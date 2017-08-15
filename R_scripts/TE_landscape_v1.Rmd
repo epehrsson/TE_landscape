@@ -31,22 +31,32 @@ chromHMM_TE_state[which(chromHMM_TE_state$X5_TxWk == chromHMM_TE_state$Tissues),
 ```{r}
 library(ggplot2)
 library(aheatmap)
+theme_set(theme_bw() %+replace%  theme(panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA)))
 ```
 
 ## Figure 1
+
+(A) The proportion of each feature annotated as each chromHMM state, averaged across all 127 samples. Features (except genome, TE) are Refseq features downloaded xx. All features except "Genome" exclude portions of the feature overlapping TEs. Features were merged to remove redundant bases. Promoters <>. Non-coding elements ("NR"), protein-coding elements ("NM")
+
 ```{r echo=FALSE}
+source('~/TE_landscape/R_scripts/chromHMM_proportion.R')
+a = ggplot(mnemonics_states_all,aes(x=Cohort,y=Mean,fill=State)) + geom_bar(stat="identity") + xlab("chromHMM") + ylab("Mean proportion of feature in state") + scale_fill_manual(values=chromHMM_colors) + theme(axis.text.x = element_text(size=15,angle=45,hjust=1))
 
- plot_1a = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[c(1:3,6:7)]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank()) + ylab("Proportion of feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1b = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[4:5]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),axis.title.y = element_blank()) + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1c = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[8]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),axis.title.y = element_blank()) + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1d = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[c(10:12)]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank()) + ylab("Proportion of feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1e = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[c(9,13:14)]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),axis.title.y = element_blank()) + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1f = ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[15]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),axis.title.y = element_blank()) + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),guide="none")
- plot_1g = ggplot(contribution_TE_long,aes(x=State,y=Proportion,fill=Class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(text=element_text(size=15),axis.title.y=element_blank(),panel.background=element_rect(fill=NA),panel.border=element_rect(color="black",fill=NA),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = 0.44918676) + scale_x_discrete(labels=c(levels(contribution_TE_long$State)[1],chromHMM_states,levels(contribution_TE_long$State)[17:22]),limits=order_states,breaks=levels(contribution_TE_long$State)) + scale_fill_manual(values=c("floralwhite","firebrick3"),guide=FALSE)
- temp=ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[c(1:3,6:7)]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),legend.position = "bottom") + ylab("Proportion of feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")))
- plot_1legend = get_legend(temp)
- grid.arrange(plot_1a,plot_1b,plot_1c,plot_1d,plot_1e,plot_1f,plot_1g,plot_1legend, nrow = 3, layout_matrix = rbind(c(1,1,1,1,2,2,3,7,7,7), c(4,4,4,5,5,5,6,7,7,7), rep(8,10)),heights=c(0.45,0.45,0.1))
+source('~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R')
+b = ggplot(CpG_Meth,aes(x=Cohort,y=Mean,fill=State)) + geom_bar(stat="identity") + xlab("WGBS") + ylab("Mean proportion of feature CpGs in state") + scale_fill_manual(values=meth_colors) + theme(axis.text.x = element_text(size=15,angle=45,hjust=1))
 
+source('~/TE_landscape/R_scripts/DNase_other.R')
+c = ggplot(DNase_proportion,aes(x=Cohort,y=Proportion)) + geom_bar(stat="identity") + xlab("DNase") + ylab("Mean proportion of feature in state") +  theme(axis.text.x = element_text(size=15,angle=45,hjust=1))
+
+source('~/TE_landscape/R_scripts/H3K27ac_other.R')
+d = ggplot(H3K27ac_proportion,aes(x=Cohort,y=Proportion)) + geom_bar(stat="identity") + xlab("H3K27ac") + ylab("Mean proportion of feature in state") +  theme(axis.text.x = element_text(size=15,angle=45,hjust=1))
+
+g = ggplot(contribution_TE_long,aes(x=State,y=Proportion,fill=Class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(text=element_text(size=15),axis.title.y=element_blank(),panel.background=element_rect(fill=NA),panel.border=element_rect(color="black",fill=NA),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = 0.44918676) + scale_x_discrete(labels=c(levels(contribution_TE_long$State)[1],chromHMM_states,levels(contribution_TE_long$State)[17:22]),limits=order_states,breaks=levels(contribution_TE_long$State)) + scale_fill_manual(values=c("floralwhite","firebrick3"),guide=FALSE)
+
+temp=ggplot(mnemonics_states_features[which(mnemonics_states_features$Cohort != "Genome" & mnemonics_states_features$Cohort != "repeats" & mnemonics_states_features$State %in% chromHMM_states[c(1:3,6:7)]),],aes(x=State,y=Proportion,fill=Cohort)) + geom_boxplot() + theme(text=element_text(size=15),panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),axis.title.x = element_blank(),legend.position = "bottom") + ylab("Proportion of feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")))
+legend = get_legend(temp)
+
+grid.arrange(plot_1a,plot_1b,plot_1c,plot_1d,plot_1e,plot_1f,plot_1g,plot_1legend, nrow = 3, layout_matrix = rbind(c(1,1,1,1,2,2,3,7,7,7), c(4,4,4,5,5,5,6,7,7,7), rep(8,10)),heights=c(0.45,0.45,0.1))
 ```
 
 ## Figure 2
