@@ -1,5 +1,5 @@
 # Methylation level per TE
-# See 7/21/2017, 7/22/2017
+# See 6/2/2016, 9/17/2016, 12/15/2016, 2/6/2017, 7/21/2017, 7/22/2017
 
 # Methylation level for all TEs
 TE_meth_average = read.table("WGBS/TE_CpG_Meth_new_average.txt",sep='\t',header=TRUE)
