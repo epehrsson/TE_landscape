@@ -40,7 +40,11 @@ potential_TEother_state_class_stats_cum$Class = factor(potential_TEother_state_c
 
 # Contribution
 # Contribution of each TE class to each chromHMM state (with Unconfident)
+# Total is all unmerged TE bases across all tissues
 contribution_class = as.data.frame(t(contribution[c(4:7,11:12,16),]))
 contribution_class = contribution_class/rowSums(contribution_class)
 contribution_class_long = melt(as.matrix(contribution_class))
 colnames(contribution_class_long) = c("State","Class","Proportion")
+
+# Contribution of TEs vs. non-TEs (Reordered)
+order_states = contribution_TE$State[1:22]

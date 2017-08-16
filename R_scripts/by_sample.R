@@ -1,6 +1,7 @@
-# Proportion of chromHMM state in TEs by sample grouping
+# Proportion of state in TEs by sample grouping
 # See 5/25/2016, 9/27/2016, 2/3/2017, 3/8/2017
 
+# chromHMM
 # Proportion of each state in all TEs in each sample
 mnemonics_states_TEother_proportion = mnemonics_states_TEother/mnemonics_states
 
@@ -26,3 +27,19 @@ rownames(mnemonics_states_TEother_proportion_range) = c("Min","Max","Median")
 # Kruskal-Wallis with Bonferroni for signficantly different state proportion in all TEs between sample groups
 mnemonics_states_TEother_proportion_kruskal = rbind(p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Group))["p.value"]),method="bonf"),p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Anatomy))["p.value"]),method="bonf"),p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Type))["p.value"]),method="bonf"),p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Cancer))["p.value"]),method="bonf"),p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Age))["p.value"]),method="bonf"),p.adjust(apply(mnemonics_states_TEother_proportion,2,function(x) unlist(kruskal.test(x ~ EID_metadata$Germline))["p.value"]),method="bonf"))
 rownames(mnemonics_states_TEother_proportion_kruskal) = c("Group","Anatomy","Type","Cancer","Age","Germline")
+
+# WGBS
+# Proportion of hypomethylated CpGs in TEs by sample (see WGBS_sample_TE_state.R)
+mean(TE_CpG_meth$Hypomethylated/all_CpG_meth$Hypomethylated)
+
+# DNase
+# Proportion of Dnase peaks overlapping TEs by sample classification
+mean(DNase_stats$Total_width_in_TE/DNase_stats$Total_width)
+kruskal.test(DNase_stats$Total_width_in_TE/DNase_stats$Total_width,EID_metadata[match(DNase_stats$Sample,EID_metadata$Sample),]$Type)
+wilcox_to_all(DNase_stats$Total_width_in_TE/DNase_stats$Total_width,droplevels(EID_metadata[match(DNase_stats$Sample,EID_metadata$Sample),]$Group))
+
+# H3K27ac
+# Proportion of H3K27ac peaks overlapping TEs by sample classification
+mean(H3K27ac_stats$Total_width_in_TE/H3K27ac_stats$Total_width) 
+kruskal.test(H3K27ac_stats$Total_width_in_TE/H3K27ac_stats$Total_width,EID_metadata[match(H3K27ac_stats$Sample,EID_metadata$Sample),]$Group)
+wilcox_to_all(H3K27ac_stats$Total_width_in_TE/H3K27ac_stats$Total_width,droplevels(EID_metadata[match(H3K27ac_stats$Sample,EID_metadata$Sample),]$Group))
