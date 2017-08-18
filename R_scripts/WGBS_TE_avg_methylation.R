@@ -24,5 +24,8 @@ TE_meth_average$Missing_noIMR90 = apply(TE_meth_average,1,function(x) sum(is.na(
 
 # Adding Unconfident class
 TE_meth_average$class_update = TE_meth_average$class
-TE_meth_average$class_update = factor(TE_meth_average$class_update,levels=c("DNA","LINE","LTR","SINE","Other","RC","Unconfident"))
-TE_meth_average[which(TE_meth_average$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?")),]$class_update = "Unconfident"
+TE_meth_average$class_update = factor(TE_meth_average$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
+TE_meth_average[which(TE_meth_average$class == "Other"),]$class_update = "SVA"
+TE_meth_average[which(TE_meth_average$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC")),]$class_update = "Other"
+
+save(TE_meth_average,file="R_scripts/TE_meth_average.RData")

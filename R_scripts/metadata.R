@@ -32,3 +32,5 @@ H3K27ac_samples = read.table("sample_lists/H3K27ac_samples.txt")
 H3K27ac_samples$H3K27ac = rep("H3K27ac",dim(H3K27ac_samples)[2])
 metadata = merge(metadata,H3K27ac_samples,by.x="Sample",by.y="V1",all.x=TRUE)
 rm(H3K27ac_samples)
+
+save(metadata,file="R_scripts/metadata.RData")

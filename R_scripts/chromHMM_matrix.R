@@ -12,5 +12,13 @@ colnames(chromHMM_max_intra) = c(colnames(chromHMM_TE_state)[1:7],"Max_states_in
 chromHMM_TE_state = merge(chromHMM_TE_state,chromHMM_max_intra,by=colnames(chromHMM_TE_state)[1:7])
 rm(chromHMM_max_intra)
 
+# Updating classes
+chromHMM_TE_state$class_update = chromHMM_TE_state$class
+chromHMM_TE_state$class_update = factor(chromHMM_TE_state$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
+chromHMM_TE_state[which(chromHMM_TE_state$class == "Other"),]$class_update = "SVA"
+chromHMM_TE_state[which(chromHMM_TE_state$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC")),]$class_update = "Other"
+
 # Number of samples each TE is in each chromHMM state, no cancer cell lines or IMR90
 chromHMM_TE_state_noCancer = rbind(read.table("chromHMM/potential/all_chromHMM_TE_noCancer_potential_0.txt",sep='\t',header=TRUE),read.table("chromHMM/potential/all_chromHMM_other_potential_noCancer.txt",sep='\t',header=TRUE))
+
+save(list=c("chromHMM_TE_state","chromHMM_TE_state_noCancer"),file="R_scripts/chromHMM_TE_state.RData")

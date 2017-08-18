@@ -10,8 +10,11 @@ TE_H3K27ac_peaks = dcast(TE_H3K27ac_peaks,chromosome+start+stop+subfamily+family
 TE_H3K27ac_peaks[is.na(TE_H3K27ac_peaks)] = 0
 
 TE_H3K27ac_peaks$class_update = TE_H3K27ac_peaks$class
-TE_H3K27ac_peaks$class_update = factor(TE_H3K27ac_peaks$class_update,levels=c("DNA","LINE","LTR","SINE","Other","RC","Unconfident"))
-TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?")),]$class_update = "Unconfident"
+TE_H3K27ac_peaks$class_update = factor(TE_H3K27ac_peaks$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
+TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$class == "Other"),]$class_update = "SVA"
+TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC")),]$class_update = "Other"
 
 # Number of samples a TE overlaps a H3K27ac peak
 TE_H3K27ac_peaks$Samples = apply(TE_H3K27ac_peaks,1,function(x) sum(as.numeric(x[8:105]) > 0))
+
+save(TE_H3K27ac_peaks,file="R_scripts/TE_H3K27ac_peaks.RData")
