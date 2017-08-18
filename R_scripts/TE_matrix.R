@@ -31,7 +31,7 @@ feature_files = c("features/intersect_features/rmsk_TEother_refseq_promoters_mer
 
 # Overlap between TEs and Refseq features
 features = lapply(feature_files,function(x) read.table(x,sep='\t'))
-features = lapply(features, setNames, nm =c("chromosome","start","stop","subfamily","family","class","strand"))
+features = lapply(features, setNames, nm =c("chromosome","start","stop","subfamily","class","family","strand"))
 colnames(features[[1]])[8] = "Promoter"
 colnames(features[[2]])[8] = "5UTR"
 colnames(features[[3]])[8] = "CDS"
