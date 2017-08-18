@@ -8,14 +8,6 @@ subfamily_CpG_meth = subfamily_CpG_meth[,c(1,6,2:5)]
 colnames(subfamily_CpG_meth) = c("Sample","subfamily",meth_states)
 subfamily_CpG_meth[is.na(subfamily_CpG_meth)] = 0
 
-# Adding number of CpGs per subfamily
-TE_subfamily_CpG_count = read.table("WGBS/subfamily/TE_CpG_subfamily.txt",sep='\t')
-colnames(TE_subfamily_CpG_count) = c("Subfamily","CpGs")
-TE_subfamily_CpG_count = merge(TE_subfamily_CpG_count,rmsk_TEother_stats_subfamily[,c(1:4,8)],by=c("Subfamily"),all.y=TRUE)[,c(1,4,3,2,5,6)]
-colnames(TE_subfamily_CpG_count)[5] = "TEs"
-TE_subfamily_CpG_count[is.na(TE_subfamily_CpG_count)] = 0
-TE_subfamily_CpG_count$CpGs_per_TE = TE_subfamily_CpG_count$CpGs/TE_subfamily_CpG_count$TEs
-TE_subfamily_CpG_count$CpGs_per_length = TE_subfamily_CpG_count$CpGs/TE_subfamily_CpG_count$Total_length
 subfamily_CpG_meth = merge(subfamily_CpG_meth,TE_subfamily_CpG_count[,1:4],by.x=c("subfamily"),by.y=c("Subfamily"),all.x=TRUE)
 
 # Proportion of all CpGs hypomethylated

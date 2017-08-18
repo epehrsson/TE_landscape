@@ -37,3 +37,12 @@ rm(list=c("TE_CpG_count","test"))
 rmsk_TE_class$TEs_wCpG_per = rmsk_TE_class$TEs_wCpG/rmsk_TE_class$Count
 rmsk_TE_class$Mean_CpG = rmsk_TE_class$CpGs/rmsk_TE_class$Count
 rmsk_TE_class$Mean_CpG_wCpG = rmsk_TE_class$CpGs/rmsk_TE_class$TEs_wCpG
+
+# Total length per class
+class_lengths = read.table("features/TEs/class/class_lengths.txt",sep='\t')
+colnames(class_lengths) = c("class","Total_length")
+class_lengths$class = factor(class_lengths$class,levels=c(levels(class_lengths$class),"SVA"))
+class_lengths[which(class_lengths$class == "Other"),]$class = "SVA"
+class_lengths[which(class_lengths$class == "Unconfident_RC"),]$class = "Other"
+rmsk_TE_class$Total_length = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length
+rm(class_lengths)
