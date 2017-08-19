@@ -39,10 +39,15 @@ rmsk_TE_class$Mean_CpG = rmsk_TE_class$CpGs/rmsk_TE_class$Count
 rmsk_TE_class$Mean_CpG_wCpG = rmsk_TE_class$CpGs/rmsk_TE_class$TEs_wCpG
 
 # Total length per class
-class_lengths = read.table("features/TEs/class/class_lengths.txt",sep='\t')
-colnames(class_lengths) = c("class","Total_length")
+class_lengths = cbind(read.table("features/TEs/class/class_lengths.txt",sep='\t'),read.table("features/TEs/class/class_lengths_noY.txt",sep='\t'))[c(1:3,5,7:8),c(1:2,4)]
+colnames(class_lengths) = c("class","Total_length","Total_length_noY")
 class_lengths$class = factor(class_lengths$class,levels=c(levels(class_lengths$class),"SVA"))
 class_lengths[which(class_lengths$class == "Other"),]$class = "SVA"
 class_lengths[which(class_lengths$class == "Unconfident_RC"),]$class = "Other"
 rmsk_TE_class$Total_length = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length
+rmsk_TE_class$Total_length_noY = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length_noY
+rmsk_TE_class$chromHMM_total_width = 121*rmsk_TE_class$Total_length + rmsk_TE_class$Total_length_noY
+rmsk_TE_class$WGBS_total_width = 37*rmsk_TE_class$Total_length
+rmsk_TE_class$DNase_total_width = 47*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
+rmsk_TE_class$H3K27ac_total_width = 92*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
 rm(class_lengths)

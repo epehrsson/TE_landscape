@@ -13,7 +13,6 @@ colnames(contribution) = c("Total",chromHMM_states,"Active","Inactive","Active R
 # TEs vs. not TEs (total is all bases across all tissues)
 contribution_TE = as.data.frame(t(contribution[1:3,]))
 contribution_TE = (contribution_TE/contribution_TE$Total)[,2:3]
-rm(contribution)
 
 # WGBS contribution
 # Proportion of CpGs in each state in TEs across all samples (with/without IMR90)
