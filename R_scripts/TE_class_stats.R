@@ -1,12 +1,12 @@
 # TE statistics by class
-# See 4/19/2016, 4/25/2016, 8/24/2016, 8/25/2016, 9/20/2016, 9/21/2016, 9/27/2016, 9/28/2016, 11/4/2016, 11/5/2016, 11/7/2016, 11/18/2016, 12/16/2016, 1/31/2017, 2/1/2017, 2/3/2017, 2/6/2017, 2/9/2017, 2/10/2017, 2/25/2017, 2/27/2017, 2/28/2017, 3/5/2017, 3/8/2017, 5/14/2017, 5/15/2017, 5/16/2017, 5/17/2017, 6/7/2017, 6/14/2017, 6/15/2017, 7/21/2017, 7/24/2017, 8/1/2017, 8/2/2017
+# See 4/19/2016, 4/25/2016, 8/24/2016, 8/25/2016, 9/20/2016, 9/21/2016, 9/23/2016, 9/27/2016, 9/28/2016, 11/4/2016, 11/5/2016, 11/7/2016, 11/18/2016, 12/16/2016, 1/31/2017, 2/1/2017, 2/3/2017, 2/6/2017, 2/9/2017, 2/10/2017, 2/25/2017, 2/27/2017, 2/28/2017, 3/5/2017, 3/8/2017, 5/12/2017, 5/14/2017, 5/15/2017, 5/16/2017, 5/17/2017, 6/7/2017, 6/14/2017, 6/15/2017, 7/21/2017, 7/24/2017, 8/1/2017, 8/2/2017
 
 library(plyr)
 
 load("R_scripts/rmsk_TE.RData")
 
 # Number of instances, median/sd of length, mean/sd mappability, mean age/sd for each class
-rmsk_TE_class = ddply(rmsk_TE,~class_update,summarize,Count = length(Length),Median_length = median(Length), SD_length = sd(Length), Mappability = mean(mappability), Mappability_SD = sd(mappability), Age = mean(JC_distance), Age_SD = sd(JC_distance))
+rmsk_TE_class = ddply(rmsk_TE,~class_update,summarize,Count = length(Length),Families = length(unique(family)), Subfamilies = length(unique(subfamily)), Median_length = median(Length), SD_length = sd(Length), Mappability = mean(mappability), Mappability_SD = sd(mappability), Age = mean(JC_distance), Age_SD = sd(JC_distance))
 rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),],~class_update,summarize,Count_noY = length(Length)),by="class_update")
 
 # Proportion of each class overlapping each feature
@@ -46,3 +46,22 @@ class_lengths[which(class_lengths$class == "Other"),]$class = "SVA"
 class_lengths[which(class_lengths$class == "Unconfident_RC"),]$class = "Other"
 rmsk_TE_class$Total_length = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length
 rm(class_lengths)
+
+# Mouse orthologs and subfamilies by class
+human_mouse_orthologs_mm10 = read.table("Mouse/liftover/hg19_mm10_TE_intersect_same.bed",sep='\t')
+colnames(human_mouse_orthologs_mm10) = c("human_chr_mm10","human_start_mm10","human_stop_mm10","human_strand_mm10","human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19","mouse_chr_mm10","mouse_start_mm10","mouse_stop_mm10","mouse_subfamily","mouse_class","mouse_family","mouse_strand_mm10","overlap")
+
+test = table(human_mouse_orthologs_mm10$human_class)
+test[12] = sum(test[c(2,4,6:7,9:11)])
+names(test)[12] = "Other"
+rmsk_TE_class$Mouse_ortholog_class = test[as.vector(rmsk_TE_class$class_update)]
+rmsk_TE_class[which(is.na(rmsk_TE_class$Mouse_ortholog_class)),]$Mouse_ortholog_class = 0
+rm(test)
+
+mm10_rmsk_TE = read.table("features/mouse/TEs/mm10_rmsk_TE.txt",sep='\t')
+colnames(mm10_rmsk_TE) = c("chromosome","start","stop","subfamily","class","family","strand")
+
+source("R_scripts/TE_subfamily_stats.R")
+
+rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE_subfamily[which(rmsk_TE_subfamily$subfamily %in% mm10_rmsk_TE$subfamily),],~class_update,summarize,Mouse_ortholog_subfamily = length(unique(subfamily))),by="class_update",all.x=TRUE)
+rmsk_TE_class[which(is.na(rmsk_TE_class$Mouse_ortholog_subfamily)),]$Mouse_ortholog_subfamily = 0
