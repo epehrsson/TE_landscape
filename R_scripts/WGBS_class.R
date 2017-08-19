@@ -4,15 +4,11 @@
 # Proportion of class CpGs in methylation state by sample
 class_CpG_meth = read.table("WGBS/class_CpG_Meth_states.txt",sep='\t')
 class_CpG_meth = class_CpG_meth[which(class_CpG_meth$V1 != 41),]
-class_CpG_meth$Sample = rep(EID_metadata_meth$Sample,7)
+class_CpG_meth$Sample = rep(as.vector(metadata[which(!is.na(metadata$WGBS)),]$Sample),8)
 class_CpG_meth = class_CpG_meth[,c(7,6,2:5)]
 colnames(class_CpG_meth)[3:6] = meth_states
 colnames(class_CpG_meth)[2] = "class"
 class_CpG_meth[is.na(class_CpG_meth)] = 0
+class_CpG_meth = class_CpG_meth[which(class_CpG_meth$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
+class_CpG_meth$class = factor(c(rep("LINE",37),rep("SINE",37),rep("LTR",37),rep("DNA",37),rep("SVA",37),rep("Other",37)),levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
 class_CpG_meth[,3:6] = class_CpG_meth[,3:6]/rowSums(class_CpG_meth[,3:6])
-
-# Comparison of CpG % hypomethylated by class
-kruskal.test(class_CpG_meth$Hypomethylated~class_CpG_meth$class)
-pairwise.wilcox.test(class_CpG_meth$Hypomethylated,class_CpG_meth$class,p.adj="bonf")
-kruskal.test(class_CpG_meth[which(class_CpG_meth$Sample != "E017"),]$Hypomethylated~class_CpG_meth[which(class_CpG_meth$Sample != "E017"),]$class)
-pairwise.wilcox.test(class_CpG_meth[which(class_CpG_meth$Sample != "E017"),]$Hypomethylated,class_CpG_meth[which(class_CpG_meth$Sample != "E017"),]$class,p.adj="bonf")
