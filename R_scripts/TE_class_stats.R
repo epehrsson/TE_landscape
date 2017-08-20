@@ -51,3 +51,5 @@ rmsk_TE_class$WGBS_total_width = 37*rmsk_TE_class$Total_length
 rmsk_TE_class$DNase_total_width = 47*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
 rmsk_TE_class$H3K27ac_total_width = 92*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
 rm(class_lengths)
+
+rmsk_TE_class = rmsk_TE_class[c(1:3,5,6,4),]
