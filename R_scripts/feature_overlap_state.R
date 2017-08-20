@@ -1,10 +1,17 @@
 # Average number of samples in state by Refseq feature overlap
+# Currently with IMR90 for methylation
 # See 9/20/2016, 9/28/2016, 12/14/2016, 2/9/2017, 6/6/2017, 6/14/17, 7/24/17, 8/1/2017
 
-potential_TEother_mean_chromHMM = apply(rmsk_TEother_feature[,9:16],2,function(y) apply(merge(rmsk_TEother_feature[which(y != "NA"),1:7],potential_TEother_state,by=c("chromosome","start","stop","strand","class","family","subfamily"))[,8:22],2,function(x) mean(x)/1.27))
-potential_TEother_mean_hypo = as.data.frame(apply(rmsk_TEother_feature[,9:16],2,function(y) mean(apply(merge(TE_meth_average,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily")),1,function(x) sum(na.omit(x[8:44]) < 0.3))))/0.37)
-potential_TEother_mean_hypo_noIMR90 = as.data.frame(apply(rmsk_TEother_feature[,9:16],2,function(y) mean(merge(TE_meth_average,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily"))$Hypomethylated_noIMR90)/0.36))
-potential_TEother_mean_DNase = apply(rmsk_TEother_feature[,9:16],2,function(y) mean(c(merge(TE_DNase_peaks,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily"))[,61],rep(0,dim(rmsk_TEother_feature[which(y != "NA"),])[1]-length(merge(TE_DNase_peaks,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily"))[,61]))))/0.53)
-potential_TEother_mean_H3K27ac = apply(rmsk_TEother_feature[,9:16],2,function(y) mean(c(merge(TE_H3K27ac_peaks,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily"))[,106],rep(0,dim(rmsk_TEother_feature[which(y != "NA"),])[1]-length(merge(TE_H3K27ac_peaks,rmsk_TEother_feature[which(y != "NA"),1:7],by=c("chromosome","start","stop","strand","class","family","subfamily"))[,106]))))/0.98)
-potential_TEother_mean_chromHMM = rbind(potential_TEother_mean_chromHMM,t(potential_TEother_mean_hypo),t(potential_TEother_mean_hypo_noIMR90),t(potential_TEother_mean_DNase),t(potential_TEother_mean_H3K27ac))
-rownames(potential_TEother_mean_chromHMM)[16:19] = c("Hypomethylated","Hypomethylated_noIMR90","DNase","H3K27ac")
+source("R_scripts/TE_correlation.R")
+source("R_scripts/potential.R")
+
+feature_state_mean = apply(rmsk_TE_measure[,14:21],2,function(y) colMeans(rmsk_TE_measure[which(y != "NA"),c(23:37,40:43,48:49)],na.rm=TRUE))
+rownames(feature_state_mean)[1:15] = chromHMM_states
+feature_state_mean[1:15,] = feature_state_mean[1:15,]/1.27
+feature_state_mean[16:19,] = feature_state_mean[16:19,]/0.37
+feature_state_mean[20,] = feature_state_mean[20,]/0.53
+feature_state_mean[21,] = feature_state_mean[21,]/0.98
+
+combine_stats = rbind(chromHMM_TE_state_dist_stats,TE_meth_average_category_stats,TE_DNase_potential_stats,TE_H3K27ac_potential_stats)
+feature_state_mean = as.data.frame(cbind(combine_stats[match(rownames(feature_state_mean),combine_stats$State),]$Samples_avg_all,feature_state_mean))
+colnames(feature_state_mean)[1] = "All"
