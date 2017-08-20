@@ -21,4 +21,7 @@ feature_names = gsub("_noTE_Meth_average.txt","",feature_names)
 rownames(CpG_feature_meth_average) = feature_names
 CpG_feature_meth_average = melt(as.matrix(CpG_feature_meth_average))
 colnames(CpG_feature_meth_average) = c("Cohort","Sample","Methylation")
+
+# Compare all/TE CpGs to other features
+CpG_feature_meth_average = rbind(droplevels(CpG_meth_average[which(CpG_meth_average$Cohort != "noTE"),]),CpG_feature_meth_average)
 CpG_feature_meth_average = CpG_feature_meth_average[order(CpG_feature_meth_average$Cohort,CpG_feature_meth_average$Methylation),]
