@@ -4,7 +4,7 @@
 library(reshape2)
 
 # chromHMM potential
-load("R_scripts/chromHMM_matrix.RData")
+load("R_scripts/chromHMM_TE_state.RData")
 
 # All samples
 # Distribution
