@@ -7,8 +7,9 @@ library(reshape2)
 contribution = read.table(file="chromHMM/TEother_contribution.txt",header=TRUE,sep='\t',row.names=1)
 
 # Adding composite states
-contribution = as.data.frame(cbind(contribution,rowSums(contribution[,2:9]),rowSums(contribution[,10:16]),rowSums(contribution[,c(2:4,7:8)]),rowSums(contribution[,5:6]),rowSums(contribution[,c(10,14:15)]),rowSums(contribution[,11:13])))
-colnames(contribution) = c("Total",chromHMM_states,"Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
+# contribution = as.data.frame(cbind(contribution,rowSums(contribution[,2:9]),rowSums(contribution[,10:16]),rowSums(contribution[,c(2:4,7:8)]),rowSums(contribution[,5:6]),rowSums(contribution[,c(10,14:15)]),rowSums(contribution[,11:13])))
+# colnames(contribution) = c("Total",chromHMM_states,"Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
+colnames(contribution) = c("Total",chromHMM_states)
 
 # TEs vs. not TEs (total is all bases across all tissues)
 contribution_TE = as.data.frame(t(contribution[1:3,]))
@@ -29,14 +30,15 @@ rm(wgbs)
 # Total DNase width in TEs, all samples
 source("~/TE_landscape/R_scripts/DNase_overlap.R")
 contribution_TE = rbind(contribution_TE,c(1-sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width))))
-rownames(contribution_TE)[27] = "DNase"
+rownames(contribution_TE)[21] = "DNase"
 
 # H3K27ac contribution
 # Proportion of all peaks in TEs
 source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
 contribution_TE = rbind(contribution_TE,c(1-sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)),sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width))))
-rownames(contribution_TE)[28] = "H3K27ac"
+rownames(contribution_TE)[22] = "H3K27ac"
 
+# Combine all
 contribution_TE$State = rownames(contribution_TE)
 contribution_TE = melt(contribution_TE,id.vars="State")
 colnames(contribution_TE)[2:3] = c("Cohort","Proportion")
