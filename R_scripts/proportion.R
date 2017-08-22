@@ -59,10 +59,6 @@ mnemonics_states_all = rbind(mnemonics_states_genome_normalized[,128:129],mnemon
 mnemonics_states_all$State = rep(chromHMM_states,2)
 mnemonics_states_all$Cohort = c(rep("Genome",15),rep("TE",15))
 mnemonics_states_all = rbind(mnemonics_states_all,mnemonics_states_features_noTE_normalized)
-mnemonics_states_all$Feature = apply(mnemonics_states_all,1,function(x) unlist(strsplit(as.character(x[4]),"_"))[1])
-mnemonics_states_all$Coding = apply(mnemonics_states_all,1,function(x) unlist(strsplit(as.character(x[4]),"_"))[2])
-mnemonics_states_all[which(is.na(mnemonics_states_all$Coding)),]$Coding = "all"
-mnemonics_states_all$Cohort = factor(mnemonics_states_all$Cohort,levels=c("TE","Genome","genome_noTE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","coding_exon","coding_exon_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
 mnemonics_states_all$State = factor(mnemonics_states_all$State,levels=chromHMM_states[c(1:3,6:7,4:5,8,10:12,9,13:14,15)])
 
 # WGBS proportion 
@@ -76,7 +72,6 @@ rownames(CpG_Meth) = CpG_Meth$Cohort
 CpG_Meth = CpG_Meth[,1:4]
 CpG_Meth = melt(as.matrix(CpG_Meth/rowSums(CpG_Meth)))
 colnames(CpG_Meth) = c("Cohort","State","Mean")
-CpG_Meth$Cohort = factor(CpG_Meth$Cohort,levels=c("TE","Genome","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","coding_exon","coding_exon_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
 # mean(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
 
 # DNase proportion
@@ -85,14 +80,14 @@ source("~/TE_landscape/R_scripts/DNase_overlap.R")
 # Proportion of RefSeq features overlapping DNase peaks, averaged
 DNase_features = merge(DNase_features,aggregate(data=mnemonics_states_features_noTE,Bases~Cohort+Sample,sum),by=c("Sample","Cohort"))
 colnames(DNase_features)[3:4] = c("Total_width_in_feature","Feature_width")
-DNase_features$Proportion = DNase_features$Total_width_in_feature/DNase_features$Feature_width
-DNase_proportion = aggregate(data=DNase_features,Proportion~Cohort,mean)
+DNase_features$Mean = DNase_features$Total_width_in_feature/DNase_features$Feature_width
+DNase_proportion = aggregate(data=DNase_features,Mean~Cohort,mean)
 
 # Proportion of TEs overlapping DNase peaks, averaged
 DNase_proportion[20,] = c("Genome",mean(DNase_stats$Total_width/as.numeric(mnemonics_states_genome[1,as.vector(DNase_stats$Sample)])))
 DNase_proportion[21,] = c("TE",mean(DNase_stats$Total_width_in_TE/as.numeric(mnemonics_states_TE[1,as.vector(DNase_stats$Sample)])))
-DNase_proportion$Cohort = factor(DNase_proportion$Cohort,levels=c("TE","Genome","genome_noTE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","coding_exon","coding_exon_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
-DNase_proportion$Proportion = as.numeric(DNase_proportion$Proportion)
+DNase_proportion$Mean = as.numeric(DNase_proportion$Mean)
+DNase_proportion$State = rep("DNase",dim(DNase_proportion)[1])
 
 # H3K27ac proportion
 source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
@@ -100,11 +95,21 @@ source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
 # Proportion of RefSeq features overlapping H3K27ac peaks, averaged
 H3K27ac_features = merge(H3K27ac_features,aggregate(data=mnemonics_states_features_noTE,Bases~Cohort+Sample,sum),by=c("Sample","Cohort"))
 colnames(H3K27ac_features)[3:4] = c("Total_width_in_feature","Feature_width")
-H3K27ac_features$Proportion = H3K27ac_features$Total_width_in_feature/H3K27ac_features$Feature_width
-H3K27ac_proportion = aggregate(data=H3K27ac_features,Proportion~Cohort,mean)
+H3K27ac_features$Mean = H3K27ac_features$Total_width_in_feature/H3K27ac_features$Feature_width
+H3K27ac_proportion = aggregate(data=H3K27ac_features,Mean~Cohort,mean)
 
 # Proportion of TEs overlapping H3K27ac peaks, averaged
 H3K27ac_proportion[20,] = c("Genome",mean(H3K27ac_stats$Total_width/as.numeric(mnemonics_states_genome[1,as.vector(H3K27ac_stats$Sample)])))
 H3K27ac_proportion[21,] = c("TE",mean(H3K27ac_stats$Total_width_in_TE/as.numeric(mnemonics_states_TE[1,as.vector(H3K27ac_stats$Sample)])))
-H3K27ac_proportion$Cohort = factor(H3K27ac_proportion$Cohort,levels=c("TE","Genome","genome_noTE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","coding_exon","coding_exon_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
-H3K27ac_proportion$Proportion = as.numeric(H3K27ac_proportion$Proportion)
+H3K27ac_proportion$Mean = as.numeric(H3K27ac_proportion$Mean)
+H3K27ac_proportion$State = rep("H3K27ac",dim(H3K27ac_proportion)[1])
+
+# Combine all
+combined_proportion = rbind(mnemonics_states_all[,c(1,3:4)],CpG_Meth,DNase_proportion,H3K27ac_proportion)
+combined_proportion$Group = factor(c(rep("chromHMM",315),rep("WGBS",80),rep("DNase",21),rep("H3K27ac",21)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
+combined_proportion$Cohort = gsub("coding_exon","CDS",combined_proportion$Cohort)
+combined_proportion$Cohort = factor(combined_proportion$Cohort,levels=c("TE","Genome","genome_noTE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","CDS","CDS_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
+combined_proportion$Feature = factor(apply(combined_proportion,1,function(x) unlist(strsplit(as.character(x[3]),"_"))[1]),levels=c("TE","Genome","promoters","5UTR","CDS","3UTR","exons","introns","intergenic"))
+combined_proportion$Coding = apply(combined_proportion,1,function(x) unlist(strsplit(as.character(x[3]),"_"))[2])
+combined_proportion[which(is.na(combined_proportion$Coding)),]$Coding = "All"
+combined_proportion$Coding = factor(combined_proportion$Coding,levels=c("All","pc","nc","noTE"))
