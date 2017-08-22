@@ -57,8 +57,7 @@ TE_meth_average_category_cum_long$Sample_proportion = as.numeric(TE_meth_average
 
 TE_meth_average_category_stats = as.data.frame(t(rbind(apply(TE_meth_average_category[,2:5],2,function(x) sum(x[2:38])/32004.28),apply(TE_meth_average_category[,2:5],2,function(x) sum(as.numeric(x)*seq(0,37))/sum(x))/0.37,apply(TE_meth_average_category[2:38,2:5],2,function(x) sum(as.numeric(x)*seq(1,37))/sum(x))/0.37)))
 colnames(TE_meth_average_category_stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
-TE_meth_average_category_stats$State = rownames(TE_meth_average_category_stats)
-TE_meth_average_category_stats$State = factor(TE_meth_average_category_stats$State,levels=as.vector(TE_meth_average_category_stats$State)[c(4,2,3,1)])
+TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_stats),levels=as.vector(TE_meth_average_category_stats$State)[c(4,2,3,1)])
 
 # Cumulative distribution of methylation states and statistics, no IMR90
 TE_meth_average_noIMR90_category = sample_distribution(TE_meth_average,c(50:53),36)
