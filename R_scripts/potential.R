@@ -39,7 +39,7 @@ TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_
 # Cumulative distribution of methylation states and statistics, no IMR90
 TE_meth_average_noIMR90_category = sample_distribution(TE_meth_average,c(50:53),36)
 TE_meth_average_noIMR90_category_cum = cumulative_distribution(TE_meth_average,c(50:53),36)
-TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_category,4,36)
+TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_noIMR90_category,4,36)
 TE_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=c("Missing","Hypermethylated","Intermediate","Hypomethylated"))
 
 # Number of TEs in each WGBS state by sample
@@ -57,16 +57,8 @@ load("R_scripts/TE_DNase_peaks.RData")
 TE_DNase_potential = sample_distribution(TE_DNase_peaks,61,53)
 TE_DNase_potential[1,2] = 4430788-1840984
 colnames(TE_DNase_potential)[2] = "DNase"
-
-# Cumulative distribution of TEs overlapping DNase peaks
-TE_DNase_potential_cum = as.data.frame(cumsum(TE_DNase_potential[which(TE_DNase_potential$Samples %in% seq(1,53)),]$DNase)/sum(TE_DNase_potential[which(TE_DNase_potential$Samples %in% seq(1,53)),]$DNase))
-rownames(TE_DNase_potential_cum) = seq(1:53)
-TE_DNase_potential_cum$Samples = rownames(TE_DNase_potential_cum)
-colnames(TE_DNase_potential_cum)[1] = "Proportion"
+TE_DNase_potential_cum = cumulative_distribution(TE_DNase_peaks,61,53)
 TE_DNase_potential_cum$State = rep("DNase",53)
-TE_DNase_potential_cum$Sample_proportion = as.numeric(TE_DNase_potential_cum$Samples)/53
-
-# Statistics
 TE_DNase_potential_stats = potential_stats(TE_DNase_potential,1,53)
 TE_DNase_potential_stats$State = "DNase"
 
@@ -85,16 +77,8 @@ load("R_scripts/TE_H3K27ac_peaks.RData")
 TE_H3K27ac_potential = sample_distribution(TE_H3K27ac_peaks,106,98)
 TE_H3K27ac_potential[1,2] = 4430788-1801527
 colnames(TE_H3K27ac_potential)[2] = "H3K27ac"
-
-# Cumulative distribution of TEs overlapping H3K27ac peaks
-TE_H3K27ac_potential_cum = as.data.frame(cumsum(TE_H3K27ac_potential[which(TE_H3K27ac_potential$Samples %in% seq(1,98)),]$H3K27ac)/sum(TE_H3K27ac_potential[which(TE_H3K27ac_potential$Samples %in% seq(1,98)),]$H3K27ac))
-rownames(TE_H3K27ac_potential_cum) = seq(1:98)
-TE_H3K27ac_potential_cum$Samples = rownames(TE_H3K27ac_potential_cum)
-colnames(TE_H3K27ac_potential_cum)[1] = "Proportion"
+TE_H3K27ac_potential_cum = cumulative_distribution(TE_H3K27ac_peaks,106,98)
 TE_H3K27ac_potential_cum$State = rep("H3K27ac",98)
-TE_H3K27ac_potential_cum$Sample_proportion = as.numeric(TE_H3K27ac_potential_cum$Samples)/98
-
-# Statistics
 TE_H3K27ac_potential_stats = potential_stats(TE_H3K27ac_potential,1,98)
 TE_H3K27ac_potential_stats$State = "H3K27ac"
 
