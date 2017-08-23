@@ -7,33 +7,15 @@ library(reshape2)
 load("R_scripts/chromHMM_TE_state.RData")
 
 # All samples
-# Distribution
 chromHMM_TE_state_dist = sample_distribution(chromHMM_TE_state,c(8:22),127)
-
-# Cumulative distribution
 chromHMM_TE_state_cum = cumulative_distribution(chromHMM_TE_state,c(8:22),127)
-chromHMM_TE_state_cum_long = melt(as.matrix(chromHMM_TE_state_cum))
-colnames(chromHMM_TE_state_cum_long) = c("Samples","State","Proportion")
-chromHMM_TE_state_cum_long$Sample_proportion = as.numeric(chromHMM_TE_state_cum_long$Samples)/127
-
-# Stats
-chromHMM_TE_state_dist_stats = as.data.frame(t(rbind(apply(chromHMM_TE_state_dist[,2:16],2,function(x) sum(x[2:128])/44307.88),apply(chromHMM_TE_state_dist[,2:16],2,function(x) sum(x*as.numeric(chromHMM_TE_state_dist$Samples))/sum(x))/1.27,apply(chromHMM_TE_state_dist[2:128,2:16],2,function(x) sum(x*as.numeric(chromHMM_TE_state_dist$Samples[2:128]))/sum(x))/1.27)))
-colnames(chromHMM_TE_state_dist_stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+chromHMM_TE_state_dist_stats = potential_stats(chromHMM_TE_state_dist,15,127)
 chromHMM_TE_state_dist_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
 # No cancer cell lines
-# Distribution
 chromHMM_TE_state_dist_noCancer = sample_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
-
-# Cumulative distribution
 chromHMM_TE_state_noCancer_cum = cumulative_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
-chromHMM_TE_state_noCancer_cum_long = melt(as.matrix(chromHMM_TE_state_noCancer_cum))
-colnames(chromHMM_TE_state_noCancer_cum_long) = c("Samples","State","Proportion")
-chromHMM_TE_state_noCancer_cum_long$Sample_proportion = as.numeric(chromHMM_TE_state_noCancer_cum_long$Samples)/121
-
-# Stats
-chromHMM_TE_state_dist_noCancer_stats = as.data.frame(t(rbind(apply(chromHMM_TE_state_dist_noCancer[,2:16],2,function(x) sum(x[2:122])/44307.88),apply(chromHMM_TE_state_dist_noCancer[,2:16],2,function(x) sum(x*as.numeric(chromHMM_TE_state_dist_noCancer$Samples))/sum(x))/1.21,apply(chromHMM_TE_state_dist_noCancer[2:122,2:16],2,function(x) sum(x*as.numeric(chromHMM_TE_state_dist_noCancer$Samples[2:122]))/sum(x))/1.21)))
-colnames(chromHMM_TE_state_dist_noCancer_stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_noCancer,15,121)
 chromHMM_TE_state_dist_noCancer_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
 # Number of TEs in each chromHMM state by sample
@@ -51,23 +33,13 @@ load("R_scripts/TE_meth_average.RData")
 # Cumulative distribution of methylation states and statistics
 TE_meth_average_category = sample_distribution(TE_meth_average,c(46:49),37)
 TE_meth_average_category_cum = cumulative_distribution(TE_meth_average,c(46:49),37)
-TE_meth_average_category_cum_long = melt(as.matrix(TE_meth_average_category_cum))
-colnames(TE_meth_average_category_cum_long) = c("Samples","State","Proportion")
-TE_meth_average_category_cum_long$Sample_proportion = as.numeric(TE_meth_average_category_cum_long$Samples)/37
-
-TE_meth_average_category_stats = as.data.frame(t(rbind(apply(TE_meth_average_category[,2:5],2,function(x) sum(x[2:38])/32004.28),apply(TE_meth_average_category[,2:5],2,function(x) sum(as.numeric(x)*seq(0,37))/sum(x))/0.37,apply(TE_meth_average_category[2:38,2:5],2,function(x) sum(as.numeric(x)*seq(1,37))/sum(x))/0.37)))
-colnames(TE_meth_average_category_stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
-TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_stats),levels=as.vector(TE_meth_average_category_stats$State)[c(4,2,3,1)])
+TE_meth_average_category_stats = potential_stats(TE_meth_average_category,4,37)
+TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_stats),levels=as.vector(rownames(TE_meth_average_category_stats))[c(4,2,3,1)])
 
 # Cumulative distribution of methylation states and statistics, no IMR90
 TE_meth_average_noIMR90_category = sample_distribution(TE_meth_average,c(50:53),36)
 TE_meth_average_noIMR90_category_cum = cumulative_distribution(TE_meth_average,c(50:53),36)
-TE_meth_average_noIMR90_category_cum_long = melt(as.matrix(TE_meth_average_noIMR90_category_cum))
-colnames(TE_meth_average_noIMR90_category_cum_long) = c("Samples","State","Proportion")
-TE_meth_average_noIMR90_category_cum_long$Sample_proportion = as.numeric(TE_meth_average_noIMR90_category_cum_long$Samples)/36
-
-TE_meth_average_noIMR90_category_stats = as.data.frame(t(rbind(apply(TE_meth_average_noIMR90_category[,2:5],2,function(x) sum(x[2:37])/32004.28),apply(TE_meth_average_noIMR90_category[,2:5],2,function(x) sum(as.numeric(x)*seq(0,36))/sum(x))/0.36,apply(TE_meth_average_noIMR90_category[2:37,2:5],2,function(x) sum(as.numeric(x)*seq(1,36))/sum(x))/0.36)))
-colnames(TE_meth_average_noIMR90_category_stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_category,4,36)
 TE_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=c("Missing","Hypermethylated","Intermediate","Hypomethylated"))
 
 # Number of TEs in each WGBS state by sample
@@ -81,7 +53,7 @@ colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")
 # DNase potential
 load("R_scripts/TE_DNase_peaks.RData")
 
-# Distribution of TEs overlapping DNase peaks (needs matrix)
+# Distribution of TEs overlapping DNase peaks
 TE_DNase_potential = sample_distribution(TE_DNase_peaks,61,53)
 TE_DNase_potential[1,2] = 4430788-1840984
 colnames(TE_DNase_potential)[2] = "DNase"
@@ -95,8 +67,7 @@ TE_DNase_potential_cum$State = rep("DNase",53)
 TE_DNase_potential_cum$Sample_proportion = as.numeric(TE_DNase_potential_cum$Samples)/53
 
 # Statistics
-TE_DNase_potential_stats = as.data.frame(t(rbind(sum(TE_DNase_potential$DNase[2:54])*100/sum(TE_DNase_potential$DNase),(sum(as.numeric(TE_DNase_potential$DNase)*seq(0,53))/sum(TE_DNase_potential$DNase))/0.53,(sum(as.numeric(TE_DNase_potential$DNase[2:54])*seq(1,53))/sum(TE_DNase_potential$DNase))/0.53)))
-colnames(TE_DNase_potential_stats)[1:3] = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+TE_DNase_potential_stats = potential_stats(TE_DNase_potential,1,53)
 TE_DNase_potential_stats$State = "DNase"
 
 # Proportion of TEs overlapping Dnase peaks, by sample
@@ -124,8 +95,7 @@ TE_H3K27ac_potential_cum$State = rep("H3K27ac",98)
 TE_H3K27ac_potential_cum$Sample_proportion = as.numeric(TE_H3K27ac_potential_cum$Samples)/98
 
 # Statistics
-TE_H3K27ac_potential_stats = as.data.frame(t(rbind(sum(TE_H3K27ac_potential$H3K27ac[2:99])*100/sum(TE_H3K27ac_potential$H3K27ac),(sum(as.numeric(TE_H3K27ac_potential$H3K27ac)*seq(0,98))/sum(TE_H3K27ac_potential$H3K27ac))/0.98,(sum(as.numeric(TE_H3K27ac_potential$H3K27ac[2:99])*seq(1,98))/sum(TE_H3K27ac_potential$H3K27ac))/0.98)))
-colnames(TE_H3K27ac_potential_stats)[1:3] = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+TE_H3K27ac_potential_stats = potential_stats(TE_H3K27ac_potential,1,98)
 TE_H3K27ac_potential_stats$State = "H3K27ac"
 
 # Proportion of TEs overlapping H3K27ac peaks, by sample
