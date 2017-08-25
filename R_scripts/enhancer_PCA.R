@@ -9,9 +9,3 @@ rownames(enhancer_matrix) = apply(enhancer_matrix,1,function(x) paste(x[1],x[2],
 
 # Compute PCA
 enhancer_matrix_pca = prcomp(t(na.omit(enhancer_matrix[,8:134])),scale=TRUE,center=TRUE)
-
-# Additional analyses
-# enhancer_matrix_dist = cor(enhancer_matrix[,8:134],use="pairwise.complete.obs")
-# enhancer_matrix_hclust = hclust(as.dist(enhancer_matrix_dist),method="complete")
-# plot(enhancer_matrix_hclust,hang=-1)
-# summary(enhancer_matrix_pca) #To get the proportion and cumulative proportion of variance explained by each PC

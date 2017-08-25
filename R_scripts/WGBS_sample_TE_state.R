@@ -1,24 +1,6 @@
 # Methylation state of TEs by sample
 # See 6/1/2016, 7/10/2016, 9/16/2016, 9/17/2016, 12/15/2016, 12/16/2016, 1/24/2017, 2/6/2017, 2/9/2017, 3/8/2017, 5/11/2017, 5/12/2017, 6/14/2017, 7/22/2017, 8/1/2017
 
-# Average TE methylation level by sample
-TE_meth_average_mean = apply(TE_meth_average[,c(8:44)],2,function(x) mean(na.omit(x)))
-
-# Summaries with/without IMR90
-mean(TE_meth_average_mean)
-sd(TE_meth_average_mean)
-mean(TE_meth_average_mean[c(1:10,12:37)])
-sd(TE_meth_average_mean[c(1:10,12:37)])
-
-# TEs per methylation state per sample
-TE_meth_average_state = as.data.frame(cbind(apply(TE_meth_average[,8:44],2,function(x) sum(na.omit(x) < 0.3)/length(x)),apply(TE_meth_average[,8:44],2,function(x) sum(na.omit(x) > 0.7)/length(x)),apply(TE_meth_average[,8:44],2,function(x)  sum(na.omit(x) <= 0.7 & na.omit(x) >= 0.3)/length(x)),apply(TE_meth_average[,8:44],2,function(x) sum(is.na(x))/length(x))))
-colnames(TE_meth_average_state) = c("Hypomethylated","Hypermethylated","Intermediate","Missing")
-TE_meth_average_state = TE_meth_average_state[order(TE_meth_average_state$Hypermethylated + TE_meth_average_state$Missing),]
-
-# Average proportion of TEs hypomethylated, excluding IMR90
-mean(TE_meth_average_state$Hypomethylated[2:37])
-sd(TE_meth_average_state$Hypomethylated[2:37])
-
 # Proportion of TEs hypomethylated by sample metadata
 TE_meth_average_state_long = melt(as.matrix(TE_meth_average_state))
 colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")

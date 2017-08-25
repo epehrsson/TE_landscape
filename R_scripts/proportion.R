@@ -72,7 +72,6 @@ rownames(CpG_Meth) = CpG_Meth$Cohort
 CpG_Meth = CpG_Meth[,1:4]
 CpG_Meth = melt(as.matrix(CpG_Meth/rowSums(CpG_Meth)))
 colnames(CpG_Meth) = c("Cohort","State","Mean")
-# mean(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
 
 # DNase proportion
 source("~/TE_landscape/R_scripts/DNase_overlap.R")
