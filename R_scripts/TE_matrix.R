@@ -26,20 +26,17 @@ colnames(rmsk_TE_age) = c("chromosome","start","stop","subfamily","family","clas
 rmsk_TE = merge(rmsk_TE,rmsk_TE_age,by=c("chromosome","start","stop","subfamily","family","class","strand"))
 rm(rmsk_TE_age)
 
-# Add feature overlap per TE
-feature_files = c("features/intersect_features/rmsk_TEother_refseq_promoters_merge.txt","features/intersect_features/rmsk_TEother_refseq_5UTR_merge.txt","features/intersect_features/rmsk_TEother_refseq_coding_exon_merge.txt","features/intersect_features/rmsk_TEother_refseq_3UTR_merge.txt","features/intersect_features/rmsk_TEother_refseq_exons_merge.txt","features/intersect_features/rmsk_TEother_refseq_introns_merge.txt","features/intersect_features/rmsk_TEother_refseq_intergenic.txt","features/intersect_features/rmsk_TEother_cpgIsland.txt")
-
 # Overlap between TEs and Refseq features
+feature_files = list.files(path="features/intersect_features/",pattern="rmsk_TEother_",full.names=TRUE)
 features = lapply(feature_files,function(x) read.table(x,sep='\t'))
 features = lapply(features, setNames, nm =c("chromosome","start","stop","subfamily","class","family","strand"))
-colnames(features[[1]])[8] = "Promoter"
-colnames(features[[2]])[8] = "5UTR"
-colnames(features[[3]])[8] = "CDS"
-colnames(features[[4]])[8] = "3UTR"
-colnames(features[[5]])[8] = "Exon"
-colnames(features[[6]])[8] = "Intron"
-colnames(features[[7]])[8] = "Intergenic"
-colnames(features[[8]])[8] = "CGI"
+feature_files = gsub("features/intersect_features//rmsk_TEother_","",feature_files)
+feature_files = gsub("refseq_","",feature_files)
+feature_files = gsub("_merge.txt","",feature_files)
+feature_files = gsub(".txt","",feature_files)
+for (i in 1:length(feature_files)){
+  colnames(features[[i]])[8] = feature_files[i]
+}
 features_merge = reshape::merge_recurse(features,by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
 
 # Convert to matrix
