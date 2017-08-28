@@ -3,7 +3,7 @@
 
 library(plyr)
 
-load("R_scripts/rmsk_TE.RData")
+load("R_datasets/rmsk_TE.RData")
 
 # Number of instances, median/sd of length, mean/sd mappability, mean age/sd for each class
 rmsk_TE_class = ddply(rmsk_TE,~class_update,summarize,Count = length(Length),Families = length(unique(family)), Subfamilies = length(unique(subfamily)), Median_length = median(Length), SD_length = sd(Length), Mappability = mean(mappability), Mappability_SD = sd(mappability), Age = mean(JC_distance), Age_SD = sd(JC_distance))
