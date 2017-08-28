@@ -37,10 +37,10 @@ colnames(RNA_TE_agnostic)[57:60] = c("E028","E037","E038","E062")
 rm(test)
 
 # Number of samples TE is expressed >1 RPKM
-RNA_TE_agnostic$Expressed_samples = apply(RNA_TE_agnostic[,8:60],1,function(x) sum(x > 1))
+RNA_TE_agnostic$Expressed_samples = apply(RNA_TE_agnostic[,9:60],1,function(x) sum(x > 1))
 
 # Max expression per TE
-RNA_TE_agnostic$Max_expression = apply(RNA_TE_agnostic[,8:60],1,max)
+RNA_TE_agnostic$Max_expression = apply(RNA_TE_agnostic[,9:60],1,max)
 
 # Updating class
 RNA_TE_agnostic$class_update = RNA_TE_agnostic$class
@@ -52,10 +52,10 @@ RNA_TE_agnostic[which(RNA_TE_agnostic$class %in% c("DNA?","LINE?","LTR?","SINE?"
 RNA_TE_agnostic_subfamily = aggregate(data=RNA_TE_agnostic[,c(4:6,8:60)],.~class+family+subfamily,mean)
 
 # Max average expression per subfamily
-RNA_TE_agnostic_subfamily$Max_expression = apply(RNA_TE_agnostic_subfamily[,4:56],1,max)
+RNA_TE_agnostic_subfamily$Max_expression = apply(RNA_TE_agnostic_subfamily[,5:56],1,max)
 
 # Number of samples mean subfamily expression is >1 RPKM
-RNA_TE_agnostic_subfamily$Expressed_samples = apply(RNA_TE_agnostic_subfamily[,4:56],1,function(x) sum(x > 1))
+RNA_TE_agnostic_subfamily$Expressed_samples = apply(RNA_TE_agnostic_subfamily[,5:56],1,function(x) sum(x > 1))
 
 # Exons
 # Average expression per Refseq exon
@@ -74,9 +74,9 @@ colnames(RNA_refseq_exon_agnostic)[56:59] = c("E028","E037","E038","E062")
 rm(test)
 
 # Number of samples exon is expressed >1 RPKM
-RNA_refseq_exon_agnostic$Expressed_samples = apply(RNA_refseq_exon_agnostic[,7:59],1,function(x) sum(x > 1))
+RNA_refseq_exon_agnostic$Expressed_samples = apply(RNA_refseq_exon_agnostic[,8:59],1,function(x) sum(x > 1))
 
 # Max expression per exon
-RNA_refseq_exon_agnostic$Max_expression = apply(RNA_refseq_exon_agnostic[,7:59],1,max)
+RNA_refseq_exon_agnostic$Max_expression = apply(RNA_refseq_exon_agnostic[,8:59],1,max)
 
 save(list=c("RNA_TE","RNA_TE_agnostic","RNA_TE_agnostic_subfamily","RNA_refseq_exon","RNA_refseq_exon_agnostic"),file="R_scripts/rna.RData")
