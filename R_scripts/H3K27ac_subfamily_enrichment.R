@@ -3,7 +3,7 @@
 
 source("R_scripts/TE_subfamily_stats.R")
 source("R_scripts/H3K27ac_overlap.R")
-load("R_scripts/TE_H3K27ac_peaks.RData")
+load("R_datasets/TE_H3K27ac_peaks.RData")
 
 # Length of H3K27ac peak overlapping subfamily per sample
 subfamily_H3K27ac_sample = read.table("H3K27ac/subfamily_H3K27ac_sample.txt",sep='\t')

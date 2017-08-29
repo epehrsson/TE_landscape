@@ -3,7 +3,7 @@
 
 source("R_scripts/TE_subfamily_stats.R")
 source("R_scripts/DNase_overlap.R")
-load("R_scripts/TE_DNase_peaks.RData")
+load("R_datasets/TE_DNase_peaks.RData")
 
 # Length of DNase peak overlapping subfamily per sample
 subfamily_DNase_sample = read.table("DNase/subfamily_DNase_sample.txt",sep='\t')

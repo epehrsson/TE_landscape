@@ -20,4 +20,4 @@ print("Combined WGBS and CpG matrices")
 shuffled_WGBS_average = lapply(shuffled_WGBS_average,function(y) transform(y,Hypomethylated = apply(y,1,function(x) sum(x[8:44] < 0.3,na.rm=TRUE)),Hypermethylated = apply(y,1,function(x) sum(x[8:44] > 0.7,na.rm=TRUE)),Intermediate = apply(y,1,function(x) sum(x[8:44] <= 0.7 & x[8:44] >= 0.3,na.rm=TRUE)),Missing = apply(y,1,function(x) sum(is.na(x[8:44]))),Hypomethylated_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] < 0.3,na.rm=TRUE)),Hypermethylated_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] > 0.7,na.rm=TRUE)),Intermediate_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] <= 0.7 & x[c(8:17,19:44)] >= 0.3,na.rm=TRUE)),Missing_noIMR90 = apply(y,1,function(x) sum(is.na(x[c(8:17,19:44)])))))
 print("Calculating methylation states")
 
-save(shuffled_WGBS_average,file="R_scripts/shuffled_WGBS.RData")
+save(shuffled_WGBS_average,file="R_datasets/shuffled_WGBS.RData")
