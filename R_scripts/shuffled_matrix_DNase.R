@@ -15,4 +15,4 @@ print("Replacing NA with 0")
 shuffled_DNase_potential = lapply(shuffled_DNase_potential,function(y) transform(y,Samples = apply(y,1,function(x) sum(as.numeric(x[8:60]) > 0))))
 print("Calculating samples")
 
-save(shuffled_DNase_potential,file="R_scripts/shuffled_DNase.RData")
+save(shuffled_DNase_potential,file="R_datasets/shuffled_DNase.RData")
