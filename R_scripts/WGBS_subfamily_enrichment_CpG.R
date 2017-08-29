@@ -12,7 +12,7 @@ colnames(subfamily_CpG_meth) = c("Sample","subfamily",meth_states)
 subfamily_CpG_meth[is.na(subfamily_CpG_meth)] = 0
 
 # CpGs per subfamily
-subfamily_CpG_meth = merge(subfamily_CpG_meth,rmsk_TE_subfamily[,c(1:3,20)],by=c("subfamily"),all.x=TRUE)
+subfamily_CpG_meth = merge(subfamily_CpG_meth,rmsk_TE_subfamily[,c(1:3,32)],by=c("subfamily"),all.x=TRUE)
 
 # Proportion of all CpGs hypomethylated by sample
 subfamily_CpG_meth$Hypomethylated_all = apply(subfamily_CpG_meth,1,function(x) all_CpG_meth[x[2],]$Hypomethylated)
