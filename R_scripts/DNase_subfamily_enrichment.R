@@ -11,7 +11,7 @@ colnames(subfamily_DNase_sample) = c("subfamily","Sample","Length_ijk")
 
 # Length of subfamily
 subfamily_DNase_sample_expand = expand.grid(subfamily = levels(rmsk_TE_subfamily$subfamily),Sample = levels(subfamily_DNase_sample$Sample))
-subfamily_DNase_sample_expand = join(subfamily_DNase_sample_expand,rmsk_TE_subfamily[,c(1:3,21)],by=c("subfamily"))
+subfamily_DNase_sample_expand = join(subfamily_DNase_sample_expand,rmsk_TE_subfamily[,c(1:3,33)],by=c("subfamily"))
 subfamily_DNase_sample = join(subfamily_DNase_sample_expand,subfamily_DNase_sample,by=c("subfamily","Sample"),type="left")
 colnames(subfamily_DNase_sample)[5] = "Length_ik"
 subfamily_DNase_sample[is.na(subfamily_DNase_sample$Length_ijk),]$Length_ijk = 0
@@ -36,7 +36,7 @@ subfamily_DNase_sample$Length_percent_jk = subfamily_DNase_sample$Length_ijk/sub
 # Add metadata
 subfamily_DNase_sample = merge(subfamily_DNase_sample,metadata[,c(1,4:9)],by=c("Sample"),all.x=TRUE)
 
-# Number of members overlapping DNase peak (needs matrix)
+# Number of members overlapping DNase peak
 TE_DNase_peaks_members = merge(melt(aggregate(data=TE_DNase_peaks[,c(4,8:60)],.~subfamily,function(x) sum(as.numeric(x))),id.vars=c("subfamily")),melt(aggregate(data=TE_DNase_peaks[,c(4,8:60)],.~subfamily,function(x) sum(as.numeric(x) > 0)),id.vars=c("subfamily")),by=c("subfamily","variable"))
 colnames(TE_DNase_peaks_members)[2:4] = c("Sample","DNase_peaks","TEs_overlapping")
 TE_DNase_peaks_members = merge(TE_DNase_peaks_members,rmsk_TE_subfamily[,c(1,4)],by="subfamily")

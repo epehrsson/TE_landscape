@@ -11,7 +11,7 @@ colnames(subfamily_H3K27ac_sample) = c("subfamily","Sample","Length_ijk")
 
 # Length of subfamily
 subfamily_H3K27ac_sample_expand = expand.grid(subfamily = levels(rmsk_TE_subfamily$subfamily),Sample = levels(subfamily_H3K27ac_sample$Sample))
-subfamily_H3K27ac_sample_expand = join(subfamily_H3K27ac_sample_expand,rmsk_TE_subfamily[,c(1:3,21)],by=c("subfamily"))
+subfamily_H3K27ac_sample_expand = join(subfamily_H3K27ac_sample_expand,rmsk_TE_subfamily[,c(1:3,33)],by=c("subfamily"))
 subfamily_H3K27ac_sample = join(subfamily_H3K27ac_sample_expand,subfamily_H3K27ac_sample,by=c("subfamily","Sample"),type="left")
 colnames(subfamily_H3K27ac_sample)[5] = "Length_ik"
 subfamily_H3K27ac_sample[is.na(subfamily_H3K27ac_sample$Length_ijk),]$Length_ijk = 0
