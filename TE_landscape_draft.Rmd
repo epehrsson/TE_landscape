@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Load metadata, functions, and colors/labels
 
 ```{r load metadata}
-load("R_scripts/metadata.RData")
+load("R_datasets/metadata.RData")
 load("R_scripts/colors_labels.RData")
 load("R_scripts/functions.RData")
 ```
@@ -20,6 +20,8 @@ load("R_scripts/functions.RData")
 # Set universal plot parameters
 
 ```{r}
+library(plyr)
+library(reshape2)
 library(ggplot2)
 library(NMF)
 library(gridExtra)
@@ -151,6 +153,10 @@ mean(RNA_TE_agnostic$Expressed_samples)
 mean(RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),]$Expressed_samples)
 median(RNA_TE_agnostic$Max_expression)
 median(RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),]$Max_expression)
+
+# Expression by class
+merge(aggregate(data=RNA_TE_agnostic,Expressed_samples~class_update,function(x) sum(x > 0)/length(x)),aggregate(data=RNA_TE_agnostic,Max_expression~class_update,median),by=c("class_update"))
+aggregate(data=RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),],Max_expression~class_update,median)
 ```
 
 ## Supplementary Figure 3
@@ -421,7 +427,96 @@ apply(rmsk_TEother_feature_subfamily[,6:12],2,function(x) rmsk_TEother_feature_s
 
 ```
 
-# Mappability analysis
+# Individual TE analysis
+## Selection of features
+
+```{r }
+source("R_scripts/TE_correlation.R")
+source("R_scripts/TE_class_stats.R")
+
+# Input variables by class
+apply(rmsk_TE_measure[,c(8,10,12:14)],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"])
+aggregate(data=rmsk_TE_measure[,c(8:10,12:14)],.~class_update,mean)
+sort(apply(aggregate(data=rmsk_TE_measure[,c(8:10,12:14)],.~class_update,mean)[,2:6],2,function(x) sd(x)/mean(x)))
+
+# Correlation between input variables
+correlate_TE_feature = rbind(correlate_spearman(rmsk_TE_measure,"Length",c(10,12:14)),
+                             correlate_spearman(rmsk_TE_measure,"mappability",c(12:14)), 
+                             correlate_spearman(rmsk_TE_measure,"JC_distance",c(13:14)),
+                             correlate_spearman(rmsk_TE_measure,"CpGs",c(13:14)))
+correlate_TE_feature$Metric = factor(c(rep("Length",28),rep("mappability",21),rep("JC_distance",14),rep("CpGs",14)),levels=c("Length","mappability","JC_distance","CpGs","CpGs_per_length"))
+correlate_TE_feature$p.value = as.numeric(as.character(correlate_TE_feature$p.value))
+correlate_TE_feature$estimate.rho = as.numeric(as.character(correlate_TE_feature$estimate.rho))
+correlate_TE_feature$class_update = factor(correlate_TE_feature$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+correlate_TE_feature$State = factor(correlate_TE_feature$State,levels=c("Length","mappability","JC_distance","CpGs","CpGs_per_length"))
+correlate_TE_feature = correlate_TE_feature[which(correlate_TE_feature$State != correlate_TE_feature$Metric),]
+
+# Comparison of feature overlap with other input variables
+test = melt(as.matrix(apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,c(8,10,12:14)],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
+colnames(test) = c("Metric","Feature","Difference")
+test$class_update = rep("All",100)
+
+compare_TE_feature = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,c(8,10,12:14)],2,function(y) {table = aggregate(data=z,y~x,mean);(table$y[2]-table$y[1])/mean(y)})))
+compare_TE_feature$Metric = rep(colnames(rmsk_TE_measure)[c(8,10,12:14)],6)
+compare_TE_feature = melt(compare_TE_feature,id.vars=c("class_update","Metric"))
+colnames(compare_TE_feature)[3:4] = c("Feature","Difference")
+compare_TE_feature = rbind(test,compare_TE_feature)
+compare_TE_feature$class_update = factor(compare_TE_feature$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+compare_TE_feature$Feature = factor(compare_TE_feature$Feature,levels=levels(compare_TE_feature$Feature)[c(17:19,5:9,2:4,10:12,14:16,13,1,20)])
+rm(test)
+
+TE_pvalue_all_feature = apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,c(8,10,12:14)],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+TE_pvalue_class_feature = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,c(8,10,12:14)],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+
+# Number of samples in state by class
+apply(rmsk_TE_measure[,35:63],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"])
+aggregate(data=rmsk_TE_measure[,c(9,35:63)],.~class_update,mean)
+sort(apply(aggregate(data=rmsk_TE_measure[,c(9,35:63)],.~class_update,mean)[,2:30],2,function(x) sd(x)/mean(x)))
+
+# Correlation between input variables and epigenetic states
+correlate_TE_state = rbind(correlate_spearman(rmsk_TE_measure,"JC_distance",c(35:63)), 
+                     correlate_spearman(rmsk_TE_measure,"Length",c(35:63)),  
+                     correlate_spearman(rmsk_TE_measure,"mappability",c(35:63)), 
+                     correlate_spearman(rmsk_TE_measure,"CpGs",c(35:63)), 
+                     correlate_spearman(rmsk_TE_measure,"CpGs_per_length",c(35:63)))
+correlate_TE_state$Metric = c(rep("JC_distance",203),rep("Length",203),rep("mappability",203),rep("CpGs",203),rep("CpGs_per_length",203))
+correlate_TE_state$p.value = as.numeric(as.character(correlate_TE_state$p.value))
+correlate_TE_state$estimate.rho = as.numeric(as.character(correlate_TE_state$estimate.rho))
+correlate_TE_state$State = factor(correlate_TE_state$State,levels=unique(correlate_TE_state$State)[c(1:17,18,22,20,24,19,23,21,25:29)])
+correlate_TE_state$class_update = factor(correlate_TE_state$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+
+# Comparison of TEs in state by genic feature
+test = melt(as.matrix(apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
+colnames(test) = c("Metric","Feature","Difference")
+test$class_update = rep("All",580)
+
+compare_TE_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)})))
+compare_TE_state$Metric = rep(colnames(rmsk_TE_measure[,35:63]),6)
+compare_TE_state = melt(compare_TE_state,id.vars=c("class_update","Metric"))
+colnames(compare_TE_state)[3:4] = c("Feature","Difference")
+compare_TE_state = rbind(test,compare_TE_state)
+compare_TE_state$class_update = factor(compare_TE_state$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+rm(test)
+
+TE_pvalue_all_state = apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,35:63],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+TE_pvalue_class_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,35:63],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+
+# Compare states to each other
+TE_state_correlation = ldply(colnames(rmsk_TE_measure)[35:63],function(x) correlate_spearman(rmsk_TE_measure,x,c(35:63)))
+TE_state_correlation$State2 = rep(colnames(rmsk_TE_measure)[35:63],each=539)
+TE_state_correlation = TE_state_correlation[which(TE_state_correlation$State != TE_state_correlation$State2),]
+TE_state_correlation$p.value = as.numeric(as.character(TE_state_correlation$p.value))
+TE_state_correlation$estimate.rho = as.numeric(as.character(TE_state_correlation$estimate.rho))
+
+# Plots
+ggplot(correlate_TE_feature,aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+ggplot(correlate_TE_state,aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+ggplot(compare_TE_feature,aes(x=Metric,y=Feature,fill=Difference)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+ggplot(compare_TE_state,aes(x=State,y=Feature,fill=Difference)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+
+```
+
+## Other individual TE analysis
 
 ```{r}
 # Correlation between mappability, % of samples Quiescent
@@ -431,103 +526,6 @@ cor.test(rmsk_TE_map36$mappability,rmsk_TE_map36$X15_Quies)
 test = potential_TE_state[which(apply(potential_TE_state[,8:21],1,function(x) sum(x)) == 0),]
 test = merge(test[,1:7],rmsk_TE_map36[,1:8])
 t.test(test$mappability,rmsk_TE_map36$mappability)
-```
-
-# Feature analysis
-
-```{r}
-# Individual (rmsk_TE_measure)
-source("R_scripts/TE_correlation.R")
-
-# TE features by class
-apply(rmsk_TE_measure[,c(9:11,13)],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"])
-
-# Correlation of TE age and length
-unlist(cor.test(rmsk_TE_measure$JC_distance,rmsk_TE_measure$Length))[c("p.value","estimate.cor")]
-ddply(rmsk_TE_measure,~class_update,function(y) unlist(cor.test(y$JC_distance,y$Length))[c("p.value","estimate.cor")])
-
-# Correlation of TE age and mappability
-unlist(cor.test(rmsk_TE_measure$JC_distance,rmsk_TE_measure$mappability))[c("p.value","estimate.cor")]
-ddply(rmsk_TE_measure,~class_update,function(y) unlist(cor.test(y$JC_distance,y$mappability))[c("p.value","estimate.cor")])
-
-# Correlation of TE length and mappability
-unlist(cor.test(rmsk_TE_measure$Length,rmsk_TE_measure$mappability))[c("p.value","estimate.cor")]
-ddply(rmsk_TE_measure,~class_update,function(y) unlist(cor.test(y$Length,y$mappability))[c("p.value","estimate.cor")])
-
-# Correlation of TE age and number of CpGs
-unlist(cor.test(rmsk_TE_measure$JC_distance,rmsk_TE_measure$CpGs))[c("p.value","estimate.cor")]
-ddply(rmsk_TE_measure,~class_update,function(y) unlist(cor.test(y$JC_distance,y$CpGs))[c("p.value","estimate.cor")])
-
-# Correlation of TE length and number of CpGs
-unlist(cor.test(rmsk_TE_measure$Length,rmsk_TE_measure$CpGs))[c("p.value","estimate.cor")]
-ddply(rmsk_TE_measure,~class_update,function(y) unlist(cor.test(y$Length,y$CpGs))[c("p.value","estimate.cor")])
-
-# Comparison of TE age and feature overlap
-apply(rmsk_TE_measure[,14:21],2,function(x) unlist(wilcox.test(rmsk_TE_measure[which(is.na(x)),]$JC_distance,rmsk_TE_measure[which(!(is.na(x))),]$JC_distance))["p.value"])
-apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(is.na(x)),]$JC_distance))- apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(!(is.na(x))),]$JC_distance))
-
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) unlist(wilcox.test(y[which(is.na(x)),]$JC_distance,y[which(!(is.na(x))),]$JC_distance))["p.value"]))
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(is.na(x)),]$JC_distance)))- ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(!(is.na(x))),]$JC_distance)))
-
-# Comparison of TE mappability and feature overlap
-apply(rmsk_TE_measure[,14:21],2,function(x) unlist(wilcox.test(rmsk_TE_measure[which(is.na(x)),]$mappability,rmsk_TE_measure[which(!(is.na(x))),]$mappability))["p.value"])
-apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(is.na(x)),]$mappability))- apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(!(is.na(x))),]$mappability))
-
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) unlist(wilcox.test(y[which(is.na(x)),]$mappability,y[which(!(is.na(x))),]$mappability))["p.value"]))
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(is.na(x)),]$mappability)))- ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(!(is.na(x))),]$mappability)))
-
-# Correlation of TE feature overlap and number of CpGs
-apply(rmsk_TE_measure[,14:21],2,function(x) unlist(wilcox.test(rmsk_TE_measure[which(is.na(x)),]$CpGs,rmsk_TE_measure[which(!(is.na(x))),]$CpGs))["p.value"])
-apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(is.na(x)),]$CpGs))- apply(rmsk_TE_measure[,14:21],2,function(x) mean(rmsk_TE_measure[which(!(is.na(x))),]$CpGs))
-
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) unlist(wilcox.test(y[which(is.na(x)),]$CpGs,y[which(!(is.na(x))),]$CpGs))["p.value"]))
-ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(is.na(x)),]$CpGs)))- ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,14:21],2,function(x) mean(y[which(!(is.na(x))),]$CpGs)))
-
-# Number of samples in state by class
-apply(rmsk_TE_measure[,23:49],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"])
-aggregate(data=rmsk_TE_measure[,c(8,23:49)],.~class_update,mean)
-
-# Expression by class
-merge(aggregate(data=RNA_TE_agnostic,Expressed_samples~class_update,function(x) sum(x > 0)/length(x)),aggregate(data=RNA_TE_agnostic,Max_expression~class_update,median),by=c("class_update"))
-aggregate(data=RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),],Max_expression~class_update,median)
-
-# Correlation between TE age, number of samples in state/hypomethylated
-t(apply(rmsk_TE_measure[,23:49],2,function(x) unlist(cor.test(rmsk_TE_measure$JC_distance,x))[c("p.value","estimate.cor")]))
-merge(melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$JC_distance,x))["p.value"])),id.vars="class_update"),melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$JC_distance,x))["estimate.cor"])),id.vars="class_update"),by=c("class_update","variable"))
-
-# Correlation between TE length, number of samples in state/hypomethylated
-t(apply(rmsk_TE_measure[,23:49],2,function(x) unlist(cor.test(rmsk_TE_measure$Length,x))[c("p.value","estimate.cor")]))
-merge(melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$Length,x))["p.value"])),id.vars="class_update"),melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$Length,x))["estimate.cor"])),id.vars="class_update"),by=c("class_update","variable"))
-
-# Correlation between TE mappability, number of samples in state/hypomethylated
-t(apply(rmsk_TE_measure[,23:49],2,function(x) unlist(cor.test(rmsk_TE_measure$mappability,x))[c("p.value","estimate.cor")]))
-merge(melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$mappability,x))["p.value"])),id.vars="class_update"),melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$mappability,x))["estimate.cor"])),id.vars="class_update"),by=c("class_update","variable"))
-
-# Correlation between number of CpGs, number of samples in state/hypomethylated
-t(apply(rmsk_TE_measure[,23:49],2,function(x) unlist(cor.test(rmsk_TE_measure$CpGs,x))[c("p.value","estimate.cor")]))
-merge(melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$CpGs,x))["p.value"])),id.vars="class_update"),melt(ddply(rmsk_TE_measure,~class_update,function(y) apply(y[,23:49],2,function(x) unlist(cor.test(y$CpGs,x))["estimate.cor"])),id.vars="class_update"),by=c("class_update","variable"))
-
-# Comparison of TEs in state by genic feature
-apply(rmsk_TE_measure[,14:21],2,function(x) apply(rmsk_TE_measure[,23:49],2,function(y) unlist(wilcox.test(rmsk_TE_measure[which(is.na(x)),y],rmsk_TE_measure[which(!(is.na(x))),y]))["p.value"]))
-
-# Needs to be worked on
-apply(rmsk_TEother_age[,25:32],2,function(x) apply(rmsk_TEother_age[which(!(is.na(x))),10:24],2,mean))/127
-
-apply(rmsk_TEother_age[,c(10:24,33)],2,function(x) unlist(cor.test(rmsk_TEother_age$JC_distance,x))[c("p.value","estimate.cor")])
-by(rmsk_TEother_age,rmsk_TEother_age$class,function(y) apply(y[,c(10:24,33)],2,function(x) unlist(cor.test(y$JC_distance,x))[c("p.value","estimate.cor")]))
-apply(rmsk_TEother_age[,25:32],2,function(x) unlist(wilcox.test(rmsk_TEother_age[which(is.na(x)),]$JC_distance,rmsk_TEother_age[which(!(is.na(x))),]$JC_distance))["p.value"])
-by(rmsk_TEother_age,rmsk_TEother_age$class,function(y) apply(y[,25:32],2,function(x) unlist(wilcox.test(y[which(is.na(x)),]$JC_distance,y[which(!(is.na(x))),]$JC_distance))["p.value"]))
-apply(rmsk_TEother_age[,25:32],2,function(x) mean(rmsk_TEother_age[which(is.na(x)),]$JC_distance) - mean(rmsk_TEother_age[which(!(is.na(x))),]$JC_distance))
-
-# Expression correlation - work on
-# TE expression versus age
-RNA_TE_agnostic = merge(RNA_TE_agnostic,rmsk_TEother_age[,c(1:7,9)],by=c("chromosome","start","stop","strand","class","family","subfamily"))
-by(RNA_TE_agnostic,RNA_TE_agnostic$class_update,function(x) unlist(cor.test(x$JC_distance,x$Expressed_samples))[c("p.value","estimate.cor")])
-by(RNA_TE_agnostic,RNA_TE_agnostic$class_update,function(x) unlist(cor.test(x$JC_distance,x$Max_expression))[c("p.value","estimate.cor")])
-
-# TE expression by feature overlap
-RNA_TE_agnostic_feature = apply(rmsk_TEother_feature[,9:16],2,function(y) apply(merge(rmsk_TEother_feature[which(y != "NA"),1:7],RNA_TE_agnostic,by=c("chromosome","start","stop","strand","class","family","subfamily"))[,61:62],2,function(x) mean(x)/0.53))
-RNA_TE_agnostic_feature[2,] = RNA_TE_agnostic_feature[2,]*0.53
 
 # Subfamilies enriched in 3'UTR and hypomethylated
 sort(table(droplevels(rmsk_TE_age[which(!(is.na(rmsk_TE_age$'3UTR')) & rmsk_TE_age$Hypomethylated > 10),]$subfamily)))
@@ -539,15 +537,102 @@ mean(rmsk_TEother_age[which(rmsk_TEother_age$family == "Other"),]$JC_distance)
 
 # Average age of TEs with mouse orthologs
 mean(merge(rmsk_TEother_age,unique(human_mouse_orthologs_mm10[,8:14]),by.x=c("chromosome","start","stop","subfamily","family","class","strand"),by.y=c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_family","human_class","human_strand_hg19"))$JC_distance)
+```
 
-# Subfamily
-# Young subfamilies
-rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$JC_distance_mean < mean(rmsk_TEother_age_subfamily$JC_distance_mean)-2*sd(rmsk_TEother_age_subfamily$JC_distance_mean)),]
+# Subfamily analysis
 
-# Correlation between age, subfamily average methylation (all samples)
-unlist(cor.test(rmsk_TE_age_subfamily$JC_distance_mean,rmsk_TE_age_subfamily$Mean))[c("p.value","estimate.cor")]
-by(rmsk_TE_age_subfamily,rmsk_TE_age_subfamily$class,function(x) unlist(cor.test(x$JC_distance_mean,x$Mean))[c("p.value","estimate.cor")])
+```{r}
+source("R_scripts/TE_correlation_subfamily.R")
 
+# Input variables by class
+apply(rmsk_TE_subfamily_measure[,c(4:5,7,9,32:35)],2,function(x) unlist(kruskal.test(x~rmsk_TE_subfamily_measure$class_update))["p.value"])
+aggregate(data=rmsk_TE_subfamily_measure[,c(3:5,7,9,32:35)],.~class_update,mean)
+
+# Correlation between input variables
+correlate_subfam_feature = rbind(correlate_spearman(rmsk_TE_subfamily_measure,"Count",c(5,7,9,32:35)),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"Median_length",c(7,9,32:35)),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"Mappability",c(9,32:35)),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"Age",32:35),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"CpGs",33:35),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"Total_length",34:35),
+                                 correlate_spearman(rmsk_TE_subfamily_measure,"CpGs_per_TE",34:35))
+correlate_subfam_feature$Metric = c(rep("Count",49),rep("Median_length",42),rep("Mappability",35),rep("Age",28),rep("CpGs",21),rep("Total_length",14),rep("CpGs_per_TE",14))
+correlate_subfam_feature$p.value = as.numeric(as.character(correlate_subfam_feature$p.value))
+correlate_subfam_feature$estimate.rho = as.numeric(as.character(correlate_subfam_feature$estimate.rho))
+correlate_subfam_feature$class_update = factor(correlate_subfam_feature$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+correlate_subfam_feature = correlate_subfam_feature[which(correlate_subfam_feature$State != correlate_subfam_feature$Metric),]
+
+# Comparison of feature overlap with other input variables
+test = melt(as.matrix(apply(rmsk_TE_subfamily_measure[,12:31],2,function(x) apply(rmsk_TE_subfamily_measure[,c(4:5,7,9,32:35)],2,function(y) {table = aggregate(data=rmsk_TE_subfamily_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
+colnames(test) = c("Metric","Feature","Difference")
+test$class_update = rep("All",160)
+
+compare_subfam_feature = ddply(rmsk_TE_subfamily_measure,~class_update,function(z) apply(z[,12:31],2,function(x) apply(z[,c(4:5,7,9,32:35)],2,function(y) {table = aggregate(data=z,y~x,mean);(table$y[2]-table$y[1])/mean(y)})))
+compare_subfam_feature$Metric = rep(colnames(rmsk_TE_subfamily_measure)[c(4:5,7,9,32:35)],6)
+compare_subfam_feature = melt(compare_subfam_feature,id.vars=c("class_update","Metric"))
+colnames(compare_subfam_feature)[3:4] = c("Feature","Difference")
+compare_subfam_feature = rbind(test,compare_subfam_feature)
+rm(test)
+
+subfam_pvalue_all_feature = apply(rmsk_TE_subfamily_measure[,12:31],2,function(x) apply(rmsk_TE_subfamily_measure[,c(4:5,7,9,32:35)],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+subfam_pvalue_class_feature = ddply(rmsk_TE_subfamily_measure,~class_update,function(z) apply(z[,12:31],2,function(x) apply(z[,c(4:5,7,9,32:35)],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+
+# Number of samples by class
+apply(rmsk_TE_subfamily_measure[,c(36:112)],2,function(x) unlist(kruskal.test(x~rmsk_TE_subfamily_measure$class_update))["p.value"])
+aggregate(data=rmsk_TE_subfamily_measure[,c(3,36:112)],.~class_update,mean)
+
+# Correlate samples in state, max, mean, range with subfamily features
+correlate_subfamily = rbind(correlate_spearman(rmsk_TE_subfamily_measure,"Count",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"Median_length",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"Mappability",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"Age",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"CpGs",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"Total_length",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"CpGs_per_TE",c(36:112)),
+             correlate_spearman(rmsk_TE_subfamily_measure,"CpGs_per_kbp",c(36:112)))
+correlate_subfamily$Metric = c(rep("Count",539),rep("Median_length",539),rep("Mappability",539),rep("Age",539),rep("CpGs",539),rep("Total_length",539),rep("CpGs_per_TE",539),rep("CpGs_per_kbp",539))
+correlate_subfamily$p.value = as.numeric(as.character(correlate_subfamily$p.value))
+correlate_subfamily$estimate.rho = as.numeric(as.character(correlate_subfamily$estimate.rho))
+correlate_subfamily$class_update = factor(correlate_subfamily$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+
+# Comparison of TEs in state by genic feature
+test = melt(as.matrix(apply(rmsk_TE_subfamily_measure[,12:31],2,function(x) apply(rmsk_TE_subfamily_measure[,36:112],2,function(y) {table = aggregate(data=rmsk_TE_subfamily_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
+colnames(test) = c("Metric","Feature","Difference")
+test$class_update = rep("All",1540)
+
+compare_subfamily = ddply(rmsk_TE_subfamily_measure,~class_update,function(z) apply(z[,12:31],2,function(x) apply(z[,36:112],2,function(y) {table = aggregate(data=rmsk_TE_subfamily_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)})))
+compare_subfamily$Metric = rep(colnames(rmsk_TE_subfamily_measure)[36:112],6)
+compare_subfamily = melt(compare_subfamily,id.vars=c("class_update","Metric"))
+colnames(compare_subfamily)[3:4] = c("Feature","Difference")
+compare_subfamily = rbind(test,compare_subfamily)
+rm(test) 
+
+subfam_pvalue_all_state = apply(rmsk_TE_subfamily_measure[,12:31],2,function(x) apply(rmsk_TE_subfamily_measure[,36:112],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+subfam_pvalue_class_state = ddply(rmsk_TE_subfamily_measure,~class_update,function(z) apply(z[,12:31],2,function(x) apply(z[,36:112],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+
+# Compare states to each other
+subfam_state_correlation = ldply(colnames(rmsk_TE_subfamily_measure)[36:112],function(x) correlate_spearman(rmsk_TE_subfamily_measure,x,c(36:112)))
+subfam_state_correlation$State2 = rep(colnames(rmsk_TE_subfamily_measure)[36:112],each=539)
+subfam_state_correlation = subfam_state_correlation[which(subfam_state_correlation$State != subfam_state_correlation$State2),]
+subfam_state_correlation$p.value = as.numeric(as.character(subfam_state_correlation$p.value))
+subfam_state_correlation$estimate.rho = as.numeric(as.character(subfam_state_correlation$estimate.rho))
+
+# Plots
+ggplot(correlate_subfam_feature,aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+ggplot(correlate_subfamily,aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + facet_wrap(~class_update) + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1))
+
+# Correlation between age, likelihood enriched in state
+wilcox.test(rmsk_TE_age_subfamily[which(subfamily_state_sample_counts[match(rmsk_TE_age_subfamily$subfamily,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State== "6_EnhG"),]$Subfamily),]$V1 == 0),]$JC_distance_mean,rmsk_TE_age_subfamily[which(subfamily_state_sample_counts[match(rmsk_TE_age_subfamily$subfamily,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State== "6_EnhG"),]$Subfamily),]$V1 >0),]$JC_distance_mean)
+wilcox.test(rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$DNase == 0),]$JC_distance_mean,rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$DNase > 0),]$JC_distance_mean)
+wilcox.test(rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$H3K27ac == 0),]$JC_distance_mean,rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$H3K27ac > 0),]$JC_distance_mean)
+
+# RNA subfamily analysis - work on
+dim(RNA_TE_agnostic_subfamily[which(RNA_TE_agnostic_subfamily$Max_expression > 1),])
+```
+
+## Other subfamily analysis
+
+```{r}
 # Mean methylation of LTR subfamilies
 mean(rmsk_TE_age_subfamily[which(rmsk_TE_age_subfamily$class == "LTR"),]$Mean)
 sd(rmsk_TE_age_subfamily[which(rmsk_TE_age_subfamily$class == "LTR"),]$Mean)
@@ -555,49 +640,11 @@ sd(rmsk_TE_age_subfamily[which(rmsk_TE_age_subfamily$class == "LTR"),]$Mean)
 # Correlation between age, subfamily average methylation for Alu subfamilies
 cor.test(rmsk_TE_age_subfamily[which(rmsk_TE_age_subfamily$family == "Alu"),]$JC_distance_mean,rmsk_TE_age_subfamily[which(rmsk_TE_age_subfamily$family == "Alu"),]$Mean)
 
-# Correlation between age, number of samples enriched in state
-cor.test(rmsk_TE_age_subfamily$JC_distance_mean,subfamily_state_sample_counts[match(rmsk_TE_age_subfamily$subfamily,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State== "7_Enh"),]$Subfamily),]$V1)
-
-# Correlation between age, likelihood enriched in state
-wilcox.test(rmsk_TE_age_subfamily[which(subfamily_state_sample_counts[match(rmsk_TE_age_subfamily$subfamily,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State== "6_EnhG"),]$Subfamily),]$V1 == 0),]$JC_distance_mean,rmsk_TE_age_subfamily[which(subfamily_state_sample_counts[match(rmsk_TE_age_subfamily$subfamily,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State== "6_EnhG"),]$Subfamily),]$V1 >0),]$JC_distance_mean)
-
-# Correlation between age, number of members
-cor.test(rmsk_TE_age_subfamily$JC_distance_mean,rmsk_TE_age_subfamily$TEs)
-by(data=rmsk_TE_age_subfamily,rmsk_TE_age_subfamily$class,function(x) cor.test(x$JC_distance_mean,x$TEs))
-
-# Correlation between age, number of Dnase enrichments
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$DNase) 
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) unlist(cor.test(x$JC_distance_mean,x$DNase))[c("p.value","estimate.cor")])
-wilcox.test(rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$DNase == 0),]$JC_distance_mean,rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$DNase > 0),]$JC_distance_mean)
+# Young subfamilies
+rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$JC_distance_mean < mean(rmsk_TEother_age_subfamily$JC_distance_mean)-2*sd(rmsk_TEother_age_subfamily$JC_distance_mean)),]
 
 # Average age of subfamilies also in mouse 
 mean(rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$subfamily %in% mm10_rmsk_TE$subfamily),]$JC_distance_mean)
-
-# Correlation between age, max hypomethylated proportion
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Max_hypo)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Max_hypo))
-
-# Correlation between age, max hypomethylated proportion
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Max_noIMR90_hypo)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Max_noIMR90_hypo))
-
-# Correlation between max/mean hypo, age
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Max_hypo)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Max_hypo))
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Max_hypo_noIMR90)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Max_hypo_noIMR90))
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Mean_hypo)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Mean_hypo))
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$Mean_hypo_noIMR90)
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) cor.test(x$JC_distance_mean,x$Mean_hypo_noIMR90))
-
-# Correlation between H3K27ac enrichment, age
-cor.test(rmsk_TEother_age_subfamily$JC_distance_mean,rmsk_TEother_age_subfamily$H3K27ac) 
-by(rmsk_TEother_age_subfamily,rmsk_TEother_age_subfamily$class_update,function(x) unlist(cor.test(x$JC_distance_mean,x$H3K27ac))[c("p.value","estimate.cor")])
-wilcox.test(rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$H3K27ac == 0),]$JC_distance_mean,rmsk_TEother_age_subfamily[which(rmsk_TEother_age_subfamily$H3K27ac > 0),]$JC_distance_mean)
-
-# RNA subfamily analysis - work on
-dim(RNA_TE_agnostic_subfamily[which(RNA_TE_agnostic_subfamily$Max_expression > 1),])
 ```
 
 ## Figure 4
@@ -838,6 +885,41 @@ TEother_meth_wCpG_subfamily_hypo[which(!(TEother_meth_wCpG_subfamily_hypo$subfam
 c(as.vector(TE_meth_wCpG_subfamily_hypo_var_20$subfamily),as.vector(other_meth_wCpG_subfamily_hypo_var_20$subfamily))
 table(droplevels(subfamily_state_sample[which(subfamily_state_sample$Length_percent_jk > 0.01  & subfamily_state_sample$State %in% chromHMM_states[1:7] & subfamily_state_sample$Length_ijk >= 600),c(1,4)]))
 sort(unlist(lapply(TEother_meth_hypo_prop,function(x) sum(x > 0.01))))
+```
+
+# Subfamily enrichment clustering
+
+```{r}
+# Enrichment thresholds
+subfamily_state_sample_filter = subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$Length_ik > 5000),]
+subfamily_DNase_sample_filter = subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= 600 & subfamily_DNase_sample$Length_ik > 5000),]
+subfamily_H3K27ac_sample_filter = subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= 600 & subfamily_H3K27ac_sample$Length_ik > 5000),]
+subfamily_CpG_meth_filter = subfamily_CpG_meth[which(subfamily_CpG_meth$CpGs >= 25 & subfamily_CpG_meth$Hypomethylated >= 6),]
+
+# Clustering 
+enrichment_lor = list(enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "1_TssA"),],"Enrichment",1.5), 
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "2_TssAFlnk"),],"Enrichment",1.5), 
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "3_TxFlnk"),],"Enrichment",1.5), 
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "4_Tx"),],"Enrichment",1.5),
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "5_TxWk"),],"Enrichment",1.5),
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "6_EnhG"),],"Enrichment",1.5),
+                       enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == "7_Enh"),],"Enrichment",1.5),
+                       enrichment_proportion(subfamily_DNase_sample_filter,"Enrichment",1.5),
+                       enrichment_proportion(subfamily_H3K27ac_sample_filter,"Enrichment",1.5),
+                       enrichment_proportion(subfamily_CpG_meth_filter,"Enrichment",1.5))
+lapply(enrichment_lor,function(x) dim(x[which(x$Proportion > 0.5 & x$Enriched > 1),]))
+
+enrichment_pc = list(enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "1_TssA"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "2_TssAFlnk"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "3_TxFlnk"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "4_Tx"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "5_TxWk"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "6_EnhG"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= 600 & subfamily_state_sample$State == "7_Enh"),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= 600),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= 600),],"Length_percent_jk",0.01),
+                      enrichment_proportion(subfamily_CpG_meth[which(subfamily_CpG_meth$CpGs >= 25),],"Hypo_percent",0.01))
+lapply(enrichment_pc,function(x) dim(x[which(x$Proportion > 0.5 & x$Enriched > 1),]))
 ```
 
 ## Figure 6
