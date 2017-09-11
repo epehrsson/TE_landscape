@@ -61,5 +61,8 @@ subfamily_state_sample = subfamily_state_sample[,c(1:2,5,3,4,15:20,6:10,11,13:14
 # Number of enrichments per subfamily x state
 subfamily_state_sample_counts = ddply(subfamily_state_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > 1.5 & x$Length_ijk >= 600 & x$Length_ik > 5000))
 
+# Number of >1% per subfamily x state
+subfamily_state_sample_counts_pc = ddply(subfamily_state_sample,.(class_update,family,subfamily,State),function(x) sum(x$Length_percent_jk > 0.01 & x$Length_ijk >= 600))
+
 # Matrix of subfamily x sample for each state
 subfamily_sample_byState = by(subfamily_state_sample,subfamily_state_sample$State,function(x) dcast(x,subfamily ~ Sample,value.var="Enrichment")) 

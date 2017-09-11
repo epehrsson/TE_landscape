@@ -54,3 +54,7 @@ subfamily_H3K27ac_sample = subfamily_H3K27ac_sample[,c(1,3:4,2,6,5,7:20)]
 # Number of samples subfamily is enriched
 subfamily_H3K27ac_sample_counts = ddply(subfamily_H3K27ac_sample,.(class_update,family,subfamily),function(x) sum(x$Enrichment > 1.5 & x$Length_ijk >= 600 & x$Length_ik > 5000))
 subfamily_H3K27ac_sample_counts$State = rep("H3K27ac",968)
+
+# Number of >1% per subfamily x state
+subfamily_H3K27ac_sample_counts_pc = ddply(subfamily_H3K27ac_sample,.(class_update,family,subfamily),function(x) sum(x$Length_percent_jk > 0.01 & x$Length_ijk >= 600))
+subfamily_H3K27ac_sample_counts_pc$State = rep("H3K27ac",968)
