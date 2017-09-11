@@ -43,6 +43,7 @@ contribution_TE$State = rownames(contribution_TE)
 contribution_TE = melt(contribution_TE,id.vars="State")
 colnames(contribution_TE)[2:3] = c("Cohort","Proportion")
 contribution_TE = contribution_TE[order(contribution_TE$Cohort,contribution_TE$Proportion),]
+contribution_TE = contribution_TE[which(contribution_TE$State != "Total"),]
 
 # Refseq genic features
 # Contribution to each chromHMM state
