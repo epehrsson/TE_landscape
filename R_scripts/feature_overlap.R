@@ -3,6 +3,7 @@
 
 # Proportion of genome, TEs overlapping each RefSeq feature and vice-versa
 feature_overlap_cast = read.table("features/intersect_features/feature_overlap.txt",sep='\t',header=TRUE)
+feature_overlap_cast[5,5] = feature_overlap_cast[5,4] #Adding intergenic stranded
 feature_overlap_cast$Genome_percent_genome = feature_overlap_cast$Genome/3095693983
 feature_overlap_cast$TEs_percent_TE = feature_overlap_cast$TEs/1389947349
 feature_overlap_cast$TEs_strand_percent_TE = feature_overlap_cast$TEs_strand/1389947349
