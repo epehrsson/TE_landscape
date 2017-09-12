@@ -33,4 +33,13 @@ H3K27ac_samples$H3K27ac = rep("H3K27ac",dim(H3K27ac_samples)[2])
 metadata = merge(metadata,H3K27ac_samples,by.x="Sample",by.y="V1",all.x=TRUE)
 rm(H3K27ac_samples)
 
-save(metadata,file="R_scripts/metadata.RData")
+RNA_samples = read.table("sample_lists/RNAseq_samples.txt") #Does not include those that failed
+RNA_samples$RNA = rep("RNA",dim(RNA_samples)[2])
+metadata = merge(metadata,RNA_samples,by.x="Sample",by.y="V1",all.x=TRUE)
+rm(RNA_samples)
+
+# Add whether sample is IMR90 or cancer cell line
+metadata$Exclude = rep("Include",127)
+metadata[which(metadata$Sample %in% c("E116","E117","E123","E124","E126","E127")),]$Exclude = "Exclude"
+
+save(metadata,file="R_datasets/metadata.RData")
