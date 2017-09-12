@@ -4,7 +4,7 @@
 library(reshape2)
 
 # chromHMM potential
-load("R_scripts/chromHMM_TE_state.RData")
+load("R_datasets/chromHMM_TE_state.RData")
 
 # All samples
 chromHMM_TE_state_dist = sample_distribution(chromHMM_TE_state,c(8:22),127)
@@ -12,7 +12,7 @@ chromHMM_TE_state_cum = cumulative_distribution(chromHMM_TE_state,c(8:22),127)
 chromHMM_TE_state_dist_stats = potential_stats(chromHMM_TE_state_dist,15,127)
 chromHMM_TE_state_dist_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
-# No cancer cell lines
+# No cancer cell lines, IMR90
 chromHMM_TE_state_dist_noCancer = sample_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
 chromHMM_TE_state_noCancer_cum = cumulative_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
 chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_noCancer,15,121)
@@ -24,11 +24,11 @@ colnames(state_sample_count) = c("State","Sample","Count")
 state_sample_count[1905,] = c("3_TxFlnk","E002",0)
 state_sample_count$Count = as.numeric(state_sample_count$Count)
 state_sample_count$Proportion = state_sample_count$Count/4430788
-state_sample_count[which(state_sample_count$Sample %in% c("E116","E117","E123","E124","E126","E127")),]$Proportion = state_sample_count[which(state_sample_count$Sample %in% c("E116","E117","E123","E124","E126","E127")),]$Count/(4430788-31580)
+state_sample_count[which(metadata[match(state_sample_count$Sample,metadata$Sample),]$chrY == "No"),]$Proportion = state_sample_count[which(metadata[match(state_sample_count$Sample,metadata$Sample),]$chrY == "No"),]$Count/(4430788-31580)
 state_sample_count$State = factor(state_sample_count$State,levels=chromHMM_states)
 
 # WGBS potential
-load("R_scripts/TE_meth_average.RData")
+load("R_datasets/TE_meth_average.RData")
 
 # Cumulative distribution of methylation states and statistics
 TE_meth_average_category = sample_distribution(TE_meth_average,c(46:49),37)
@@ -51,41 +51,86 @@ TE_meth_average_state_long = melt(as.matrix(TE_meth_average_state))
 colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")
 
 # DNase potential
-load("R_scripts/TE_DNase_peaks.RData")
+load("R_datasets/TE_DNase_peaks.RData")
 
 # Distribution of TEs overlapping DNase peaks
-TE_DNase_potential = sample_distribution(TE_DNase_peaks,61,53)
+TE_DNase_potential = sample_distribution(TE_DNase_peaks,62,53)
 TE_DNase_potential[1,2] = 4430788-1840984
 colnames(TE_DNase_potential)[2] = "DNase"
-TE_DNase_potential_cum = cumulative_distribution(TE_DNase_peaks,61,53)
+TE_DNase_potential_cum = cumulative_distribution(TE_DNase_peaks,62,53)
 TE_DNase_potential_cum$State = rep("DNase",53)
 TE_DNase_potential_stats = potential_stats(TE_DNase_potential,1,53)
 TE_DNase_potential_stats$State = "DNase"
+
+# No cancer cell lines/IMR90
+TE_DNase_potential_noCancer = sample_distribution(TE_DNase_peaks,63,48)
+TE_DNase_potential_noCancer[1,2] = 4430788-1840984
+colnames(TE_DNase_potential_noCancer)[2] = "DNase"
+TE_DNase_potential_noCancer_cum = cumulative_distribution(TE_DNase_peaks,63,48)
+TE_DNase_potential_noCancer_cum$State = rep("DNase",48)
+TE_DNase_potential_noCancer_stats = potential_stats(TE_DNase_potential_noCancer,1,48) #Check
+TE_DNase_potential_noCancer_stats$State = "DNase"
 
 # Proportion of TEs overlapping Dnase peaks, by sample
 TE_DNase_peaks_sample = as.data.frame(apply(TE_DNase_peaks[,8:60],2,function(x) sum(x > 0)))
 colnames(TE_DNase_peaks_sample) = "Count"
 TE_DNase_peaks_sample$Proportion = TE_DNase_peaks_sample$Count/4430788
-TE_DNase_peaks_sample[which(rownames(TE_DNase_peaks_sample) %in% c("E116","E117","E123","E124","E126","E127")),]$Proportion = TE_DNase_peaks_sample[which(rownames(TE_DNase_peaks_sample) %in% c("E116","E117","E123","E124","E126","E127")),]$Count/4399208
+TE_DNase_peaks_sample[which(metadata[match(TE_DNase_peaks_sample$Sample,metadata$Sample),]$chrY == "No"),]$Proportion = TE_DNase_peaks_sample[which(metadata[match(TE_DNase_peaks_sample$Sample,metadata$Sample),]$chrY == "No"),]$Count/4399208
 TE_DNase_peaks_sample$Sample = rownames(TE_DNase_peaks_sample)
 TE_DNase_peaks_sample$State = rep("DNase",53)
 
 # H3K27ac potential
-load("R_scripts/TE_H3K27ac_peaks.RData")
+load("R_datasets/TE_H3K27ac_peaks.RData")
 
 # Distribution of TEs overlapping H3K27ac peaks
-TE_H3K27ac_potential = sample_distribution(TE_H3K27ac_peaks,106,98)
+TE_H3K27ac_potential = sample_distribution(TE_H3K27ac_peaks,107,98)
 TE_H3K27ac_potential[1,2] = 4430788-1801527
 colnames(TE_H3K27ac_potential)[2] = "H3K27ac"
-TE_H3K27ac_potential_cum = cumulative_distribution(TE_H3K27ac_peaks,106,98)
+TE_H3K27ac_potential_cum = cumulative_distribution(TE_H3K27ac_peaks,107,98)
 TE_H3K27ac_potential_cum$State = rep("H3K27ac",98)
 TE_H3K27ac_potential_stats = potential_stats(TE_H3K27ac_potential,1,98)
 TE_H3K27ac_potential_stats$State = "H3K27ac"
+
+# No cancer cell lines/IMR90
+TE_H3K27ac_potential_noCancer = sample_distribution(TE_H3K27ac_peaks,108,92)
+TE_H3K27ac_potential_noCancer[1,2] = 4430788-1801527
+colnames(TE_H3K27ac_potential_noCancer)[2] = "H3K27ac"
+TE_H3K27ac_potential_noCancer_cum = cumulative_distribution(TE_H3K27ac_peaks,108,92)
+TE_H3K27ac_potential_noCancer_cum$State = rep("H3K27ac",92)
+TE_H3K27ac_potential_noCancer_stats = potential_stats(TE_H3K27ac_potential_noCancer,1,92) #Check
+TE_H3K27ac_potential_noCancer_stats$State = "H3K27ac"
 
 # Proportion of TEs overlapping H3K27ac peaks, by sample
 TE_H3K27ac_peaks_sample = as.data.frame(apply(TE_H3K27ac_peaks[,8:105],2,function(x) sum(x > 0)))
 colnames(TE_H3K27ac_peaks_sample) = "Count"
 TE_H3K27ac_peaks_sample$Proportion = TE_H3K27ac_peaks_sample$Count/4430788
-TE_H3K27ac_peaks_sample[which(rownames(TE_H3K27ac_peaks_sample) %in% c("E116","E117","E123","E124","E126","E127")),]$Proportion = TE_H3K27ac_peaks_sample[which(rownames(TE_H3K27ac_peaks_sample) %in% c("E116","E117","E123","E124","E126","E127")),]$Count/4399208
+TE_H3K27ac_peaks_sample[which(metadata[match(TE_H3K27ac_peaks_sample$Sample,metadata$Sample),]$chrY == "No"),]$Proportion = TE_H3K27ac_peaks_sample[which(metadata[match(TE_H3K27ac_peaks_sample$Sample,metadata$Sample),]$chrY == "No"),]$Count/4399208
 TE_H3K27ac_peaks_sample$Sample = rownames(TE_H3K27ac_peaks_sample)
 TE_H3K27ac_peaks_sample$State = rep("H3K27ac",98)
+
+# RNA-seq potential
+load("R_datasets/rna.RData")
+
+# Distribution of TEs with RPKM >1
+RNA_potential = sample_distribution(RNA_TE_agnostic,61,52)
+colnames(RNA_potential)[2] = "Expression"
+RNA_potential_cum = cumulative_distribution(RNA_TE_agnostic,61,52)
+RNA_potential_cum$State = rep("Expression",52)
+RNA_potential_stats = potential_stats(RNA_potential,1,52)
+RNA_potential_stats$State = "Expression"
+
+# Distribution of TEs with RPKM >1, no cancer cell lines/IMR90
+RNA_potential_noCancer = sample_distribution(RNA_TE_agnostic,62,48)
+colnames(RNA_potential_noCancer)[2] = "Expression"
+RNA_potential_noCancer_cum = cumulative_distribution(RNA_TE_agnostic,62,48)
+RNA_potential_noCancer_cum$State = rep("Expression",48)
+RNA_potential_noCancer_stats = potential_stats(RNA_potential_noCancer,1,48)
+RNA_potential_noCancer_stats$State = "Expression"
+
+# Proportion of TEs with RPKM >1, by sample
+RNA_RPKM_sample = as.data.frame(apply(RNA_TE_agnostic[,9:60],2,function(x) sum(x > 1)))
+colnames(RNA_RPKM_sample) = "Count"
+RNA_RPKM_sample$Proportion = RNA_RPKM_sample$Count/4430788
+RNA_RPKM_sample[which(metadata[match(RNA_RPKM_sample$Sample,metadata$Sample),]$chrY == "No"),]$Proportion = RNA_RPKM_sample[which(metadata[match(RNA_RPKM_sample$Sample,metadata$Sample),]$chrY == "No"),]$Count/4399208
+RNA_RPKM_sample$Sample = rownames(RNA_RPKM_sample)
+RNA_RPKM_sample$State = rep("Expression",52)
