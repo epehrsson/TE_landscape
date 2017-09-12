@@ -17,4 +17,7 @@ TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$class %in% c("DNA?","LINE?","LTR?","SINE
 # Number of samples a TE overlaps a H3K27ac peak
 TE_H3K27ac_peaks$Samples = apply(TE_H3K27ac_peaks,1,function(x) sum(as.numeric(x[8:105]) > 0))
 
-save(TE_H3K27ac_peaks,file="R_scripts/TE_H3K27ac_peaks.RData")
+# Number of samples a TE overlaps a H3K27ac peak, no cancer cell lines
+TE_H3K27ac_peaks$Samples_noCancer = apply(TE_H3K27ac_peaks[,8:105],1,function(x) sum(as.numeric(x[which(metadata[match(colnames(TE_H3K27ac_peaks)[8:105],metadata$Sample),]$Exclude == "Include")]) > 0))
+
+save(TE_H3K27ac_peaks,file="R_datasets/TE_H3K27ac_peaks.RData")

@@ -39,6 +39,9 @@ rm(test)
 # Number of samples TE is expressed >1 RPKM 
 RNA_TE_agnostic$Expressed_samples = apply(RNA_TE_agnostic[,9:60],1,function(x) sum(x > 1))
 
+# Number of samples TE is expressed >1 RPKM, no cancer cell lines/IMR90
+RNA_TE_agnostic$Expressed_samples_noCancer = apply(RNA_TE_agnostic[,9:60],1,function(x) sum(as.numeric(x[which(metadata[match(colnames(RNA_TE_agnostic)[9:60],metadata$Sample),]$Exclude == "Include")] > 1)))
+
 # Max expression per TE
 RNA_TE_agnostic$Max_expression = apply(RNA_TE_agnostic[,9:60],1,max)
 
