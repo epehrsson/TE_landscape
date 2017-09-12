@@ -3,7 +3,7 @@
 library(reshape2)
 
 # Number of overlaps between shuffled TEs, H3K27ac peaks
-shuffled_H3K27ac_potential = lapply(list.files(path="H3K27ac/shuffled/",pattern="_H3K27ac_peaks.txt",full.names = TRUE),function(x) read.table(x,sep='\t'))
+shuffled_H3K27ac_potential = lapply(list.files(path="/scratch/ecp/shuffled/H3K27ac/",pattern="_H3K27ac_peaks.txt",full.names = TRUE),function(x) read.table(x,sep='\t'))
 shuffled_H3K27ac_potential = lapply(shuffled_H3K27ac_potential, setNames, nm =c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks","Overlap"))
 print("Loaded H3K27ac matrices")
 shuffled_H3K27ac_potential = lapply(shuffled_H3K27ac_potential,function(x) dcast(x,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Peaks"))
@@ -15,4 +15,4 @@ print("Replacing NA with 0")
 shuffled_H3K27ac_potential = lapply(shuffled_H3K27ac_potential,function(y) transform(y,Samples = apply(y,1,function(x) sum(as.numeric(x[8:105]) > 0))))
 print("Calculating samples")
 
-save(shuffled_H3K27ac_potential,file="R_scripts/shuffled_H3K27ac.RData")
+save(shuffled_H3K27ac_potential,file="R_datasets/shuffled_H3K27ac.RData")
