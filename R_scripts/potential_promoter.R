@@ -2,7 +2,7 @@
 
 library(reshape2)
 
-load("R_scripts/promoter_matrices.RData")
+load("R_datasets/promoter_matrices.RData")
 
 # chromHMM potential
 chromHMM_promoter_state_dist = sample_distribution(chromHMM_promoter_state,c(5:19),127)
