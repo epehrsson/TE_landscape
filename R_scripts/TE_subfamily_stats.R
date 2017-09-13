@@ -18,8 +18,8 @@ rmsk_TE_subfamily[which(is.na(rmsk_TE_subfamily$CpGs)),]$CpGs = 0
 rm(TE_subfamily_CpG_count)
 
 # Total length of subfamily
-subfamily_length = read.table("features/TEs/subfamily/subfamily_lengths.txt",sep='\t')
-colnames(subfamily_length) = c("subfamily","Total_length")
+subfamily_length = cbind(read.table("features/TEs/subfamily/subfamily_lengths.txt",sep='\t'),read.table("features/TEs/subfamily/subfamily_lengths_noY.txt",sep='\t'))[,c(1:2,4)]]
+colnames(subfamily_length) = c("subfamily","Total_length","Total_length_noY")
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_length,by="subfamily")
 rm(subfamily_length)
 
