@@ -36,6 +36,6 @@ colnames(rmsk_TE_measure)[length(colnames(rmsk_TE_measure))] = "H3K27ac"
 rmsk_TE_measure[which(is.na(rmsk_TE_measure$H3K27ac)),]$H3K27ac = 0
 
 # Add number of samples expressed per TE
-rmsk_TE_measure = merge(rmsk_TE_measure,RNA_TE_agnostic[,c(1:7,61:62)],by=c("chromosome","start","stop","subfamily","family","class","strand"))
+rmsk_TE_measure = merge(rmsk_TE_measure,RNA_TE_agnostic[,c(1:7,61,63)],by=c("chromosome","start","stop","subfamily","family","class","strand"))
 
 rmsk_TE_measure = rmsk_TE_measure[,c(1:12,50,59,13:32,33:49,51:58,60:63)]
