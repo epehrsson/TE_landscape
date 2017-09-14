@@ -7,7 +7,7 @@ library(plyr)
 source("R_scripts/TE_class_stats.R")
 
 # chromHMM
-load("R_scripts/chromHMM_TE_state.RData")
+load("R_datasets/chromHMM_TE_state.RData")
 
 # Distribution of state, all TEs, by class
 chromHMM_TE_state_class = by(chromHMM_TE_state,chromHMM_TE_state$class_update,function(x) sample_distribution(x,c(8:22),127))
@@ -20,7 +20,7 @@ chromHMM_TE_state_class_stats$State = factor(rep(chromHMM_states,6),levels=chrom
 chromHMM_TE_state_class_stats[,2:4] = apply(chromHMM_TE_state_class_stats[,2:4],2,function(x) as.numeric(x))
                                                                                                     
 # WGBS
-load("R_scripts/TE_meth_average.RData")
+load("R_datasets/TE_meth_average.RData")
 
 # Cumulative distribution of methylation states and statistics, by class
 TE_meth_average_class = by(TE_meth_average,TE_meth_average$class_update,function(x) sample_distribution(x,c(46:49),37))
@@ -41,7 +41,7 @@ TE_meth_average_class_noIMR90_stats$State = factor(rep(meth_states[c(1,3,2,4)],6
 TE_meth_average_class_noIMR90_stats[,2:4] = apply(TE_meth_average_class_noIMR90_stats[,2:4],2,function(x) as.numeric(x))
 
 # DNase
-load("R_scripts/TE_DNase_peaks.RData")
+load("R_datasets/TE_DNase_peaks.RData")
 
 # Distribution of TEs overlapping DNase peaks, by class
 potential_TE_DNase_class = t(as.matrix(table(TE_DNase_peaks[,61:62])))
@@ -65,7 +65,7 @@ TE_DNase_peaks_class = TE_DNase_peaks_class[,2:54]
 TE_DNase_peaks_class = TE_DNase_peaks_class/rmsk_TE_class[match(rownames(TE_DNase_peaks_class),rmsk_TE_class$class_update),]$Count
 
 # H3K27ac
-load("R_scripts/TE_H3K27ac_peaks.RData")
+load("R_datasets/TE_H3K27ac_peaks.RData")
 
 # Distribution of TEs overlapping H3K27ac peaks, by class
 potential_TE_H3K27ac_class = t(as.matrix(table(TE_H3K27ac_peaks[,106:107])))
