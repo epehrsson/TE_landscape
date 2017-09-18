@@ -16,4 +16,4 @@ for (i in 1:10){
 rm(shuffled_max_intra)
 print("Combined chromHMM and max matrices")
 
-save(shuffled_chromHMM_potential,file="R_scripts/shuffled_chromHMM.RData")
+save(shuffled_chromHMM_potential,file="R_datasets/shuffled_chromHMM.RData")
