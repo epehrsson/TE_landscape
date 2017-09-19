@@ -58,7 +58,7 @@ names(ss_inter_class) = c("DNA","LINE","LTR","Other","SINE","SVA")
 for (j in 1:6){
  ss_inter_class[[j]][lower.tri(ss_inter_class[[j]])] = t(ss_inter_class[[j]])[lower.tri(ss_inter_class[[j]])]
  for (i in 1:15){
-   ss_inter_class[[j]][i,] = ss_inter_class[[j]][i,]/apply(chromHMM_TE_state_class[[names(ss_inter_class)[j]]][,2:16],2,function(x) sum(x[2:128]))[i]
+   ss_inter_class[[j]][i,] = ss_inter_class[[j]][i,]/apply(chromHMM_TE_state_class[which(chromHMM_TE_state_class$class_update == names(ss_inter_class)[j]),3:17],2,function(x) sum(x[2:128]))[i]
  }
 }
 
@@ -90,7 +90,7 @@ for (j in 1:6){
   ss_inter_meth_class[[j]][lower.tri(ss_inter_meth_class[[j]])] = t(ss_inter_meth_class[[j]])[lower.tri(ss_inter_meth_class[[j]])]
   ss_inter_meth_class[[j]] = ss_inter_meth_class[[j]][c(2,3,1,4),c(2,3,1,4)]
   for (i in 1:4){
-    ss_inter_meth_class[[j]][i,] = ss_inter_meth_class[[j]][i,]/apply(TE_meth_average_class[[names(ss_inter_meth_class)[j]]][,c(2,4,3,5)],2,function(x) sum(x[2:38]))[i]
+    ss_inter_meth_class[[j]][i,] = ss_inter_meth_class[[j]][i,]/apply(TE_meth_average_class[which(TE_meth_average_class$class_update == names(ss_inter_meth_class)[j]),c(3,5,4,6)],2,function(x) sum(x[2:38]))[i]
   }
 }
 ss_inter_meth_class = ldply(ss_inter_meth_class)
