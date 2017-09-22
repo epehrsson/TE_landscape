@@ -35,3 +35,7 @@ feature_state_mean_class[which(feature_state_mean_class$State == "Expressed_samp
 feature_state_mean_class = melt(feature_state_mean_class)
 colnames(feature_state_mean_class) = c("Class","State","Feature","Enrichment")
 feature_state_mean_class$Feature = factor(feature_state_mean_class$Feature,levels=levels(feature_state_mean_class$Feature)[c(17,19,18,5,7,6,8:9,2,4,3,10,12,11,14,16,15,13,1,20)])
+
+# Older code
+#test = melt(as.matrix(apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
+#compare_TE_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)})))
