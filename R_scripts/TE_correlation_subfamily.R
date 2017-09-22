@@ -8,7 +8,6 @@ load("R_datasets/rna.RData")
 # Number of samples enriched by subfamily
 source("R_scripts/chromHMM_subfamily_enrichment.R")
 source("R_scripts/WGBS_subfamily_enrichment_CpG.R")
-source('~/TE_landscape/R_scripts/WGBS_subfamily_enrichment_TE.R')
 source("R_scripts/DNase_subfamily_enrichment.R")
 source("R_scripts/H3K27ac_subfamily_enrichment.R")
 
@@ -22,27 +21,27 @@ rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,test,by="subfamily",
 rm(test)
 
 # chromHMM proportion mean, max, range per subfamily
-test = melt(ddply(subfamily_state_sample,~subfamily+State,summarise,Max = max(Percent),Mean = mean(Percent),Range = (max(Percent)-min(Percent))),id.vars=c("subfamily","State"))
+test = melt(ddply(subfamily_state_sample,~subfamily+State,summarise,Max = max(2^Enrichment),Mean = mean(2^Enrichment),Range = (max(2^Enrichment)-min(2^Enrichment))),id.vars=c("subfamily","State"))
 test$Header = apply(test,1,function(x) paste(x[2],x[3],sep="_"))
 test = dcast(test[,c(1,4:5)],subfamily~Header)
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,test,by="subfamily")
 rm(test)
 
 # Adding methylation state CpG enrichment
-rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,dcast(subfamily_hypo_sample_counts,class_update+family+subfamily~State,value.var=c("V1"))[,3:11],by="subfamily",all.x=TRUE)
+rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,dcast(subfamily_hypo_sample_counts,class_update+family+subfamily~State,value.var=c("V1"))[,3:7],by="subfamily",all.x=TRUE)
 
 # Adding number of samples >1% in methylation state
-test = dcast(subfamily_hypo_sample_counts_pc,class_update+family+subfamily~State,value.var=c("V1"))[,3:11]
-colnames(test)[2:9] = lapply(colnames(test)[2:9],function(x) paste(x,"PC",sep="_"))
+test = dcast(subfamily_hypo_sample_counts_pc,class_update+family+subfamily~State,value.var=c("V1"))[,3:7]
+colnames(test)[2:5] = lapply(colnames(test)[2:5],function(x) paste(x,"PC",sep="_"))
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,test,by="subfamily",all.x=TRUE)
 rm(test)
 
-# Methylation state proportion mean, max, range per subfamily (should be CpGs!)
-for (i in 1:4){
-  rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,TE_meth_subfamily_hypo[[i]][,c(1:3,41:46)],by=c("subfamily","family","class_update"),all.x=TRUE)
-  z = length(colnames(rmsk_TE_subfamily_measure))
-  colnames(rmsk_TE_subfamily_measure)[(z-5):z] = lapply(colnames(rmsk_TE_subfamily_measure)[(z-5):z],function(x) paste(names(TE_meth_subfamily_hypo)[i],x,sep="_"))
-}
+# Methylation state proportion mean, max, range per subfamily
+test = melt(ddply(subfamily_CpG_meth,~subfamily+State,summarise,Max = max(2^Enrichment),Mean = mean(2^Enrichment),Range = (max(2^Enrichment)-min(2^Enrichment))),id.vars=c("subfamily","State"))
+test$Header = apply(test,1,function(x) paste(x[2],x[3],sep="_"))
+test = dcast(test[,c(1,4:5)],subfamily~Header)
+rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,test,by="subfamily")
+rm(test)
 
 # Adding Dnase enrichment
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,dcast(subfamily_DNase_sample_counts,class_update+family+subfamily~State,value.var=c("V1"))[,3:4],by="subfamily",all.x=TRUE)
@@ -53,7 +52,7 @@ z = length(colnames(rmsk_TE_subfamily_measure))
 colnames(rmsk_TE_subfamily_measure)[(z-1):z] = c("DNase","DNase_PC")
 
 # Add DNase proportion mean, max, range
-rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,ddply(subfamily_DNase_sample,~subfamily,summarise,DNase_Max = max(Percent),DNase_Mean = mean(Percent),DNase_Range = (max(Percent)-min(Percent))),by="subfamily")
+rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,ddply(subfamily_DNase_sample,~subfamily,summarise,DNase_Max = max(2^Enrichment),DNase_Mean = mean(2^Enrichment),DNase_Range = (max(2^Enrichment)-min(2^Enrichment))),by="subfamily")
 
 # Adding H3K27ac enrichment
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,dcast(subfamily_H3K27ac_sample_counts,class_update+family+subfamily~State,value.var=c("V1"))[,3:4],by="subfamily",all.x=TRUE)
@@ -64,7 +63,9 @@ z = length(colnames(rmsk_TE_subfamily_measure))
 colnames(rmsk_TE_subfamily_measure)[(z-1):z] = c("H3K27ac","H3K27ac_PC")
 
 # Add H3K27ac proportion mean, max, range
-rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,ddply(subfamily_H3K27ac_sample,~subfamily,summarise,H3K27ac_Max = max(Percent),H3K27ac_Mean = mean(Percent),H3K27ac_Range = (max(Percent)-min(Percent))),by="subfamily")
+rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,ddply(subfamily_H3K27ac_sample,~subfamily,summarise,H3K27ac_Max = max(2^Enrichment),H3K27ac_Mean = mean(2^Enrichment),H3K27ac_Range = (max(2^Enrichment)-min(2^Enrichment))),by="subfamily")
 
 # Adding RNA expression 
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,RNA_TE_agnostic_subfamily[,c(3,57:58)],by="subfamily")
+
+contrasts(rmsk_TE_subfamily_measure$class_update) <- contr.sum
