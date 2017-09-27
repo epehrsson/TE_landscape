@@ -42,15 +42,14 @@ class_CpG_meth_total_noIMR90 = aggregate(data=class_CpG_meth[which(class_CpG_met
 class_CpG_meth_total_noIMR90[,2:5] = class_CpG_meth_total_noIMR90[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total_noIMR90$class,rmsk_TE_class$class_update),]$CpGs*36)
 
 # By sample
-class_CpG_meth[,3:6] = class_CpG_meth[,3:6]/rowSums(class_CpG_meth[,3:6])
-class_CpG_meth = melt(class_CpG_meth,id.vars=c("class","Sample"))
-colnames(class_CpG_meth)[3:4] = c("State","Proportion")
+class_CpG_meth = merge(melt(class_CpG_meth,id.vars=c("class","Sample")),melt(cbind(class_CpG_meth[,1:2],class_CpG_meth[,3:6]/rowSums(class_CpG_meth[,3:6])),id.vars=c("class","Sample")),by=c("class","Sample","variable"))
+colnames(class_CpG_meth)[3:5] = c("State","CpGs","Proportion")
 class_CpG_meth$State = factor(class_CpG_meth$State,meth_states)
 
 # DNase
 # By sample
 TE_DNase_class = read.table("DNase/class_DNase_sample.txt",sep='\t')
-colnames(TE_DNase_class) = c("class","Sample","Overlap")
+colnames(TE_DNase_class) = c("class","Sample","Bases")
 TE_DNase_class = TE_DNase_class[which(TE_DNase_class$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
 TE_DNase_class$class = convert_class(TE_DNase_class$class)
 TE_DNase_class$Proportion = apply(TE_DNase_class,1,function(x) as.numeric(x[3])/rmsk_TE_class[match(x[1],rmsk_TE_class$class_update),]$Total_length)
@@ -66,7 +65,7 @@ TE_DNase_class_total$State = rep("DNase",6)
 # H3K27ac
 # By sample
 TE_H3K27ac_class = read.table("H3K27ac/class_H3K27ac_sample.txt",sep='\t')
-colnames(TE_H3K27ac_class) = c("class","Sample","Overlap")
+colnames(TE_H3K27ac_class) = c("class","Sample","Bases")
 TE_H3K27ac_class = TE_H3K27ac_class[which(TE_H3K27ac_class$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
 TE_H3K27ac_class$class = convert_class(TE_H3K27ac_class$class)
 TE_H3K27ac_class$Proportion = apply(TE_H3K27ac_class,1,function(x) as.numeric(x[3])/rmsk_TE_class[match(x[1],rmsk_TE_class$class_update),]$Total_length)
