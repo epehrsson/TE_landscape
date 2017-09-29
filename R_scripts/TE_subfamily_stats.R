@@ -22,7 +22,7 @@ TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
 colnames(TE_CpG_count) = c("chromosome","start","stop","subfamily","class","family","strand","CpGs")
 subfamily_wCpG_count = aggregate(data=TE_CpG_count,CpGs~subfamily,length)
 colnames(subfamily_wCpG_count)[2] = "Count_CpGs"
-rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_wCpG_count,by="subfamily")
+rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_wCpG_count,by="subfamily",all.x=TRUE)
 
 # Total length of subfamily
 subfamily_length = cbind(read.table("features/TEs/subfamily/subfamily_lengths.txt",sep='\t'),read.table("features/TEs/subfamily/subfamily_lengths_noY.txt",sep='\t'))[,c(1:2,4)]
