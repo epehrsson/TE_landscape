@@ -30,6 +30,16 @@ subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$Cp
 subfamily_CpG_meth = merge(subfamily_CpG_meth,metadata[,c(1,4:9)],by=c("Sample"),all.x=TRUE)
 subfamily_CpG_meth = subfamily_CpG_meth[,c(2,5:6,1,3,4,7:16)]
 
+# Adding members in state
+subfamily_CpG_members = read.table("WGBS/subfamily_CpG_state_members.txt",sep='\t')
+colnames(subfamily_CpG_members) = c("subfamily","Sample",meth_states)
+subfamily_CpG_members = melt(subfamily_CpG_members,id.vars=c("subfamily","Sample"))
+colnames(subfamily_CpG_members)[3:4] = c("State","Members")
+subfamily_CpG_members[is.na(subfamily_CpG_members)] = 0
+
+subfamily_CpG_meth = merge(subfamily_CpG_meth,subfamily_CpG_members,by=c("subfamily","Sample","State"),all.x=TRUE)
+subfamily_CpG_meth$Percent = apply(subfamily_CpG_meth,1,function(x) as.numeric(x[17])/rmsk_TE_subfamily[match(x[1],rmsk_TE_subfamily$subfamily),]$Count_CpGs)
+
 # Number of hypomethylation enrichments per subfamily
 subfamily_hypo_sample_counts = ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > 1.5 & x$CpG_ik >= 25 & x$CpG_ijk >= 6))
 subfamily_hypo_sample_counts_noIMR90 = ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > 1.5 & x$CpG_ik >= 25 & x$CpG_ijk >= 6 & x$Sample != "E017"))    
