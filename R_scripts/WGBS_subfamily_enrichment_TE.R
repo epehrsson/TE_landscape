@@ -4,14 +4,14 @@
 load("R_datasets/TE_meth_average.RData")
 
 # Proportion of subfamily members in each methylation state per sample
-TE_meth_subfamily_hypo = list(aggregate(data=TE_meth_average[,c(4,6,8:44,54)],.~subfamily+family+class_update,function(x) sum(na.omit(x) < 0.3)/length(x),na.action=na.pass),
+TE_meth_subfamily = list(aggregate(data=TE_meth_average[,c(4,6,8:44,54)],.~subfamily+family+class_update,function(x) sum(na.omit(x) < 0.3)/length(x),na.action=na.pass),
                               aggregate(data=TE_meth_average[,c(4,6,8:44,54)],.~subfamily+family+class_update,function(x) sum(na.omit(x) >= 0.3 & na.omit(x) <= 0.7)/length(x),na.action=na.pass),
                               aggregate(data=TE_meth_average[,c(4,6,8:44,54)],.~subfamily+family+class_update,function(x) sum(na.omit(x) > 0.7)/length(x),na.action=na.pass),
                               aggregate(data=TE_meth_average[,c(4,6,8:44,54)],.~subfamily+family+class_update,function(x) sum(is.na(x))/length(x),na.action=na.pass))
-names(TE_meth_subfamily_hypo) = meth_states
+names(TE_meth_subfamily) = meth_states
 
 # Average, max, and range of proportion of subfamily in methylation state
-TE_meth_subfamily_hypo = lapply(TE_meth_subfamily_hypo,function(y) transform(y,Mean = apply(y,1,function(x) mean(as.numeric(x[4:40]),na.rm=TRUE)),
+TE_meth_subfamily = lapply(TE_meth_subfamily,function(y) transform(y,Mean = apply(y,1,function(x) mean(as.numeric(x[4:40]),na.rm=TRUE)),
                              Mean_noIMR90 = apply(y,1,function(x) mean(as.numeric(x[c(4:13,15:40)]),na.rm=TRUE)),
                              Range = apply(y,1,function(x) max(as.numeric(na.omit(x[4:40])))-min(as.numeric(na.omit(x[4:40])))),
                              Range_noIMR90 = apply(y,1,function(x) max(as.numeric(na.omit(x[c(4:13,15:40)])))-min(as.numeric(na.omit(x[c(4:13,15:40)])))),
