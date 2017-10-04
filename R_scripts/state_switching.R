@@ -4,6 +4,8 @@
 # Matrix of states annotated on the same TE in the same sample (intra)
 # Normalized by number of instances (TE x sample) each state is found, alone or with another state
 
+source("R_scripts/potential_class.R")
+
 # Format TEs 
 ss_intra_TE = read.table("chromHMM/state_switching/all_chromHMM_TE_state_intra.txt",sep='\t',header=TRUE,row.names=1)
 ss_intra_TE[1:9,10:15] = t(ss_intra_TE[10:15,1:9])
@@ -26,8 +28,6 @@ state_switching_intra_raw = state_switching_intra
 for (i in 1:15){
   state_switching_intra[i,] = state_switching_intra[i,]/state_switching_intra[i,i]
 }
-
-# Probability that a TE ever in a particular state will be in another state in a different sample (inter)
 
 # chromHMM inter state switching
 # Format TEs
@@ -65,6 +65,7 @@ for (j in 1:6){
 ss_inter_class = ldply(ss_inter_class)
 colnames(ss_inter_class)[1] = c("Class")
 ss_inter_class$State = rep(chromHMM_states,6)
+ss_inter_class$Class = factor(ss_inter_class$Class,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
 
 # WGBS inter state switching
 # Format TEs
@@ -96,3 +97,4 @@ for (j in 1:6){
 ss_inter_meth_class = ldply(ss_inter_meth_class)
 colnames(ss_inter_meth_class)[1] = c("Class")
 ss_inter_meth_class$State = rep(meth_states,6)
+ss_inter_meth_class$Class = factor(ss_inter_meth_class$Class,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
