@@ -9,12 +9,14 @@ load("R_datasets/chromHMM_TE_state.RData")
 # All samples
 chromHMM_TE_state_dist = sample_distribution(chromHMM_TE_state,c(8:22),127)
 chromHMM_TE_state_cum = cumulative_distribution(chromHMM_TE_state,c(8:22),127)
+chromHMM_TE_state_cum$State = factor(rep(chromHMM_states,each=127),levels=chromHMM_states)
 chromHMM_TE_state_dist_stats = potential_stats(chromHMM_TE_state_dist,15,127)
 chromHMM_TE_state_dist_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
 # No cancer cell lines, IMR90
 chromHMM_TE_state_dist_noCancer = sample_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
 chromHMM_TE_state_noCancer_cum = cumulative_distribution(chromHMM_TE_state_noCancer,c(8:22),121)
+chromHMM_TE_state_noCancer_cum$State = factor(rep(chromHMM_states,each=121),levels=chromHMM_states)
 chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_noCancer,15,121)
 chromHMM_TE_state_dist_noCancer_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
@@ -34,13 +36,13 @@ load("R_datasets/TE_meth_average.RData")
 TE_meth_average_category = sample_distribution(TE_meth_average,c(46:49),37)
 TE_meth_average_category_cum = cumulative_distribution(TE_meth_average,c(46:49),37)
 TE_meth_average_category_stats = potential_stats(TE_meth_average_category,4,37)
-TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_stats),levels=as.vector(rownames(TE_meth_average_category_stats))[c(4,2,3,1)])
+TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_stats),levels=meth_states)
 
 # Cumulative distribution of methylation states and statistics, no IMR90
 TE_meth_average_noIMR90_category = sample_distribution(TE_meth_average,c(50:53),36)
 TE_meth_average_noIMR90_category_cum = cumulative_distribution(TE_meth_average,c(50:53),36)
 TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_noIMR90_category,4,36)
-TE_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=c("Missing","Hypermethylated","Intermediate","Hypomethylated"))
+TE_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=meth_states)
 
 # Number of TEs in each WGBS state by sample
 TE_meth_average_state = as.data.frame(cbind(apply(TE_meth_average[,8:44],2,function(x) sum(na.omit(x) < 0.3)/length(x)),apply(TE_meth_average[,8:44],2,function(x)  sum(na.omit(x) <= 0.7 & na.omit(x) >= 0.3)/length(x)),apply(TE_meth_average[,8:44],2,function(x) sum(na.omit(x) > 0.7)/length(x)),apply(TE_meth_average[,8:44],2,function(x) sum(is.na(x))/length(x))))

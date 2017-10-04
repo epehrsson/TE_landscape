@@ -15,13 +15,13 @@ shuffled_chromHMM_potential_stats$Iteration = rep(seq(1,10,1),each=15)
 
 # WGBS
 shuffled_WGBS_average_stats = lapply(shuffled_WGBS_average,function(x) potential_stats(sample_distribution(x,c(46:49),37),4,37))
-shuffled_WGBS_average_stats = lapply(shuffled_WGBS_average_stats,function(x) transform(x,State = factor(rownames(x),levels=as.vector(rownames(x))[c(4,2,3,1)])))
+shuffled_WGBS_average_stats = lapply(shuffled_WGBS_average_stats,function(x) transform(x,State = factor(rownames(x),levels=meth_states)))
 shuffled_WGBS_average_stats = ldply(shuffled_WGBS_average_stats)
 shuffled_WGBS_average_stats$Iteration = rep(seq(1,10,1),each=4)
 
 # WGBS, no IMR90
 shuffled_WGBS_average_noIMR90_stats = lapply(shuffled_WGBS_average,function(x) potential_stats(sample_distribution(x,c(50:53),36),4,36))
-shuffled_WGBS_average_noIMR90_stats = lapply(shuffled_WGBS_average_noIMR90_stats,function(x) transform(x,State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=c("Missing","Hypermethylated","Intermediate","Hypomethylated"))))
+shuffled_WGBS_average_noIMR90_stats = lapply(shuffled_WGBS_average_noIMR90_stats,function(x) transform(x,State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=meth_states)))
 shuffled_WGBS_average_noIMR90_stats = ldply(shuffled_WGBS_average_noIMR90_stats)
 shuffled_WGBS_average_noIMR90_stats$Iteration = rep(seq(1,10,1),each=4)
 

@@ -7,6 +7,7 @@ load("R_datasets/promoter_matrices.RData")
 # chromHMM potential
 chromHMM_promoter_state_dist = sample_distribution(chromHMM_promoter_state,c(5:19),127)
 chromHMM_promoter_state_cum = cumulative_distribution(chromHMM_promoter_state,c(5:19),127)
+chromHMM_promoter_state_cum$State = factor(rep(chromHMM_states,each=127),levels=chromHMM_states)
 chromHMM_promoter_state_dist_stats = potential_stats(chromHMM_promoter_state_dist,15,127)
 chromHMM_promoter_state_dist_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
@@ -15,13 +16,13 @@ chromHMM_promoter_state_dist_stats$State = factor(chromHMM_states,levels=chromHM
 promoter_meth_average_category = sample_distribution(promoter_meth_average,c(42:45),37)
 promoter_meth_average_category_cum = cumulative_distribution(promoter_meth_average,c(42:45),37)
 promoter_meth_average_category_stats = potential_stats(promoter_meth_average_category,4,37)
-promoter_meth_average_category_stats$State = factor(rownames(promoter_meth_average_category_stats),levels=as.vector(rownames(promoter_meth_average_category_stats))[c(4,2,3,1)])
+promoter_meth_average_category_stats$State = factor(rownames(promoter_meth_average_category_stats),levels=meth_states)
 
 # Cumulative distribution of methylation states and statistics, no IMR90
 promoter_meth_average_noIMR90_category = sample_distribution(promoter_meth_average,c(46:49),36)
 promoter_meth_average_noIMR90_category_cum = cumulative_distribution(promoter_meth_average,c(46:49),36)
 promoter_meth_average_noIMR90_category_stats = potential_stats(promoter_meth_average_noIMR90_category,4,36)
-promoter_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=c("Missing","Hypermethylated","Intermediate","Hypomethylated"))
+promoter_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=meth_states)
 
 # DNase potential
 promoter_DNase_potential = sample_distribution(promoter_DNase_peaks,58,53)
