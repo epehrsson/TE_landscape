@@ -103,7 +103,7 @@ RNA_potential_class_stats$class_update = factor(RNA_potential_class_stats$class_
 RNA_potential_class_stats$State = rep("Expression",6)
 
 # Proportion of TEs expressed RPKM > 1 by class by sample
-RNA_RPKM_class = aggregate(data=RNA_TE_agnostic[,c(9:60,64)],.~class_update,function(x) sum(x > 0))
+RNA_RPKM_class = aggregate(data=RNA_TE_agnostic[,c(9:60,64)],.~class_update,function(x) sum(x > 1))
 rownames(RNA_RPKM_class) = RNA_RPKM_class$class_update
 RNA_RPKM_class = RNA_RPKM_class[,2:53]
 RNA_RPKM_class = RNA_RPKM_class/rmsk_TE_class[match(rownames(RNA_RPKM_class),rmsk_TE_class$class_update),]$Count
