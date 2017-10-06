@@ -114,9 +114,4 @@ H3K27ac_proportion$State = rep("H3K27ac",dim(H3K27ac_proportion)[1])
 # Combine all
 combined_proportion = rbind(mnemonics_states_all,CpG_Meth,DNase_proportion[,c(1,4:5)],H3K27ac_proportion[,c(1,4:5)])
 combined_proportion$Group = factor(c(rep("chromHMM",315),rep("WGBS",80),rep("DNase",21),rep("H3K27ac",21)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
-combined_proportion$Cohort = gsub("coding_exon","CDS",combined_proportion$Cohort)
-combined_proportion$Cohort = factor(combined_proportion$Cohort,levels=c("TE","Genome","genome_noTE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","CDS","CDS_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
-combined_proportion$Feature = factor(apply(combined_proportion,1,function(x) unlist(strsplit(as.character(x[3]),"_"))[1]),levels=c("TE","Genome","promoters","5UTR","CDS","3UTR","exons","introns","intergenic"))
-combined_proportion$Coding = apply(combined_proportion,1,function(x) unlist(strsplit(as.character(x[3]),"_"))[2])
-combined_proportion[which(is.na(combined_proportion$Coding)),]$Coding = "All"
-combined_proportion$Coding = factor(combined_proportion$Coding,levels=c("All","pc","nc","noTE"))
+combined_proportion = split_coding(combined_proportion,3,c("TE","Genome","genome_noTE"))

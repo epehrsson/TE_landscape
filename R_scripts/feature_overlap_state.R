@@ -18,8 +18,8 @@ feature_state_mean[21,] = feature_state_mean[21,]/0.98
 feature_state_mean[22,] = feature_state_mean[22,]/0.52
 
 feature_state_mean = melt(as.matrix(feature_state_mean))
-colnames(feature_state_mean) = c("State","Feature","Enrichment")
-feature_state_mean$Feature = factor(feature_state_mean$Feature,levels=levels(feature_state_mean$Feature)[c(17,19,18,5,7,6,8:9,2,4,3,10,12,11,14,16,15,13,1,20)])
+colnames(feature_state_mean) = c("State","Cohort","Enrichment")
+feature_state_mean = split_coding(feature_state_mean,2)
 
 # By class
 feature_state_mean_class = ddply(rmsk_TE_measure,~class_update,function(z) 
@@ -34,8 +34,8 @@ feature_state_mean_class[which(feature_state_mean_class$State == "H3K27ac"),2:21
 feature_state_mean_class[which(feature_state_mean_class$State == "Expression"),2:21] = feature_state_mean_class[which(feature_state_mean_class$State == "Expression"),2:21]/0.52
 
 feature_state_mean_class = melt(feature_state_mean_class)
-colnames(feature_state_mean_class) = c("Class","State","Feature","Enrichment")
-feature_state_mean_class$Feature = factor(feature_state_mean_class$Feature,levels=levels(feature_state_mean_class$Feature)[c(17,19,18,5,7,6,8:9,2,4,3,10,12,11,14,16,15,13,1,20)])
+colnames(feature_state_mean_class) = c("Class","State","Cohort","Enrichment")
+feature_state_mean_class = split_coding(feature_state_mean_class,3)
 
 # Older code
 #test = melt(as.matrix(apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_measure[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
