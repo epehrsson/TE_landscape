@@ -1,6 +1,6 @@
 # Intersect with Roadmap data
-# 4/19/2016, 4/25/2016, 5/3/2016, 5/5/2016, 
-# 1/26/2017, 2/2/2017, 2/3/2017, 2/6/2017, 3/2/2017, 5/8/2017, 5/22/2017, 6/5/2017, 6/15/2017, 6/19/2017, 7/4/2017
+# 4/19/2016, 4/25/2016, 5/3/2016, 5/5/2016, 5/19/2016,
+# 1/26/2017, 2/2/2017, 2/3/2017, 2/6/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/10/2017, 5/11/2017, 5/22/2017, 6/5/2017, 6/12/2017, 6/15/2017, 6/19/2017, 7/4/2017
 # 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017, 8/25/2017, 8/28/2017, 8/29/2017
 
 # chromHMM 
@@ -176,3 +176,25 @@ while read line; do bedtools intersect -wo -a ../TE_subfamilies/TEother_subfamil
 
 # Shuffled TEs
 #TE_landscape/features/shuffled_TEs/run_intersect.sh
+
+# Mouse
+
+# chromHMM
+# mm9 TEs
+#TE_landscape/Mouse/chromHMM/intersect/TEs/ENCFF#.bed_TE [15 files]
+for file in mouse_chromHMM/*.bed ; do bedtools intersect -wo -a $file -b mm9_rmsk_TE.txt > $file\_TE; done
+
+# mm9 merged TEs
+#TE_landscape/Mouse/chromHMM/intersect/TEs/ENCFF#.bed_TEmerge [15 files]
+for file in mouse_chromHMM/*.bed ; do bedtools intersect -wo -a $file -b mm9_rmsk_TEmerge.txt > $file\_TEmerge; done
+#TE_landscape/Mouse/chromHMM/intersect/TEs/ENCFF#.bed_TEother_merge [15 files]
+for file in mouse_chromHMM/*.bed ; do output=$(basename $file); bedtools intersect -wo -a mm9_rmsk_TEother_merge.txt -b $file > mouse_chromHMM_other/$output\_TEother_merge; done
+
+# WGBS (mm10)
+#TE_landscape/Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_ENCFF#.bed [9 files]
+#TE_landscape/Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_WGBS.bed
+awk -v OFS='\t' '{print $1, $2, $3, $10, $11}' $file | bedtools intersect -wo -a mm10_rmsk_TE.txt -b - > mm10_rmsk_TE_$file;
+
+# DNase
+#TE_landscape/Mouse/DNase_mm10/mm10_orthologs_DNase.txt
+for file in ENCFF*.bed; do bedtools intersect -wo -a mm10_hg19_TE_intersect_same.bed -b $file | awk -v OFS='\t' -v sample=$file '{print $0, sample}' - >> mm10_orthologs_DNase.txt; done

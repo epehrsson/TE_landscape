@@ -1,5 +1,5 @@
 # Sum overlap by merged feature
-# 4/26/2016, 6/27/2016, 2/2/2017, 2/3/2017, 3/2/2017, 5/8/2017, 6/5/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017
+# 4/26/2016, 5/19/2016, 6/27/2016, 2/2/2017, 2/3/2017, 2/8/2017, 3/2/2017, 5/8/2017, 6/5/2017, 6/12/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017
 
 # chromHMM 
 
@@ -88,3 +88,23 @@ awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep
 #TE_landscape/H3K27ac/Refseq_features/refseq_features_H3K27ac.txt
 for file in refseq_*H3K27ac.txt; do awk -v OFS='\t' -v feature=$(basename "$file" .txt) '{a[$15]+=$14}END{for(i in a){print i, a[i], feature}}' $file | sort >> refseq_features_H3K27ac.txt; done
 awk -v OFS='\t' '{a[$11]+=$3-$2}END{for(i in a){print i, a[i], "genome_noTE"}}' genome_noTE_H3K27ac.txt | sort >> refseq_features_H3K27ac.txt #Update 8/7/17
+
+# Mouse
+
+# chromHMM
+# Number of bases in each state in each sample	 
+#TE_landscape/Mouse/chromHMM/sample_summaries/genome/ENCFF#.bed_state [15 files]	
+for file in mouse_chromHMM/*.bed ; do awk '{SUM+=$3-$2}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($4 == state) SUM+=$3-$2}END{print SUM}' $file >> $file\_state; done; done	
+
+# Number of bases in each state in each sample in merged mm9 TEs	 
+#TE_landscape/Mouse/chromHMM/sample_summaries/TEs/ENCFF#.bed_TEmerge_state [15 files]	
+for file in mouse_chromHMM_TE/*.bed_TEmerge; do awk '{SUM+=$13}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($4 == state) SUM+=$13}END{print SUM}' $file >> $file\_state; done; done	
+
+# Number of bases in each state in each sample in merged mm9 all TEs	 
+#TE_landscape/Mouse/chromHMM/sample_summaries/TEs/ENCFF#.bed_TEother_merge_state [15 files]	
+for file in mouse_chromHMM_other/*.bed_TEother_merge; do awk '{SUM+=$13}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($7 == state) SUM+=$13}END{print SUM}' $file >> $file\_state; done; done	
+
+# DNase
+# Total overlap with Dnase per TE	 
+#TE_landscape/Mouse/DNase_mm10/mm10_orthologs_DNase_sum.txt	
+awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $19]+=$18; b[$1, $2, $3, $4, $5, $6, $7, $19]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i], b[i];}}' mm10_orthologs_DNase.txt > mm10_orthologs_DNase_sum.txt
