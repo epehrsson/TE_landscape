@@ -4,8 +4,8 @@ library(reshape2)
 
 load("R_datasets/rna.RData")
 
-# Reduce matrix to unique exons
-RNA_exon_unique = unique(RNA_refseq_exon_agnostic[,c(1:3,7:61)])
+# Remove exons on non-standard chromosomes and reduce matrix to unique exons
+RNA_exon_unique = unique(RNA_refseq_exon_agnostic[which(RNA_refseq_exon_agnostic$chromosome %in% standard_chromosomes),c(1:3,7:61)])
 
 # Distribution of exons with RPKM >1
 RNA_potential_exon = sample_distribution(RNA_exon_unique,57,52)
