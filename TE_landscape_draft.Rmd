@@ -13,8 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load metadata}
 load("R_datasets/metadata.RData")
-load("R_scripts/functions.RData")
-#load("R_scripts/colors_labels.RData")
+source("R_scripts/functions.R")
 ```
 
 # Set universal plot parameters
@@ -116,7 +115,7 @@ a = ggplot(rmsk_TE,aes(x=reorder(class_update,Length,median),y=log10(Length),fil
 
 source("R_scripts/state_lengths.R")
 
-b = ggplot(all_lengths,aes(x=State,y=log10(Length),fill=State)) + geom_boxplot() + theme(text=element_text(size=15),axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_fill_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + ylab("log10(Length) of blocks") + ylim(1,8)
+b = ggplot(all_lengths,aes(x=State,y=log10(Length),fill=State)) + geom_boxplot() + theme(text=element_text(size=15),axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_fill_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + ylab("log10(Length) of blocks") + scale_y_continuous(limits=seq(1,8,1))
 
 load("R_datasets/cpg_density.RData")
 
@@ -126,7 +125,7 @@ source("R_scripts/histone_modification.R")
 
 d = ggplot(histones,aes(x=Bin,y=Level,color=Mark,group=Mark))+geom_point(size=0.5)+geom_line(size=1.5)+theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),text=element_text(size=15),panel.grid=element_blank(),legend.position = "bottom",legend.title = element_blank())+ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Genomic position (+/-5kb around TE)")+ylim(0,12) + facet_wrap(~ State,nrow=3)
 
-grid.arrange(a,b,c,d, nrow=3,layout_matrix=rbind(c(1,3),c(2,3),c(4,4)),heights=c(0.2,0.2,0.6))
+grid.arrange(a,b,c,d, nrow=3,layout_matrix=rbind(c(1,3),c(2,3),c(4,4)),heights=c(0.2,0.3,0.5))
 ```
 
 # State lengths analysis
@@ -204,60 +203,92 @@ Supplmentary Figure 3. Comparison of chromHMM, WGBS, DNase, and H3K27ac states. 
 ```{r Figure S3}
 source("R_scripts/compare_marks.R")
 
-test = xtabs(TE_sample_norm ~ H3K27ac+chromHMM, data=compare_marks_all)
-names(dimnames(test)) = c("H3K27ac","chromHMM")
+test = xtabs(TE_sample_norm ~ chromHMM+WGBS, data=compare_marks_all)
+names(dimnames(test)) = c("chromHMM","WGBS")
 a = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
-
-test = xtabs(TE_sample ~ H3K27ac+DNase, data=compare_marks_unique)
-names(dimnames(test)) = c("H3K27ac","DNase")
-b = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
-
-test = xtabs(TE_sample ~ H3K27ac+WGBS, data=compare_marks_unique)
-names(dimnames(test)) = c("H3K27ac","WGBS")
-c = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
-
-test = xtabs(TE_sample_norm ~ DNase+chromHMM, data=compare_marks_all)
-names(dimnames(test)) = c("DNase","chromHMM")
-d = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
-
-test = xtabs(TE_sample ~ DNase+H3K27ac, data=compare_marks_unique)
-names(dimnames(test)) = c("DNase","H3K27ac")
-e = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
-
-test = xtabs(TE_sample ~ DNase+WGBS, data=compare_marks_unique)
-names(dimnames(test)) = c("DNase","WGBS")
-f = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
 test = xtabs(TE_sample_norm ~ WGBS+chromHMM, data=compare_marks_all)
 names(dimnames(test)) = c("WGBS","chromHMM")
-g = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+b = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-test = xtabs(TE_sample ~ WGBS+DNase, data=compare_marks_unique)
-names(dimnames(test)) = c("WGBS","DNase")
-h = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+test = xtabs(TE_sample_norm ~ DNase+chromHMM, data=compare_marks_all)
+names(dimnames(test)) = c("DNase","chromHMM")
+c = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-test = xtabs(TE_sample ~ WGBS+H3K27ac, data=compare_marks_unique)
-names(dimnames(test)) = c("WGBS","H3K27ac")
-i = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+test = xtabs(TE_sample_norm ~ H3K27ac+chromHMM, data=compare_marks_all)
+names(dimnames(test)) = c("H3K27ac","chromHMM")
+d = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-test = xtabs(TE_sample_norm ~ chromHMM+H3K27ac, data=compare_marks_all)
-names(dimnames(test)) = c("chromHMM","H3K27ac")
-j = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+test = xtabs(TE_sample_norm ~ RNA+chromHMM, data=compare_marks_all)
+names(dimnames(test)) = c("RNA","chromHMM")
+e = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
 test = xtabs(TE_sample_norm ~ chromHMM+DNase, data=compare_marks_all)
 names(dimnames(test)) = c("chromHMM","DNase")
+f = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ WGBS+DNase, data=compare_marks_unique)
+names(dimnames(test)) = c("WGBS","DNase")
+g = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ DNase+WGBS, data=compare_marks_unique)
+names(dimnames(test)) = c("DNase","WGBS")
+h = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ H3K27ac+WGBS, data=compare_marks_unique)
+names(dimnames(test)) = c("H3K27ac","WGBS")
+i = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ RNA+WGBS, data=compare_marks_unique)
+names(dimnames(test)) = c("RNA","WGBS")
+j = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample_norm ~ chromHMM+H3K27ac, data=compare_marks_all)
+names(dimnames(test)) = c("chromHMM","H3K27ac")
 k = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-test = xtabs(TE_sample_norm ~ chromHMM+WGBS, data=compare_marks_all)
-names(dimnames(test)) = c("chromHMM","WGBS")
+test = xtabs(TE_sample ~ WGBS+H3K27ac, data=compare_marks_unique)
+names(dimnames(test)) = c("WGBS","H3K27ac")
 l = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-mplot(l,g,d,a,k,h,f,c,j,i,e,b)
-
-test = xtabs(TE_sample_norm ~ chromHMM+WGBS+DNase+H3K27ac, data=compare_marks_all)
+test = xtabs(TE_sample ~ DNase+H3K27ac, data=compare_marks_unique)
+names(dimnames(test)) = c("DNase","H3K27ac")
 m = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
 
-mplot(m)
+test = xtabs(TE_sample ~ H3K27ac+DNase, data=compare_marks_unique)
+names(dimnames(test)) = c("H3K27ac","DNase")
+n = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ RNA+DNase, data=compare_marks_unique)
+names(dimnames(test)) = c("RNA","DNase")
+o = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample_norm ~ chromHMM+RNA, data=compare_marks_all)
+names(dimnames(test)) = c("chromHMM","RNA")
+p = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ WGBS+RNA, data=compare_marks_unique)
+names(dimnames(test)) = c("WGBS","RNA")
+q = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ DNase+RNA, data=compare_marks_unique)
+names(dimnames(test)) = c("DNase","RNA")
+r = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ H3K27ac+RNA, data=compare_marks_unique)
+names(dimnames(test)) = c("H3K27ac","RNA")
+s = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+test = xtabs(TE_sample ~ RNA+H3K27ac, data=compare_marks_unique)
+names(dimnames(test)) = c("RNA","H3K27ac")
+t = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+mplot(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t)
+
+test = xtabs(TE_sample_norm ~ chromHMM+WGBS+DNase+H3K27ac+RNA, data=compare_marks_all)
+u = mosaic(test,shade=TRUE,return_grob=TRUE,legend=FALSE)
+
+mplot(u)
 ```
 
 # Compare mark analysis (get p-values and residuals)
@@ -266,6 +297,7 @@ mplot(m)
 # Tables for each mark
 aggregate(data=compare_marks_unique,TE_sample~DNase,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$DNase)),]$TE_sample))
 aggregate(data=compare_marks_unique,TE_sample~H3K27ac,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$H3K27ac)),]$TE_sample))
+aggregate(data=compare_marks_unique,TE_sample~RNA,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$RNA)),]$TE_sample))
 aggregate(data=compare_marks_unique,TE_sample~WGBS,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$WGBS)),]$TE_sample))
 aggregate(data=compare_marks_all,TE_sample_norm~chromHMM,function(x) sum(x)/sum(compare_marks_all$TE_sample_norm))
 
@@ -273,8 +305,12 @@ aggregate(data=compare_marks_all,TE_sample_norm~chromHMM,function(x) sum(x)/sum(
 chisq_list = list(chisq.test(xtabs(TE_sample~H3K27ac+DNase,data=aggregate(data=compare_marks_unique,TE_sample~H3K27ac+DNase,sum))),  
                   chisq.test(xtabs(TE_sample~H3K27ac+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~H3K27ac+WGBS,sum))), 
                   chisq.test(xtabs(TE_sample~DNase+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~DNase+WGBS,sum))), 
+                  chisq.test(xtabs(TE_sample~DNase+RNA,data=aggregate(data=compare_marks_unique,TE_sample~DNase+RNA,sum))), 
+                  chisq.test(xtabs(TE_sample~RNA+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~RNA+WGBS,sum))), 
+                  chisq.test(xtabs(TE_sample~RNA+H3K27ac,data=aggregate(data=compare_marks_unique,TE_sample~RNA+H3K27ac,sum))), 
                   chisq.test(xtabs(TE_sample_norm~chromHMM+DNase,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+DNase,sum))), 
                   chisq.test(xtabs(TE_sample_norm~chromHMM+H3K27ac,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+H3K27ac,sum))),
+                  chisq.test(xtabs(TE_sample_norm~chromHMM+RNA,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+RNA,sum))),
                   chisq.test(xtabs(TE_sample_norm~chromHMM+WGBS,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+WGBS,sum))))
 lapply(chisq_list,function(x) x$p.value)
 lapply(chisq_list,function(x) x$residuals)
@@ -295,6 +331,10 @@ source("R_scripts/potential_promoter.R")
 source("R_scripts/potential_exon.R")
 
 # Shuffled TEs
+combine_boxplot$Iteration = rep("True",dim(combine_boxplot)[1])
+combine_shuffled_boxplot = rbind(state_sample_count_shuffled[,c(1:2,4:5)],shuffled_WGBS_average_count,shuffled_DNase_potential_count[,2:5],shuffled_H3K27ac_potential_count[,2:5],combine_boxplot[which(combine_boxplot$State != "Expression"),])
+combine_shuffled_boxplot$Iteration = factor(combine_shuffled_boxplot$Iteration,levels=c(seq(1,10,1),"True"))
+
 combine_shuffled_stats = rbind(shuffled_chromHMM_potential_stats,shuffled_WGBS_average_stats,shuffled_DNase_potential_stats,shuffled_H3K27ac_potential_stats)
 combine_shuffled_stats$Group = factor(c(rep("chromHMM",150),rep("WGBS",40),rep("DNase",10),rep("H3K27ac",10)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combine_shuffled_stats = melt(combine_shuffled_stats,id.vars=c("State","Group","Iteration"))
@@ -303,7 +343,9 @@ colnames(combine_shuffled_stats)[4:5] = c("Metric","Value")
 combine_stats_long = melt(combine_stats,id.vars=c("State","Group"))
 colnames(combine_stats_long)[3:4] = c("Metric","Value")
 
-a = ggplot(combine_shuffled_stats,aes(x=State,y=Value)) + geom_boxplot() + theme(axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(limits=c(chromHMM_states,meth_states,"DNase","H3K27ac")) + geom_point(data=combine_stats_long[which(combine_stats_long$State != "Expression"),],aes(x=State,y=Value),color="red",size=3) + facet_wrap(~Metric,nrow=3,labeller=labeller(Metric=metric_labels))
+a = ggplot(combine_shuffled_boxplot,aes(x=State,y=Proportion*100,fill=Iteration,color=Iteration)) + geom_boxplot(position="dodge",outlier.size=0.1) + scale_x_discrete(limits=all_state_labels[1:21]) + labs(y="% of TEs in state") + theme(axis.title.x=element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_manual(values=c(rep("white",10),"white"),guide=FALSE) + scale_color_manual(values=c(rep("grey",10),"red"),guide=FALSE)
+
+b = ggplot(combine_shuffled_stats,aes(x=State,y=Value)) + geom_boxplot() + theme(axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(limits=c(chromHMM_states,meth_states,"DNase","H3K27ac")) + geom_point(data=combine_stats_long[which(combine_stats_long$State != "Expression"),],aes(x=State,y=Value),color="red",size=1) + facet_wrap(~Metric,nrow=3,labeller=labeller(Metric=metric_labels))
 
 # Promoters
 combine_cum_prom = rbind(chromHMM_promoter_state_cum,promoter_meth_average_category_cum,promoter_DNase_potential_cum,promoter_H3K27ac_potential_cum)
@@ -311,18 +353,18 @@ combine_stats_prom = rbind(chromHMM_promoter_state_dist_stats,promoter_meth_aver
 combine_stats_prom$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac"),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combine_boxplot_prom = rbind(promoter_state_sample_count[,c(1:2,4)],promoter_meth_average_state_long,promoter_DNase_peaks_sample[,2:4],promoter_H3K27ac_peaks_sample[,2:4])
 
-b = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of promoters in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot_prom$State))) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=3)
+c = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of promoters in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot_prom$State))) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2)
 
-c = ggplot(combine_cum_prom,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x="Proportion of all samples",y="Cumulative proportion of promoters in state") + scale_color_manual(values=all_state_colors[1:21],guide=FALSE) + geom_vline(xintercept = combine_stats_prom$Samples_avg_ever/100,color=all_state_colors[as.vector(combine_stats_prom$State)])
+d = ggplot(combine_cum_prom,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x="Proportion of all samples",y="Cumulative proportion of promoters in state") + scale_color_manual(values=all_state_colors[1:21],guide=FALSE) + geom_vline(xintercept = combine_stats_prom$Samples_avg_ever/100,color=all_state_colors[as.vector(combine_stats_prom$State)])
 
 # Exons
-d = ggplot(RNA_exon_sample,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values="black",guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of exons in state") + coord_flip() + scale_x_discrete(labels="RPKM > 1") + geom_point(data=RNA_potential_exon_stats,aes(x=State,y=Proportion_ever),color="red",size=3) + scale_y_continuous(limits=c(0,100))
+e = ggplot(RNA_exon_sample,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values="black",guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of exons in state") + coord_flip() + scale_x_discrete(labels="RPKM > 1") + geom_point(data=RNA_potential_exon_stats,aes(x=State,y=Proportion_ever),color="red",size=3) + scale_y_continuous(limits=c(0,100))
 
-e = ggplot(RNA_potential_exon_cum,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x="Proportion of all samples (n=52)",y="Cumulative proportion of exons RPKM > 1") + scale_color_manual(values="black",guide=FALSE) + geom_vline(xintercept = RNA_potential_exon_stats$Samples_avg_ever/100,color="black")
+f = ggplot(RNA_potential_exon_cum,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x="Proportion of all samples (n=52)",y="Cumulative proportion of exons RPKM > 1") + scale_color_manual(values="black",guide=FALSE) + geom_vline(xintercept = RNA_potential_exon_stats$Samples_avg_ever/100,color="black")
 
 legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
 
-grid.arrange(a,b,c,d,e,legend, nrow = 5, ncol=2, layout_matrix=cbind(c(1,2,2,3,3),c(1,4,5,5,6)),heights=c(0.4,0.15,0.1,0.15,0.2))
+grid.arrange(a,b,c,d,e,f,legend, nrow = 5, ncol=2, layout_matrix=cbind(c(1,3,3,4,4),c(2,5,6,6,7)),heights=c(0.5,0.1,0.15,0.1,0.15))
 ```
 
 # Exon expression control analysis
@@ -665,7 +707,7 @@ grid.arrange(b,c,d,e,f,nrow=5)
 # CpGs per class
 
 ```{r}
-
+rmsk_TE_class[,c(1:2,12,32,35:38)]
 ```
 
 # TE stats
@@ -820,7 +862,6 @@ a = ggplot(by_sample_class,aes(x=State,y=Proportion,color=Group)) + geom_point(p
 
 # Feature methylation by sample
 b =  ggplot(CpG_feature_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Feature,shape=Coding)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.title=element_blank(),panel.grid.major.x = element_line(color="black")) + ylab("Average methylation") + scale_color_manual(values=c("black",brewer.pal(8,"Set1"))) + scale_shape_discrete(labels=c("All","Protein-coding","Non-coding")) 
-
 grid.arrange(a,b,nrow=2)
 ```
 
