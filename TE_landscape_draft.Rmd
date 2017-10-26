@@ -587,6 +587,12 @@ TE_pvalue_all_state = apply(rmsk_TE_measure[,15:34],2,function(x) apply(rmsk_TE_
 TE_pvalue_class_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,15:34],2,function(x) apply(z[,35:63],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
 ```
 
+# Correlations between number of samples in state and metric
+
+```{r}
+ correlate_TE_state[which(correlate_TE_state$p.value < 0.001 & abs(correlate_TE_state$estimate.rho) > 0.3),]
+```
+
 # Overlap with CpG islands by age (logistic regression)
 
 ```{r}
@@ -863,6 +869,23 @@ a = ggplot(by_sample_class,aes(x=State,y=Proportion,color=Group)) + geom_point(p
 # Feature methylation by sample
 b =  ggplot(CpG_feature_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Feature,shape=Coding)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.title=element_blank(),panel.grid.major.x = element_line(color="black")) + ylab("Average methylation") + scale_color_manual(values=c("black",brewer.pal(8,"Set1"))) + scale_shape_discrete(labels=c("All","Protein-coding","Non-coding")) 
 grid.arrange(a,b,nrow=2)
+
+# PCA on TEs in DNase, H3K27ac
+ plot_pca(DNase_pca,c(1,2),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_color,guide=T)
+ plot_pca(DNase_pca,c(3,2),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_color,guide=T)
+ plot_pca(DNase_pca,c(3,4),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_color,guide=T)
+ plot_pca(H3K27ac_pca,c(1,2),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_color,guide=T)
+ plot_pca(H3K27ac_pca,c(3,2),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_color,guide=T)
+ plot_pca(H3K27ac_pca,c(3,4),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_color,guide=T)
+```
+
+# Test by class
+
+```{r}
+#9/19/2017 - For each state, I performed a Kruskal-Wallis test of the proportion in each state by class. Almost all are p < 2.2e-16, and 14_ReprPCWk (3.532e-05) and Hypermethylated (4.58e-15) are also significant. Most pairwise Wilcox tests are also significant.
+ by(combine_class_sample,combine_class_sample$State,function(x) kruskal.test(x$Proportion~x$class))
+ by(combine_class_sample,combine_class_sample$State,function(x) pairwise.wilcox.test(x$Proportion,x$class,method="bonf"))
+ ggplot(combine_class_sample,aes(x=class,y=Proportion)) + geom_boxplot(position="dodge") + facet_wrap(~State,scales="free")
 ```
 
 # Tests by sample classification and class
