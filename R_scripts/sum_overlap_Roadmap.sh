@@ -1,6 +1,6 @@
 # Sum overlap by merged feature
 # 4/20/2016, 4/25/2016, 4/26/2016, 5/19/2016, 6/27/2016, 9/5/2016,
-# 2/2/2017, 2/3/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/24/2017, 6/5/2017, 6/12/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017
+# 2/2/2017, 2/3/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/24/2017, 6/5/2017, 6/12/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017, 9/19/2017
 
 # chromHMM 
 
@@ -37,6 +37,9 @@ for file in chromHMM_bedfiles/E*_15_coreMarks_mnemonics.bed_TE; do awk '{SUM+=$1
 bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_TE/*state
 
 # Merged TE classes
+# Number of bases in each state in merged TE classes in each sample
+ while read line; do awk -v OFS='\t' -v class=$line '{a[$7,$9]+=$8}END{for(i in a) {split (i, sep, SUBSEP); print class, sep[1], sep[2], a[i];}}' ../TEs/intersect/class/rmsk_$line\.txt_chromHMM.bed >> class_state_sample.txt; done < classes.txt
+
 #TE_landscape/chromHMM/class/rmsk_[class].txt_chromHMM.bed_state [13 files]
 for file in TE_classes/rmsk_*.txt_chromHMM.bed; do awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' $file > $file\_state; while read line; do grep $line $file | awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' - >> $file\_state; done < chromHMM_states.txt ; done
 awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' rmsk_Unconfident.txt_chromHMM.bed > rmsk_Unconfident.txt_chromHMM.bed_state; while read line; do grep $line rmsk_Unconfident.txt_chromHMM.bed | awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' - >> rmsk_Unconfident.txt_chromHMM.bed_state; done < chromHMM_states.txt
