@@ -12,9 +12,11 @@ python ../bin/TE_landscape/average_methylation.py other_CpG_Meth.bed rmsk_other.
 #TE_landscape/WGBS/methylation_old/error/TE_CpG_Meth_avg.bed		
 
 # TEs overlapping a CpG in each methylation state by sample
+#TE_landscape/WGBS/TE_CpG_Meth_state.txt
  python ~/bin/TE_landscape/count_CpG_state.py TE_CpG_Meth_new.bed TE_CpG_count.txt ../sample_lists/WGBS_samples.txt TE_CpG_Meth_state.txt
 
 # Count by subfamily
+#TE_landscape/WGBS/subfamily_CpG_state_members.txt
  tail -n +2 TE_CpG_Meth_state.txt | awk -v OFS='\t' '{a[$4,$8]+=1; if($12 > 0) miss[$4,$8]+=1; if($9 > 0) hypo[$4,$8]+=1; if($11 > 0) hyper[$4,$8]+=1; if($10 > 0) inter[$4,$8]+=1;} END{for (i in a){split (i, sep, SUBSEP); print sep[1], sep[2], hypo[i], inter[i], hyper[i], miss[i];}}' - > subfamily_CpG_state_members.txt
 
 # Average methylation of unique Refseq promoters	 

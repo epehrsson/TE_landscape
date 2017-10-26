@@ -28,6 +28,8 @@ for file in E*; do cut -f1-8,11,13,15 $file | sort | uniq | awk -v OFS='\t' '{a[
 awk -v OFS='\t' '{a[$2,$3,$4]+=$5}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' combine_marks_counts.txt
 
 # Adding RNA-seq to the mark comprison
+#TE_landscape/RNAseq/rmsk_TE_rpkm.txt
+#TE_landscape/compare_marks/TE_combine_marks_RNA.txt
 write.table(melt(RNA_TE_agnostic[,1:60],id.vars=c(colnames(RNA_TE_agnostic)[1:7])),file="RNAseq/rmsk_TE_rpkm.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')
 ln -s ~/TE_landscape/RNAseq/rmsk_TE_rpkm.txt .
 awk '{print>$8}' rmsk_TE_rpkm.txt &
@@ -36,6 +38,9 @@ awk '{print>$8}' TE_combine_marks.txt &
 python ~/bin/TE_landscape/combine_marks_RNA.py ~/TE_landscape/sample_lists/mnemonics.txt ~/TE_landscape/sample_lists/RNAseq_samples.txt TE_combine_marks_RNA.txt &
 
 # Generating tables
+#TE_landscape/compare_marks/combine_marks_counts.txt
+#TE_landscape/compare_marks/combine_marks_counts_RNA.txt
+#TE_landscape/compare_marks/combine_marks_table_counts_RNA.txt
 awk -v OFS='\t' '{a[$9,$11,$13,$15,$17]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], a[i];}}' TE_combine_marks_RNA.txt > combine_marks_table_counts_RNA.txt
 awk '{print>$8}' TE_combine_marks_RNA.txt
 for file in E*; do cut -f1-8,11,13,15,17 $file | sort | uniq | awk -v OFS='\t' '{a[$8,$9,$10,$11,$12]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], a[i];}}' - >> combine_marks_counts_RNA.txt; done

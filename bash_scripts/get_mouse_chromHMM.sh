@@ -1,0 +1,15 @@
+wget https://www.encodeproject.org/files/ENCFF030MYT/@@download/ENCFF030MYT.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF376DPH/@@download/ENCFF376DPH.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF715UGP/@@download/ENCFF715UGP.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF272MLR/@@download/ENCFF272MLR.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF294FWP/@@download/ENCFF294FWP.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF215ZKG/@@download/ENCFF215ZKG.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF880AMI/@@download/ENCFF880AMI.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF483ALY/@@download/ENCFF483ALY.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF539POM/@@download/ENCFF539POM.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF640YBG/@@download/ENCFF640YBG.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF605STV/@@download/ENCFF605STV.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF391XXL/@@download/ENCFF391XXL.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF059JEI/@@download/ENCFF059JEI.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF449FJP/@@download/ENCFF449FJP.bed.gz .
+wget https://www.encodeproject.org/files/ENCFF202WYG/@@download/ENCFF202WYG.bed.gz .

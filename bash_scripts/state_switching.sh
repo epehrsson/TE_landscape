@@ -1,5 +1,5 @@
 # State switching
-# 7/6/2016, 2/2/2017, 3/2/2017, 8/1/2017, 8/24/2017, 8/25/2017, 8/27/2017
+# 7/6/2016, 2/2/2017, 3/2/2017, 8/1/2017, 8/24/2017, 8/25/2017, 8/27/2017, 9/14/2017
 
 #TE_landscape/chromHMM/state_switching/all_chromHMM_TE_state_inter.txt		
 python ../bin/TE_landscape/state_sharing_inter.py all_chromHMM_TE_sorted.txt chromHMM_states.txt all_chromHMM_TE_state_inter.txt &

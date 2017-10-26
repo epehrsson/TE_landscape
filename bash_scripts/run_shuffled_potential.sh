@@ -1,0 +1,2 @@
+for i in {1..10}; do python ~/bin/TE_landscape/potential_TE_shuffled.py rmsk_TE_shuffle_$i\_sorted.txt ~/TE_landscape/features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt ~/TE_landscape/chromHMM/chromHMM_states.txt ~/TE_landscape/sample_lists/mnemonics.txt rmsk_TE_shuffle_$i\_potential.txt 0; done
+for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_intra_max.py rmsk_TE_shuffle_$i\_sorted.txt rmsk_TE_shuffle_$i\_max.txt 7; done

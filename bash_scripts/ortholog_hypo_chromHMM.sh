@@ -1,5 +1,5 @@
 # Human-mouse hypomethylated orthologs, chromHMM
-# 5/29/2017, 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017
+# 5/29/2017, 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017, 10/10/2017
 
 # hg19 TEs hypomethylated in human and mouse	
 #TE_landscape/human_mouse_ortholog_hypo.txt	
@@ -39,3 +39,16 @@ awk -v OFS='\t' '{a[$4, $5, $6, $7, $8, $9, $10, $14, $21]+=$20;}END{for(i in a)
  cut -f1-3 mm10_to_mm9_ortholog_hypo.txt | paste - mm10_ortholog_hypo.txt > mm9_ortholog_hypo.txt
  while read line; do bedtools intersect -wo -a mm9_ortholog_hypo.txt -b ../raw_data/mouse/chromHMM/$line\.bed | awk -v OFS='\t' -v sample=$line '{print $0, sample}' - >> mm9_ortholog_hypo_chromHMM.txt; done < ../sample_lists/mouse_chromHMM_samples.txt
  awk -v OFS='\t' '{a[$4, $5, $6, $7, $8, $9, $10, $14, $21]+=$20;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i];}}' mm9_ortholog_hypo_chromHMM.txt > mm10_ortholog_hypo_chromHMM.txt
+
+10/10/2017	TE_landscape/Mouse/hg19_ortholog_hypo.txt
+10/3/2017	TE_landscape/Mouse/hg19_ortholog_hypo_chromHMM.txt
+10/3/2017	TE_landscape/Mouse/hg19_orthologs_hypo_1TssA.bed
+10/3/2017	TE_landscape/Mouse/hg19_orthologs_hypo_1TssA_Gencode.txt
+10/10/2017	TE_landscape/Mouse/mm10_ortholog_hypo.txt
+10/3/2017	TE_landscape/Mouse/mm10_ortholog_hypo_chromHMM.txt
+10/3/2017	TE_landscape/Mouse/mm10_to_mm9_ortholog_hypo.txt
+10/3/2017	TE_landscape/Mouse/mm9_ortholog_hypo.txt
+10/3/2017	TE_landscape/Mouse/mm9_ortholog_hypo_chromHMM.txt
+10/3/2017	TE_landscape/Mouse/out.txt
+10/3/2017	TE_landscape/Mouse/TE_combine_marks_meth.txt
+

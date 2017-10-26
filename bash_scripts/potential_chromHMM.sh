@@ -1,5 +1,5 @@
 # chromHMM potential 
-# 4/25/2016, 4/26/2016, 5/3/2016, 5/12/2016, 6/27/2016, 8/30/2016, 1/26/2017, 2/2/2017, 5/10/2017, 5/29/2017, 8/7/2017, 8/23/2017, 9/14/2017, 9/18/2017
+# 4/25/2016, 4/26/2016, 5/3/2016, 5/12/2016, 6/27/2016, 8/30/2016, 1/26/2017, 2/2/2017, 5/10/2017, 5/29/2017, 8/7/2017, 8/23/2017, 9/14/2017, 9/15/2017, 9/18/2017
 
 # TEs
 #TE_landscape/chromHMM/potential/all_chromHMM_TE_potential_0.txt
@@ -18,6 +18,9 @@ python ../bin/TE_landscape/potential_TE.py all_chromHMM_TE.txt rmsk_TE.txt chrom
  awk -v OFS='\t' '{a[$4,$5]+=$6}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' subfamily_state_sample.txt > state_sample_counts.txt
 
 # By class
+#TE_landscape/chromHMM/class/class_state_sample.txt
+#TE_landscape/chromHMM/class/classes.txt
+#TE_landscape/chromHMM/class_state_sample.txt
 awk -v OFS='\t' '{a[$5,$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' all_chromHMM_TE.txt > class_state_sample.txt
 awk -v OFS='\t' '{if($5 == "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print "SVA", sep[1], sep[2], a[i];}}' all_chromHMM_other.txt >> class_state_sample.txt
 awk -v OFS='\t' '{if($5 != "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print "Other", sep[1], sep[2], a[i];}}' all_chromHMM_other.txt >> class_state_sample.txt
@@ -31,6 +34,9 @@ awk -v OFS='\t' '{if($5 != "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep,
  awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $6]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}'  chromHMM_refseq_promoters_unique_sorted.txt > promoter_state_sample_count.txt
 
 # Shuffled TEs
+#TE_landscape/chromHMM/shuffled_TEs/rmsk_TE_shuffle_#_max.txt [10 files]
+#TE_landscape/chromHMM/shuffled_TEs/rmsk_TE_shuffle_#_potential.txt [10 files]
+#TE_landscape/chromHMM/shuffled_TEs/state_sample_count_#.txt [10 files]
  for j in {1..10}; do awk -v OFS='\t' '{a[$8,$9]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TE_shuffle_$j\_sorted.txt > state_sample_count_$j\.txt; done
 
 # Segwey promoters
