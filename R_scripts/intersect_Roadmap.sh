@@ -1,6 +1,6 @@
 # Intersect with Roadmap data
 # 4/19/2016, 4/25/2016, 5/3/2016, 5/5/2016, 5/19/2016,
-# 1/26/2017, 2/2/2017, 2/3/2017, 2/6/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/10/2017, 5/11/2017, 5/22/2017, 6/5/2017, 6/12/2017, 6/15/2017, 6/19/2017, 7/4/2017
+# 1/26/2017, 2/2/2017, 2/3/2017, 2/6/2017, 2/8/2017, 3/2/2017, 3/6/2017, 5/8/2017, 5/10/2017, 5/11/2017, 5/22/2017, 5/29/2017, 5/30/2017, 5/31/2017, 6/5/2017, 6/12/2017, 6/15/2017, 6/19/2017, 7/4/2017
 # 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017, 8/25/2017, 8/28/2017, 8/29/2017
 
 # chromHMM 
@@ -176,6 +176,16 @@ while read line; do bedtools intersect -wo -a ../TE_subfamilies/TEother_subfamil
 
 # Shuffled TEs
 #TE_landscape/features/shuffled_TEs/run_intersect.sh
+
+# RNA-seq
+# Intersect TEs with RNA-seq bedfiles (run by Daofeng on server)
+#TE_landscape/RNAseq/intersect_sample_list_RNA_raw.sh
+#TE_landscape/RNAseq/intersect_sample_list_RNA_raw_ag.sh
+#TE_landscape/RNAseq/htcf_ecp/refseq_exons.txt.sorted
+#TE_landscape/RNAseq/htcf_ecp/rmsk_TEother.txt.sorted
+#TE_landscape/RNAseq/htcf_ecp/run.sh
+#TE_landscape/RNAseq/htcf_ecp/samples.txt
+#TE_landscape/RNAseq/htcf_ecp/samples2.txt
 
 # Mouse
 

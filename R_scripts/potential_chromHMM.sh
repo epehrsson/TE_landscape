@@ -1,5 +1,5 @@
 # chromHMM potential 
-# 4/25/2016, 4/26/2016, 5/3/2016, 5/12/2016, 6/27/2016, 8/30/2016, 1/26/2017, 2/2/2017, 5/10/2017, 8/7/2017, 8/23/2017
+# 4/25/2016, 4/26/2016, 5/3/2016, 5/12/2016, 6/27/2016, 8/30/2016, 1/26/2017, 2/2/2017, 5/10/2017, 5/29/2017, 8/7/2017, 8/23/2017
 
 # TEs
 #TE_landscape/chromHMM/potential/all_chromHMM_TE_potential_0.txt
@@ -31,3 +31,8 @@ python ../bin/TE_landscape/potential_TE.py all_chromHMM_TE.txt rmsk_TE.txt chrom
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.75.txt
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.txt
  python ../bin/TE_landscape/potential_promoter.py all_chromHMM_promoter.txt promoters.txt chromHMM_states.txt all_chromHMM_promoter_potential_0.txt 0
+
+# Mouse
+# chromHMM state for each mm9 TE	 
+#TE_landscape/Mouse/chromHMM/mouse_mm9_chromHMM_TE.txt	
+while read line ; do awk -v OFS='\t' -v sample=$line '{a[$10, $11, $12, $13, $14, $15, $16, $4, sample]+=$17;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i];}}'  mouse_chromHMM_TE/$line\.bed_TE >> mouse_mm9_chromHMM_TE.txt; done < mouse_samples.txt

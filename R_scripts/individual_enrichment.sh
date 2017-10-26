@@ -1,5 +1,12 @@
-# 
-# 5/24/2017, 5/29/2017, 5/30/2017, 5/31/2017
+# TEs in state when subfamily is enriched
+# 9/30/2016, 5/4/2017, 5/24/2017, 5/29/2017, 5/30/2017, 5/31/2017
+
+# Coordinates of subfamilies enriched in blood
+#TE_landscape/enrichment/blood.txt	
+# Coordinates of subfamilies enriched in mesenchymal cluster
+#TE_landscape/enrichment/mesen_sub.txt	
+# MER57E3 elements in the 1TssA state in at least 20 samples
+#TE_landscape/enrichment/MER57E3_1TssA_20.bed	
 
 # Individual TEs in the state from candidate subfamilies	 
 #TE_landscape/enrichment/candidate_[state]_indv.txt [5 files]	

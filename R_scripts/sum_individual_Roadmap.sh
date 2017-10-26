@@ -1,5 +1,5 @@
 # Sum overlap by individual feature
-#4/20/2016, 5/3/2016, 7/6/2016, 1/26/2017, 2/2/2017, 5/24/2017, 7/4/2017, 8/7/2017, 8/23/2017, 8/24/2017, 9/12/2017
+# 4/20/2016, 4/26/2016, 5/3/2016, 7/6/2016, 1/26/2017, 2/2/2017, 5/24/2017, 7/4/2017, 8/7/2017, 8/23/2017, 8/24/2017, 9/12/2017
 
 # chromHMM
 
@@ -12,6 +12,10 @@ sort -k1,1V -k2,2n -k3,3n -k6,6 -k10,10 all_chromHMM_TE.txt > all_chromHMM_TE_so
 for file in chromHMM_bedfiles/*.bed_other; do suffix=$(basename $file | cut -d '_' -f1); awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i];}}' $file | awk -v x=$suffix 'BEGIN{OFS="\t";}{print $0, x}' - ; done >> all_chromHMM_other.txt
 #TE_landscape/chromHMM/all_chromHMM_other_sorted.txt
 sort -k1,1V -k2,2n -k3,3n -k6,6 -k10,10 all_chromHMM_other.txt > all_chromHMM_other_sorted.txt
+
+# Number of bases in each TE block in each state in each sample (old!)
+#TE_landscape/chromHMM/all_chromHMM_TE_merge.txt	
+for file in chromHMM_TE_merge/* ; do suffix=$(basename $file | cut -d '_' -f1); awk -v OFS='\t' '{a[$1, $2, $3, $7]+=$8;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i];}}' $file | awk -v x=$suffix 'BEGIN{OFS="\t";}{print $0, x}' - >> all_chromHMM_TE_merge.txt; done 
 
 # TEs by class
 #TE_landscape/chromHMM/all_chromHMM_[class]_sorted.txt [6 files]
