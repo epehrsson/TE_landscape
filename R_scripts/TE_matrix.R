@@ -50,4 +50,4 @@ TE_blacklist = aggregate(data=TE_blacklist,blacklist~chromosome+start+stop+subfa
 rmsk_TE = merge(rmsk_TE,TE_blacklist,by=c("chromosome","start","stop","subfamily","class","family","strand"),all.x=TRUE)
 rm(TE_blacklist)
 
-save(rmsk_TE,file="R_scripts/rmsk_TE.RData")
+save(rmsk_TE,file="R_datasets/rmsk_TE.RData")

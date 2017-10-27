@@ -7,7 +7,7 @@ colnames(cpg) = c("chr","start","stop",samples)
 cpg = melt(cpg[,4:40])
 colnames(cpg) = c("Sample","Methylation")
 cpg = cpg[which(cpg$Methylation != -1),]
-save(cpg,"~/TE_landscape/R_scripts/cpg_density.RData")
+save(cpg,"~/TE_landscape/R_datasets/cpg_density.RData")
 
 # Old code: Global methylation in bins of 0.01
 #TE_landscape/WGBS/all_CpG_Meth_distribution.txt

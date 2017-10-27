@@ -36,4 +36,4 @@ promoter_H3K27ac_peaks[is.na(promoter_H3K27ac_peaks)] = 0
 # Number of samples a promoter overlaps a H3K27ac peak
 promoter_H3K27ac_peaks$Samples = apply(promoter_H3K27ac_peaks,1,function(x) sum(as.numeric(x[5:102]) > 0))
 
-save(list=c("chromHMM_promoter_state","promoter_meth_average","promoter_DNase_peaks","promoter_H3K27ac_peaks"),file="R_scripts/promoter_matrices.RData")
+save(list=c("chromHMM_promoter_state","promoter_meth_average","promoter_DNase_peaks","promoter_H3K27ac_peaks"),file="R_datasets/promoter_matrices.RData")

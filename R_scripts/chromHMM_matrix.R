@@ -21,4 +21,4 @@ chromHMM_TE_state[which(chromHMM_TE_state$class %in% c("DNA?","LINE?","LTR?","SI
 # Number of samples each TE is in each chromHMM state, no cancer cell lines or IMR90
 chromHMM_TE_state_noCancer = rbind(read.table("chromHMM/potential/all_chromHMM_TE_noCancer_potential_0.txt",sep='\t',header=TRUE),read.table("chromHMM/potential/all_chromHMM_other_potential_noCancer.txt",sep='\t',header=TRUE))
 
-save(list=c("chromHMM_TE_state","chromHMM_TE_state_noCancer"),file="R_scripts/chromHMM_TE_state.RData")
+save(list=c("chromHMM_TE_state","chromHMM_TE_state_noCancer"),file="R_datasets/chromHMM_TE_state.RData")
