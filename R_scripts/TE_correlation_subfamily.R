@@ -36,4 +36,8 @@ rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,ddply(subfamily_H3K2
 # Adding RNA expression 
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily_measure,RNA_TE_agnostic_subfamily[,c(3,57:58)],by="subfamily")
 
+# Adding C-GATE
+rmsk_TE_subfamily_measure$CGate = rep("no",968)
+rmsk_TE_subfamily_measure[which(rmsk_TE_subfamily_measure$subfamily %in% cgate_subfams),]$CGate = "yes"
+
 contrasts(rmsk_TE_subfamily_measure$class_update) <- contr.sum
