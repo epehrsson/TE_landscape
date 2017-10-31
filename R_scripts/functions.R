@@ -210,10 +210,10 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
            annRow=data.frame(Class=rmsk_TE_subfamily[match(rownames(test),rmsk_TE_subfamily$subfamily),]$class_update),annColors=column_colors,annCol=column_metadata,annLegend=FALSE)
 }
 
-plot_binary_heatmap_indv = function(matrix,subfamily,threshold1=0,threshold2=128,metadata,colors) #Should be candidate_1TssA_indv
+plot_binary_heatmap_indv = function(matrix,threshold1=0,threshold2=128,metadata,colors)
 {
-  test = dcast(matrix[which(matrix$subfamily == subfamily),],chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Overlap")
-  test[,setdiff(EID_metadata$Sample,colnames(test))] = rep(NA,dim(test)[1])
+  test = dcast(matrix,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Overlap")
+  test[,setdiff(metadata$Sample,colnames(test))] = rep(NA,dim(test)[1])
   test = test[,c(colnames(test)[1:7],as.vector(EID_metadata$Sample))]
   test[is.na(test)] = 0
   test[,8:134] <- +(test[,8:134] > 0) #Change this to % of length
@@ -256,5 +256,5 @@ write_subfamily_candidates = function(candidate_list,state){
   }
   
   # Write samples where candidate subfamilies are enriched in state	 
-  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",state,"_enrich.txt",sep=""))
+  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",state,"_enrich.txt",sep=""))
 }
