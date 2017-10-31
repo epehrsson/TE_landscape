@@ -1,9 +1,6 @@
 # Create matrix of TEs with age, mappability, and feature overlaps
 # See 4/19/2016, 4/25/2016, 8/24/2016, 8/25/2016, 9/20/2016, 9/21/2016, 9/27/2016, 9/28/2016, 11/4/2016, 11/5/2016, 11/7/2016, 11/18/2016, 12/16/2016, 1/31/2017, 2/1/2017, 2/3/2017, 2/6/2017, 2/9/2017, 2/10/2017, 2/25/2017, 2/27/2017, 2/28/2017, 3/5/2017, 3/8/2017, 5/14/2017, 5/15/2017, 5/16/2017, 5/17/2017, 6/7/2017, 6/14/2017, 6/15/2017, 7/21/2017, 7/24/2017, 8/1/2017, 8/2/2017
 
-library(plyr)
-library(reshape2)
-
 # RepeatMasker file restricted to TEs
 rmsk_TE = read.table(file="features/TEs/rmsk_TEother.txt",sep='\t')
 colnames(rmsk_TE) = c("chromosome","start","stop","subfamily","class","family","strand")
@@ -49,5 +46,11 @@ colnames(TE_blacklist) = c("chromosome","start","stop","subfamily","class","fami
 TE_blacklist = aggregate(data=TE_blacklist,blacklist~chromosome+start+stop+subfamily+class+family+strand,sum)
 rmsk_TE = merge(rmsk_TE,TE_blacklist,by=c("chromosome","start","stop","subfamily","class","family","strand"),all.x=TRUE)
 rm(TE_blacklist)
+
+# Add TEs overlapping VISTA enhancers
+vista_TE = read.table("features/intersect_features/vista_enhancers_TE.txt",sep='\t')
+colnames(vista_TE) = c("chromosome","start","stop","subfamily","class","family","strand","Vista_enhancers")
+rmsk_TE = merge(rmsk_TE,vista_TE,by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
+rm(vista_TE)
 
 save(rmsk_TE,file="R_datasets/rmsk_TE.RData")

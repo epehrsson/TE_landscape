@@ -8,7 +8,7 @@ rmsk_TE_class = ddply(rmsk_TE,~class_update,summarize,Count = length(Length),Fam
 rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),],~class_update,summarize,Count_noY = length(Length)),by="class_update")
 
 # Proportion of each class overlapping each feature
-rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE,~class_update,function(y) apply(y[,13:32],2,function(x) length(na.omit(x))/length(x))),by="class_update")
+rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE,~class_update,function(y) apply(y[,13:33],2,function(x) length(na.omit(x))/length(x))),by="class_update")
 
 # Number of CpGs per class
 TE_class_CpG_count = read.table("WGBS/class/TE_CpG_class.txt",sep='\t',row.names=1)

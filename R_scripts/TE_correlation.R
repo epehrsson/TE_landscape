@@ -17,6 +17,9 @@ rmsk_TE_measure[is.na(rmsk_TE_measure)] = 0
 rmsk_TE_measure[,13:32] = apply(rmsk_TE_measure[,13:32],2,function(x) {ifelse(x == 0, "no", "yes")})
 rmsk_TE_measure[,13:32] = apply(rmsk_TE_measure[,13:32],2,function(x) x <- factor(x,levels=c("no","yes")))
 
+# Convert VISTA enhancer overlap to categories
+rmsk_TE_measure$Vista_enhancers = ifelse(rmsk_TE_measure$Vista_enhancers == 0, "no", "yes")
+
 # Add number of samples in chromHMM state per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,chromHMM_TE_state[,c(1:23,25)],by=c("chromosome","start","stop","subfamily","family","class","strand"))
 
@@ -38,4 +41,4 @@ rmsk_TE_measure[which(is.na(rmsk_TE_measure$H3K27ac)),]$H3K27ac = 0
 # Add number of samples expressed per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,RNA_TE_agnostic[,c(1:7,61,63)],by=c("chromosome","start","stop","subfamily","family","class","strand"))
 
-rmsk_TE_measure = rmsk_TE_measure[,c(1:12,50,59,13:32,33:49,51:58,60:63)]
+rmsk_TE_measure = rmsk_TE_measure[,c(1:12,51,60,13:32,34:50,52:59,61:64,33)]

@@ -8,7 +8,7 @@ rmsk_TE_subfamily = ddply(rmsk_TE,~subfamily+family+class_update,summarize,Count
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,ddply(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),],~subfamily+family+class_update,summarize,Count_noY = length(Length)),by=c("subfamily","family","class_update"))
 
 # Proportion of each subfamily in each feature
-rmsk_TE_subfamily = merge(rmsk_TE_subfamily,ddply(rmsk_TE,~subfamily,function(y) apply(y[,13:32],2,function(x) length(na.omit(x))/length(x))),by="subfamily")
+rmsk_TE_subfamily = merge(rmsk_TE_subfamily,ddply(rmsk_TE,~subfamily,function(y) apply(y[,13:33],2,function(x) length(na.omit(x))/length(x))),by="subfamily")
 
 # Number of CpGs per subfamily
 TE_subfamily_CpG_count = read.table("WGBS/subfamily/TE_CpG_subfamily.txt",sep='\t')
