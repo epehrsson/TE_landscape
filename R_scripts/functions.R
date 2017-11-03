@@ -108,8 +108,14 @@ correlate_spearman = function(matrix, indpt_var, response_vars){ #For all TEs, c
 }
 
 # Enrichment
-enrichment_proportion = function(matrix,enrichment,threshold){
+enrichment_proportion = function(matrix,enrichment,threshold,metric){
   #Cannot process more than one state at a time
+  if (metric == "chromHMM"){
+    metadata_matrix = metadata
+  } else {
+    metadata_matrix = metadata[which(!is.na(metadata[[metric]])),]
+  }
+
   categories = c("Age","Anatomy","Cancer","Germline","Group","Type")
   proportions = list()
   
@@ -122,7 +128,7 @@ enrichment_proportion = function(matrix,enrichment,threshold){
     proportions[[i]] = aggregate_matrix
   }
   proportions = ldply(proportions)
-  proportions$Proportion = apply(proportions,1,function(x) as.numeric(x[3])/length(metadata[which(metadata[,x[4]] == x[2]),x[4]]))
+  proportions$Proportion = apply(proportions,1,function(x) as.numeric(x[3])/length(metadata_matrix[which(metadata_matrix[,x[4]] == x[2]),x[4]]))
   
   return(proportions)
 }
