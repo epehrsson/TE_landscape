@@ -229,10 +229,15 @@ plot_binary_heatmap_indv = function(matrix,threshold1=0,threshold2=128,metadata,
   aheatmap(test[which(apply(test,1,sum) > threshold1 & apply(test,1,sum) < threshold2),],Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","cornflowerblue"),breaks=0.5,legend=FALSE,labCol=NA,annCol=metadata,annColors=colors,border_color="NA")
 }
 
-write_subfamily_candidates = function(candidate_list,state){
+write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   # See 7/11/2016, 8/29/2016, 9/29/2016, 11/22/2016, 11/27/2016, 5/23/2017, 5/24/2017, 5/29/2017, 5/30/2017, 6/15/2017
   
   stateX = paste("X",state,sep="")
+  if (state == "8_ZNF/Rpts"){
+    print_state = "8_ZNF.Rpts"
+  } else {
+    print_state = state
+  }
   
   # Statistics for candidate subfamilies
   test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily %in% candidate_list & subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state),],.(subfamily),summarise,Min = min(Members),Max = max(Members),Median = median(Members))
@@ -249,20 +254,22 @@ write_subfamily_candidates = function(candidate_list,state){
   print(test[,c(1,6:7,8,9,5,2:4)])
   
   # Write enriched subfamily coordinates
-  if (state %in% chromHMM_states){
-    # TEs ever in state, by subfamily	 
-    lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] > 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",state,".bed",sep="")))
-    # TEs never in state, by subfamily	 
-    lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] == 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",state,".bed",sep="")))
-  } else {
-    # TEs ever in state, by subfamily	 
-    lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] > 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",state,".bed",sep="")))
-    # TEs never in state, by subfamily	 
-    lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] == 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",state,".bed",sep="")))
+  if (print_coords == TRUE){
+    if (state %in% chromHMM_states){
+      # TEs ever in state, by subfamily	 
+      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] > 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",print_state,".bed",sep="")))
+      # TEs never in state, by subfamily	 
+      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] == 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",print_state,".bed",sep="")))
+    } else {
+      # TEs ever in state, by subfamily	 
+      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] > 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",print_state,".bed",sep="")))
+      # TEs never in state, by subfamily	 
+      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] == 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",print_state,".bed",sep="")))
+    }
   }
   
   # Write samples where candidate subfamilies are enriched in state	 
-  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",state,"_enrich.txt",sep=""))
+  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enrich.txt",sep=""))
 }
 
 print_individual_TEs = function(subfamily_state_sample){
