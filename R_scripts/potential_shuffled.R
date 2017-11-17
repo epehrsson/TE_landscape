@@ -1,7 +1,5 @@
 # Potential for shuffled matrices
  
-library(reshape2)
-
 load("R_datasets/shuffled_chromHMM.RData")
 load("R_datasets/shuffled_WGBS.RData")
 load("R_datasets/shuffled_DNase.RData")

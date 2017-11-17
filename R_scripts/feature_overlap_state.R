@@ -2,8 +2,8 @@
 # Currently with IMR90 for methylation
 # See 9/20/2016, 9/28/2016, 12/14/2016, 2/9/2017, 6/6/2017, 6/14/17, 7/24/17, 8/1/2017
 
-source("R_scripts/TE_correlation.R")
-source("R_scripts/potential.R")
+#source("R_scripts/TE_correlation.R")
+#source("R_scripts/potential.R")
 
 # For TEs overlapping each feature, mean number of samples in state
 feature_state_mean = apply(rmsk_TE_measure[,15:34],2,function(y) 

@@ -1,6 +1,6 @@
 # Proportion of each state in TEs by sample grouping
 
-source("R_scripts/proportion.R")
+#source("R_scripts/proportion.R")
 
 # chromHMM
 # Proportion of each chromHMM state in TEs by sample

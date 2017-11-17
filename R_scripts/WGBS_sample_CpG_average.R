@@ -1,9 +1,6 @@
 # Average methylation level across CpGs by sample and feature
 # See 5/25/2016, 9/16/2016, 12/15/2016, 5/11/2017, 5/12/2017, 7/21/2017, 8/7/2017
 
-library(reshape2)
-library(plyr)
-
 # Import average methylation of CpGs (all, in TEs, not in TEs)
 CpG_meth_average = rbind(read.table("WGBS/all_CpG_Meth_average_new.txt",header=TRUE),read.table("WGBS/CpG_noTE_Meth_average.txt",header=TRUE),read.table("WGBS/CpG_TE_Meth_average.txt",header=TRUE))
 rownames(CpG_meth_average) = c("All","noTE","TE")

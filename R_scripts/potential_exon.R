@@ -1,8 +1,6 @@
 # Expression potential for exons
 
-library(reshape2)
-
-load("R_datasets/rna.RData")
+#load("R_datasets/rna.RData")
 
 # Remove exons on non-standard chromosomes and reduce matrix to unique exons
 RNA_exon_unique = unique(RNA_refseq_exon_agnostic[which(RNA_refseq_exon_agnostic$chromosome %in% standard_chromosomes),c(1:3,7:61)])

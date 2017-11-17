@@ -2,10 +2,10 @@
 # See 4/27/2016, 5/20/2016, 6/27/2016, 9/17/2016, 2/3/2017, 2/6/2017, 3/2/2017, 5/18/2017, 6/5/2017, 7/4/2017
 # See 5/9/2016, 6/2/2016, 6/27/2016, 8/24/2016, 9/7/2016, 9/17/2016, 9/28/2016, 11/27/2016, 12/13/2016, 12/15/2016, 1/13/2017, 2/6/2017, 3/2/2017, 3/3/2017, 5/14/2017, 5/18/2017, 7/21/2017, 7/24/2017, 8/1/2017
 
-source("R_scripts/TE_class_stats.R")
+#source("R_scripts/TE_class_stats.R")
 
 # chromHMM
-load("R_datasets/chromHMM_TE_state.RData")
+#load("R_datasets/chromHMM_TE_state.RData")
 
 chromHMM_TE_state_class = ddply(chromHMM_TE_state,~class_update,function(x) sample_distribution(x,c(8:22),127))
 
@@ -25,7 +25,7 @@ class_state_sample[which(metadata[match(class_state_sample$Sample,metadata$Sampl
 class_state_sample$State = factor(class_state_sample$State,levels=chromHMM_states)                                                                                                    
 
 # WGBS
-load("R_datasets/TE_meth_average.RData")
+#load("R_datasets/TE_meth_average.RData")
 
 TE_meth_average_class = ddply(TE_meth_average,~class_update,function(x) sample_distribution(x,c(46:49),37))
 
@@ -54,7 +54,7 @@ TE_meth_average_state_class = melt(TE_meth_average_state_class)
 colnames(TE_meth_average_state_class) = c("Class","Sample","State","Proportion")
 
 # DNase
-load("R_datasets/TE_DNase_peaks.RData")
+#load("R_datasets/TE_DNase_peaks.RData")
 
 colnames(TE_DNase_peaks)[62] = "DNase"
 potential_TE_DNase_class = ddply(TE_DNase_peaks,~class_update,function(x) sample_distribution(x,62,53))
@@ -73,7 +73,7 @@ colnames(TE_DNase_peaks_class) = c("Class","Sample","Proportion")
 TE_DNase_peaks_class$State = rep("DNase",dim(TE_DNase_peaks_class)[1])
 
 # H3K27ac
-load("R_datasets/TE_H3K27ac_peaks.RData")
+#load("R_datasets/TE_H3K27ac_peaks.RData")
 
 colnames(TE_H3K27ac_peaks)[107] = "H3K27ac"
 potential_TE_H3K27ac_class = ddply(TE_H3K27ac_peaks,~class_update,function(x) sample_distribution(x,107,98))
@@ -92,7 +92,7 @@ colnames(TE_H3K27ac_peaks_class) = c("Class","Sample","Proportion")
 TE_H3K27ac_peaks_class$State = rep("H3K27ac",dim(TE_H3K27ac_peaks_class)[1])
 
 # Expression
-load("R_datasets/rna.RData")
+#load("R_datasets/rna.RData")
 
 RNA_potential_class = ddply(RNA_TE_agnostic,~class_update,function(x) sample_distribution(x,61,52))
 

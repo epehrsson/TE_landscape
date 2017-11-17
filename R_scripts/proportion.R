@@ -1,8 +1,8 @@
 # Proportion of feature in each state
 # See 4/18/2016, 4/20/2016, 4/25/2016, 4/26/2016, 4/27/2016, 5/10/2016, 5/25/2016, 6/27/2016, 9/8/2016, 9/25/2016, 9/27/2016, 2/3/2017, 2/10/2017, 3/8/2017, 5/8/2017, 5/24/2017, 5/30/2017, 6/5/2017, 7/4/2017, 7/24/2017, 8/1/2017, 8/3/2017, 8/7/2017
 
-library(plyr)
-library(reshape2)
+#library(plyr)
+#library(reshape2)
 
 # chromHMM
 # Genome
@@ -70,7 +70,7 @@ mnemonics_states_all = rbind(mnemonics_states_all,states_features_noTE[,c(1:2,5)
 mnemonics_states_all$State = factor(mnemonics_states_all$State,levels=chromHMM_states[c(1:3,6:7,4:5,8,10:12,9,13:14,15)])
 
 # WGBS proportion 
-source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
+#source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
 
 # Proportion of Refseq feature and TE CpGs hypomethylated per sample
 CpG_Meth = as.data.frame(rbind(colSums(all_CpG_meth),colSums(TE_CpG_meth)))
@@ -82,7 +82,7 @@ CpG_Meth = melt(as.matrix(CpG_Meth/rowSums(CpG_Meth)))
 colnames(CpG_Meth) = c("Cohort","State","Proportion")
 
 # DNase proportion
-source("~/TE_landscape/R_scripts/DNase_overlap.R")
+#source("~/TE_landscape/R_scripts/DNase_overlap.R")
 
 # Proportion of RefSeq features overlapping DNase peaks, averaged
 DNase_features = merge(DNase_features,aggregate(data=mnemonics_states_features_noTE,Bases~Cohort+Sample,sum),by=c("Sample","Cohort"))
@@ -97,7 +97,7 @@ DNase_proportion$Proportion = as.numeric(DNase_proportion$Total_width_in_feature
 DNase_proportion$State = rep("DNase",dim(DNase_proportion)[1])
 
 # H3K27ac proportion
-source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
+#source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
 
 # Proportion of RefSeq features overlapping H3K27ac peaks, averaged
 H3K27ac_features = merge(H3K27ac_features,aggregate(data=mnemonics_states_features_noTE,Bases~Cohort+Sample,sum),by=c("Sample","Cohort"))

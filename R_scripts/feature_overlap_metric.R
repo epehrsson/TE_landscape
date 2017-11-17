@@ -1,6 +1,6 @@
 # Average TE metrics by Refseq feature overlap
 
-source("R_scripts/TE_correlation.R")
+#source("R_scripts/TE_correlation.R")
 
 # For TEs overlapping each feature, metric average
 feature_metric_mean = melt(as.matrix(apply(rmsk_TE_measure[,15:34],2,function(y) 

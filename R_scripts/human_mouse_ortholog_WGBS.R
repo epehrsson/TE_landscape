@@ -1,8 +1,8 @@
 # Comparison of human-mouse TE ortholog methylation and chromHMM state
 # See 5/11/2017, 5/12/2017, 5/22/2017, 5/29/2017, 5/30/2017, 7/21/2017, 7/26/2017, 7/31/2017, 8/1/2017, 
 
-load("R_datasets/TE_meth_average.RData")
-source("R_scripts/WGBS_subfamily_enrichment_TE.R")
+#load("R_datasets/TE_meth_average.RData")
+#source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 
 # Corresponding human-mouse samples
 human_mouse_samples = read.table("Mouse/human_mouse_samples.txt",sep='\t')

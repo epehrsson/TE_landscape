@@ -2,12 +2,12 @@
 # See 4/27/2016, 4/28/2016, 5/4/2016, 5/24/2016, 6/29/2016, 7/6/2016, 7/7/2016, 7/8/2016, 7/10/2016, 7/11/2016, 8/28/2016, 8/29/2016, 9/8/2016, 9/9/2016, 9/17/2016, 9/18/2016, 9/27/2016, 9/29/2016, 11/9/2016, 11/10/2016, 11/15/2016, 11/16/2016, 11/22/2016, 11/27/2016, 
 # 1/13/2017, 1/19/2017, 1/20/2017, 1/26/2017, 2/6/2017, 2/9/2017, 2/10/2017, 2/13/2017, 2/14/2017, 2/16/2017, 2/21/2017, 3/16/2017, 5/15/2017, 5/16/2017, 5/23/2017, 5/24/2017, 5/29/2017, 5/30/2017, 6/5/17, 6/6/17, 6/7/17, 6/9/17, 6/15/2017, 7/4/2017, 7/21/2017, 7/23/2017, 7/24/2017, 7/26/2017, 8/2/2017
 
-source("R_scripts/TE_subfamily_stats.R")
-source("R_scripts/WGBS_sample_CpG_state.R")
-source("R_scripts/DNase_overlap.R")
-source("R_scripts/H3K27ac_overlap.R")
-load("R_datasets/TE_DNase_peaks.RData")
-load("R_datasets/TE_H3K27ac_peaks.RData")
+#source("R_scripts/TE_subfamily_stats.R")
+#source("R_scripts/WGBS_sample_CpG_state.R")
+#source("R_scripts/DNase_overlap.R")
+#source("R_scripts/H3K27ac_overlap.R")
+#load("R_datasets/TE_DNase_peaks.RData")
+#load("R_datasets/TE_H3K27ac_peaks.RData")
 
 THRESHOLD_IJK_BASE = 600
 THRESHOLD_IK_BASE = 5000

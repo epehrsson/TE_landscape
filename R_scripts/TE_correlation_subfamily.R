@@ -1,8 +1,8 @@
 # Correlation of TE subfamily features with number of samples enriched in state
 
-source("R_scripts/TE_subfamily_stats.R")
-source("R_scripts/subfamily_enrichment.R")
-load("R_datasets/rna.RData")
+#source("R_scripts/TE_subfamily_stats.R")
+#source("R_scripts/subfamily_enrichment.R")
+#load("R_datasets/rna.RData")
 
 # Adding number of samples enriched in each state
 rmsk_TE_subfamily_measure = merge(rmsk_TE_subfamily,dcast(subfamily_state_sample_counts,class_update+family+subfamily~State,value.var=c("V1"))[,3:24],by="subfamily",all.x=TRUE)

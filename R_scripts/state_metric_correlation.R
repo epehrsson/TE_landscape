@@ -1,7 +1,7 @@
 # Spearman correlation between states and metrics
 # Individual TE level
 
-source("R_scripts/TE_correlation.R")
+#source("R_scripts/TE_correlation.R")
 
 # Correlation between TE metrics and number of samples in state
 correlate_TE_state = rbind(correlate_spearman(rmsk_TE_measure,"JC_distance",c(35:63)), 

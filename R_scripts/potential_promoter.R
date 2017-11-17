@@ -1,7 +1,5 @@
 # Potential for promoters
 
-library(reshape2)
-
 load("R_datasets/promoter_matrices.RData")
 
 # chromHMM potential

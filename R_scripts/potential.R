@@ -1,10 +1,8 @@
 # Potential 
 # See 4/25/2016, 4/26/2016, 4/27/2016, 5/3/2016, 5/11/2016, 5/12/2016, 6/2/2016, 6/27/2016, 7/11/2016, 8/25/2016, 8/26/2016, 8/30/2016, 9/16/2016, 9/20/2016, 9/28/2016, 12/15/2016, 2/3/2017, 2/6/2017, 5/10/2017, 6/14/2017, 7/22/2017, 8/1/2017, 8/2/2017, 8/3/2017
 
-library(reshape2)
-
 # chromHMM potential
-load("R_datasets/chromHMM_TE_state.RData")
+#load("R_datasets/chromHMM_TE_state.RData")
 
 # All samples
 chromHMM_TE_state_dist = sample_distribution(chromHMM_TE_state,c(8:22),127)
@@ -30,7 +28,7 @@ state_sample_count[which(metadata[match(state_sample_count$Sample,metadata$Sampl
 state_sample_count$State = factor(state_sample_count$State,levels=chromHMM_states)
 
 # WGBS potential
-load("R_datasets/TE_meth_average.RData")
+#load("R_datasets/TE_meth_average.RData")
 
 # Cumulative distribution of methylation states and statistics
 TE_meth_average_category = sample_distribution(TE_meth_average,c(46:49),37)
@@ -53,7 +51,7 @@ TE_meth_average_state_long = melt(as.matrix(TE_meth_average_state))
 colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")
 
 # DNase potential
-load("R_datasets/TE_DNase_peaks.RData")
+#load("R_datasets/TE_DNase_peaks.RData")
 
 # Distribution of TEs overlapping DNase peaks
 TE_DNase_potential = sample_distribution(TE_DNase_peaks,62,53)
@@ -82,7 +80,7 @@ TE_DNase_peaks_sample$Sample = rownames(TE_DNase_peaks_sample)
 TE_DNase_peaks_sample$State = rep("DNase",53)
 
 # H3K27ac potential
-load("R_datasets/TE_H3K27ac_peaks.RData")
+#load("R_datasets/TE_H3K27ac_peaks.RData")
 
 # Distribution of TEs overlapping H3K27ac peaks
 TE_H3K27ac_potential = sample_distribution(TE_H3K27ac_peaks,107,98)
@@ -111,7 +109,7 @@ TE_H3K27ac_peaks_sample$Sample = rownames(TE_H3K27ac_peaks_sample)
 TE_H3K27ac_peaks_sample$State = rep("H3K27ac",98)
 
 # RNA-seq potential
-load("R_datasets/rna.RData")
+#load("R_datasets/rna.RData")
 
 # Distribution of TEs with RPKM >1
 RNA_potential = sample_distribution(RNA_TE_agnostic,61,52)

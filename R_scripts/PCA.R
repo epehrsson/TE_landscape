@@ -1,7 +1,7 @@
 # PCA on binary matrices of TEs overlapping DNase or H3K27ac by sample
 
-load("R_datasets/TE_DNase_peaks.RData")
-load("R_datasets/TE_H3K27ac_peaks.RData")
+#load("R_datasets/TE_DNase_peaks.RData")
+#load("R_datasets/TE_H3K27ac_peaks.RData")
 
 # Configure matrices
 TE_DNase_binary = TE_DNase_peaks[,1:60]
