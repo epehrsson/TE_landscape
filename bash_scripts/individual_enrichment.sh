@@ -6,8 +6,8 @@ input_matrix=$1 #Three columns: subfamily, sample, state
 combined_output=$2
 
 # Get individual TEs in the state from candidate subfamilies, filtered to enriched samples
-python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_TE_sorted.txt $combined_output\_temp
-python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_other_sorted.txt $combined_output\_temp
+python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_TE_sorted.txt $combined_output\_temp 10 8
+python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_other_sorted.txt $combined_output\_temp 10 8
 
 # Filter to subfamily-sample-state pairs
 while read subfamily sample state
