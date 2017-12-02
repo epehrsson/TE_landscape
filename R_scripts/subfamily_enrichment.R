@@ -9,13 +9,6 @@
 #load("R_datasets/TE_DNase_peaks.RData")
 #load("R_datasets/TE_H3K27ac_peaks.RData")
 
-THRESHOLD_IJK_BASE = 600
-THRESHOLD_IK_BASE = 5000
-THRESHOLD_IJK_CPG = 6
-THRESHOLD_IK_CPG = 25
-THRESHOLD_LOR = 1.5
-THRESHOLD_PC = 0.01
-
 # chromHMM
 # Number of bp in each subfamily x sample x state
 subfamily_state_sample = read.table("chromHMM/subfamily/subfamily_state_sample.txt",sep='\t')
@@ -90,7 +83,7 @@ colnames(subfamily_CpG_meth)[7] = "CpG_ik"
 subfamily_CpG_meth$CpG_jk = apply(subfamily_CpG_meth,1,function(x) all_CpG_meth[x[2],match(x[3],colnames(all_CpG_meth))])
 
 # Enrichment of state CpGs in sample x subfamily
-subfamily_CpG_meth$Enrichment = log2((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/56434896))
+subfamily_CpG_meth$Enrichment = log2((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/ALL_CPGS))
 
 # Proportion of all state CpGs in subfamily
 subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_jk
