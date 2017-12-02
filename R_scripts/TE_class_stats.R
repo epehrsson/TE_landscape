@@ -18,8 +18,8 @@ rmsk_TE_class$CpGs = TE_class_CpG_count[as.vector(rmsk_TE_class$class_update),]
 rm(TE_class_CpG_count)
 
 # Proportion of CpGs (all, overlapping TEs) in each class
-rmsk_TE_class$Percent_TE_CpGs = rmsk_TE_class$CpGs/28373958
-rmsk_TE_class$Percent_all_CpGs = rmsk_TE_class$CpGs/56434896
+rmsk_TE_class$Percent_TE_CpGs = rmsk_TE_class$CpGs/TE_CPGS
+rmsk_TE_class$Percent_all_CpGs = rmsk_TE_class$CpGs/ALL_CPGS
 
 # Number of CpGs per TE
 TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
