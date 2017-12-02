@@ -130,6 +130,26 @@ variable_labels = c("Mappability","Jukes-Cantor evolutionary distance","Length (
 names(variable_labels) = c("mappability","JC_distance","Length","CpGs","CpGs_per_length")
 ```
 
+## Load features sizes
+
+```{r load features sizes}
+# Genome
+hg19_genome = read.table("raw_data/hg19.genome",sep='\t',header=TRUE)
+GENOME_WIDTH = sum(as.numeric(hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes),]$size))
+
+# CpGs
+ALL_CPGS = 56434896
+TE_CPGS = 28373958
+
+# TEs 
+NUM_TE = dim(rmsk_TE)[1]
+NUM_TE_noY = dim(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),])[1]
+NUM_TE_WGBS = dim(TE_meth_average)[1]
+  
+# awk '{sum+=$3-$2}END{print sum}' features/TEs/merge/rmsk_TEother_merge.txt
+MERGED_TE_WIDTH = 1389947349
+```
+
 ## Calculate TE class and subfamily stats
 
 ```{r calculate TE stats}
@@ -143,6 +163,31 @@ source("R_scripts/TE_subfamily_stats.R")
 source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
 source("~/TE_landscape/R_scripts/DNase_overlap.R")
 source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
+```
+
+# Basic TE statistics
+
+```{r basic TE stats}
+# Number of TEs
+NUM_TE
+
+# Proportion of TEs on chrY
+NUM_TE-NUM_TE_noY
+(NUM_TE-NUM_TE_noY)/NUM_TE
+
+# Total bp in TEs
+MERGED_TE_WIDTH
+
+# % of genome
+MERGED_TE_WIDTH/GENOME_WIDTH
+
+# Total TE bases (redundant)
+sum(rmsk_TE$Length)-MERGED_TE_WIDTH
+sum(rmsk_TE$Length)/MERGED_TE_WIDTH
+
+# % CpGs overlapping TEs
+TE_CPGS
+TE_CPGS/ALL_CPGS
 ```
 
 ## Figure 1
@@ -167,6 +212,15 @@ grid.arrange(a,b,legend, nrow = 2,layout_matrix = rbind(c(1,2),c(3,3)),heights=c
 ```{r analysis Fig 1}
 mean(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
 sd(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
+```
+
+# VISTA enhancers
+
+```{r vista enhancers}
+# wc -l features/vista_enhancers/vista_enhancers_human.bed
+# cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2, $3}' - | sort | uniq | wc -l
+
+355/934
 ```
 
 ## Supplementary Figure 1
@@ -202,7 +256,13 @@ grid.arrange(a,b,c,d, nrow=3,layout_matrix=rbind(c(1,3),c(2,3),c(4,4)),heights=c
 # State/peak lengths analysis
 
 ```{r analysis Fig S1}
-ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length))
+# Length of TEs
+min(rmsk_TE$Length)
+median(rmsk_TE$Length)
+max(rmsk_TE$Length)
+
+# Length of states
+ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length))
 ```
 
 ## Supplementary Figure 2
@@ -228,8 +288,10 @@ Figure 2. Potential for individual TEs to be in each epigenetic state. (A) Boxpl
 source("R_scripts/potential.R")
 
 combine_boxplot = rbind(state_sample_count[,c(1:2,4)],TE_meth_average_state_long,TE_DNase_peaks_sample[,2:4],TE_H3K27ac_peaks_sample[,2:4],RNA_RPKM_sample[,2:4])
+aggregate(data=combine_boxplot,Proportion~State,mean)
 combine_stats = rbind(chromHMM_TE_state_dist_stats,TE_meth_average_category_stats,TE_DNase_potential_stats,TE_H3K27ac_potential_stats,RNA_potential_stats)
 combine_stats$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac","Expression"),levels=c("chromHMM","WGBS","DNase","H3K27ac","Expression"))
+combine_stats
 
 a = ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot$State)),labels=rev(all_state_labels)) + geom_point(data=combine_stats,aes(x=State,y=Proportion_ever),color="red",size=3)
 
@@ -240,6 +302,17 @@ c = ggplot(chromHMM_TE_state_cum,aes(x=Sample_proportion,y=Proportion,color=Stat
 legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
 
 grid.arrange(a,b,c,legend, nrow = 3, layout_matrix=rbind(c(1,2),c(1,3),c(4,4)),heights=c(0.4,0.4,0.2))
+```
+
+## Basic TE statistics
+
+```{r}
+# % TEs overlapping CpGs
+NUM_TE_WGBS
+NUM_TE_WGBS/NUM_TE
+min(TE_meth_average$CpGs)
+median(TE_meth_average$CpGs)
+max(TE_meth_average$CpGs)
 ```
 
 ## Number of TEs ever in composite states
@@ -266,12 +339,17 @@ sum(apply(chromHMM_TE_state[c(16,20,21)],1,function(x) sum(x > 0)) > 0)
 mean(apply(RNA_TE_agnostic[,9:60],1,function(x) sum(x > 0)))
 
 hist(RNA_TE_agnostic$Expressed_samples)
+table(RNA_TE_agnostic$Expressed_samples)
+table(RNA_TE_agnostic$Expressed_samples)/dim(RNA_TE_agnostic)[1]
 
 # Maximum expression
+hist(RNA_TE_agnostic$Max_expression)
 median(RNA_TE_agnostic$Max_expression)
 median(RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),]$Max_expression)
 max(RNA_TE_agnostic$Max_expression)
 tail(RNA_TE_agnostic[order(RNA_TE_agnostic$Max_expression),],n=20)
+
+cor.test(RNA_TE_agnostic$Max_expression,RNA_TE_agnostic$Expressed_samples,method="spearman")
 ```
 
 ## Supplementary Figure 3
@@ -403,6 +481,7 @@ test1 = ddply(compare_marks_all[which(!is.na(compare_marks_all$DNase) & !is.na(c
 test2 = merge(ddply(test1,.(chromHMM),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),ddply(test1[which(test1$DNase == "yes" & test1$H3K27ac == "yes"),],.(chromHMM),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),by="chromHMM")
 test2$TE_sample_proportion = test2$TE_sample.y/test2$TE_sample.x
 test2$TE_sample_norm_proportion = test2$TE_sample_norm.y/test2$TE_sample_norm.x
+test2
 
 # Proportion of TEs x sample in each WGBS state also overlapping DNase peak and H3K27ac peak
 test1 = ddply(compare_marks_all[which(!is.na(compare_marks_all$DNase) & !is.na(compare_marks_all$H3K27ac) & !is.na(compare_marks_all$WGBS)),],.(WGBS,DNase,H3K27ac),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm))
@@ -429,6 +508,7 @@ combine_shuffled_stats = rbind(shuffled_chromHMM_potential_stats,shuffled_WGBS_a
 combine_shuffled_stats$Group = factor(c(rep("chromHMM",150),rep("WGBS",40),rep("DNase",10),rep("H3K27ac",10)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combine_shuffled_stats = melt(combine_shuffled_stats,id.vars=c("State","Group","Iteration"))
 colnames(combine_shuffled_stats)[4:5] = c("Metric","Value")
+combine_shuffled_stats
 
 combine_stats_long = melt(combine_stats,id.vars=c("State","Group"))
 colnames(combine_stats_long)[3:4] = c("Metric","Value")
@@ -442,6 +522,7 @@ combine_cum_prom = rbind(chromHMM_promoter_state_cum,promoter_meth_average_categ
 combine_stats_prom = rbind(chromHMM_promoter_state_dist_stats,promoter_meth_average_category_stats,promoter_DNase_potential_stats,promoter_H3K27ac_potential_stats)
 combine_stats_prom$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac"),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combine_boxplot_prom = rbind(promoter_state_sample_count[,c(1:2,4)],promoter_meth_average_state_long,promoter_DNase_peaks_sample[,2:4],promoter_H3K27ac_peaks_sample[,2:4])
+combine_stats_prom
 
 c = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank()) + labs(y="% of promoters in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot_prom$State))) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2)
 
@@ -457,6 +538,21 @@ legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=Sta
 grid.arrange(a,b,c,d,e,f,legend, nrow = 5, ncol=2, layout_matrix=cbind(c(1,3,3,4,4),c(2,5,6,6,7)),heights=c(0.5,0.1,0.15,0.1,0.15))
 ```
 
+# Basic potential control statistics
+
+```{r}
+# Number of unique promoters and exons
+dim(chromHMM_promoter_state)[1]
+dim(RNA_exon_unique)[1]
+
+# Promoter CpG stats
+promoter_CpG_count = read.table("WGBS/Refseq_promoters/refseq_promoter_unique_CpG_count.txt",sep='\t')
+dim(promoter_CpG_count)[1]
+min(promoter_CpG_count$V5)
+median(promoter_CpG_count$V5)
+max(promoter_CpG_count$V5)
+```
+
 # Exon expression control analysis
 
 ```{r analysis Fig S4}
@@ -464,12 +560,25 @@ grid.arrange(a,b,c,d,e,f,legend, nrow = 5, ncol=2, layout_matrix=cbind(c(1,3,3,4
 mean(apply(RNA_exon_unique[,5:56],1,function(x) sum(x > 0)))
 
 hist(RNA_exon_unique$Expressed_samples)
+table(RNA_exon_unique$Expressed_samples)
+table(RNA_exon_unique$Expressed_samples)/dim(RNA_exon_unique)[1]
 
 # Maximum expression
+hist(RNA_exon_unique$Max_expression)
 median(RNA_exon_unique$Max_expression)
 median(RNA_exon_unique[which(RNA_exon_unique$Expressed_samples > 0),]$Max_expression)
 max(RNA_exon_unique$Max_expression)
 tail(RNA_exon_unique[order(RNA_exon_unique$Max_expression),],n=20)
+
+# Average TE vs. exon expression
+TE_express = unlist(RNA_TE_agnostic[,9:60])
+median(TE_express)
+median(TE_express[which(TE_express > 1)])
+rm(TE_express)
+exon_express = unlist(RNA_exon_unique[,5:56])
+median(exon_express)
+median(exon_express[which(exon_express > 1)])
+rm(exon_express)
 ```
 
 ## Supplementary Figure 5
@@ -483,6 +592,7 @@ combine_cum = rbind(TE_meth_average_category_cum,TE_DNase_potential_cum,TE_H3K27
 combine_boxplot_noCancer_IMR90 = droplevels(combine_boxplot[which(metadata[match(combine_boxplot$Sample,metadata$Sample),]$Exclude == "Include"),])
 combine_stats_noCancer_IMR90 = rbind(chromHMM_TE_state_dist_noCancer_stats,TE_meth_average_noIMR90_category_stats,TE_DNase_potential_noCancer_stats,TE_H3K27ac_potential_noCancer_stats,RNA_potential_noCancer_stats)
 combine_stats_noCancer_IMR90$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac","Expression"),levels=c("chromHMM","WGBS","DNase","H3K27ac","Expression"))
+combine_stats_noCancer_IMR90
 
 a = ggplot(TE_meth_average_state_long,aes(x=Sample,y=Proportion,fill=State)) + geom_bar(stat="identity") + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank()) + scale_fill_manual(values=meth_colors,guide=FALSE) + ylab("Proportion of TEs in methylation state")
 
@@ -578,11 +688,23 @@ shuffled_WGBS_states$Iteration = factor(unlist(lapply(seq(1,10,1),function(y) re
 ggplot(shuffled_WGBS_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of shuffled TEs") + xlab("Number of methylation states")
 ```
 
-## Correlation of TE length with number of states ever, max in one sample
+# Number of states per TE x sample
 
-```{r analysis Fig S6a}
-cor.test((chromHMM_TE_state$stop-chromHMM_TE_state$start),chromHMM_TE_state$States,method="spearman")
-cor.test(chromHMM_TE_state$stop-chromHMM_TE_state$start,chromHMM_TE_state$Max_states_intra,method="spearman")
+```{r}
+# chromHMM
+test = merge(read.table("chromHMM/all_chromHMM_other_state_counts.txt",sep='\t'),read.table("chromHMM/all_chromHMM_TE_state_counts.txt",sep='\t'),by="V1")
+test$Total = test$V2.x+test$V2.y
+test$Proportion = test$Total/sum(test$Total)
+test
+# Proportion of those with >1 state in only 2 states
+test$Proportion[2]/sum(test$Proportion[2:15])
+
+# WGBS
+test = read.table("WGBS/TE_CpG_state_counts.txt",sep='\t')
+test$Proportion = test$V2/sum(test$V2)
+test
+# Proportion of those with >1 state in only 2 states
+test$Proportion[2]/sum(test$Proportion[2:4])
 ```
 
 # Stats for number of chromHMM and WGBS states per TE, overall and by class
@@ -590,21 +712,59 @@ cor.test(chromHMM_TE_state$stop-chromHMM_TE_state$start,chromHMM_TE_state$Max_st
 ```{r analysis Fig S6b}
 mean(chromHMM_TE_state$Max_states_intra)
 sd(chromHMM_TE_state$Max_states_intra)
+ddply(chromHMM_TE_state,.(class_update),summarise,Mean=mean(Max_states_intra),SD=sd(Max_states_intra))
+
 mean(chromHMM_TE_state$States)
 sd(chromHMM_TE_state$States)
 ddply(chromHMM_TE_state,.(class_update),summarise,Mean=mean(States),SD=sd(States))
+
 mean(TE_meth_average$States)
 sd(TE_meth_average$States)
 ddply(TE_meth_average,.(class_update),summarise,Mean=mean(States),SD=sd(States))
+
+# TEs with >1 max states in a sample
+dim(chromHMM_TE_state[which(chromHMM_TE_state$Max_states_intra > 1),])[1]
+dim(chromHMM_TE_state[which(chromHMM_TE_state$Max_states_intra > 1),])[1]/NUM_TE
 ```
 
-# TEs always in the 5_TxWk state
+## Correlation of TE length with number of states ever, max in one sample
+
+```{r analysis Fig S6a}
+cor.test((chromHMM_TE_state$stop-chromHMM_TE_state$start),chromHMM_TE_state$States,method="spearman")
+cor.test(chromHMM_TE_state$stop-chromHMM_TE_state$start,chromHMM_TE_state$Max_states_intra,method="spearman")
+```
+
+# TEs always in single state (update for chrY!)
 
 ```{r analysis Fig S6c}
-chromHMM_TE_state[which(chromHMM_TE_state$X5_TxWk == chromHMM_TE_state$Tissues),]
+# Methylation states
+apply(TE_meth_average[,46:49],2,function(x) dim(TE_meth_average[which(x == 37),])[1])
+apply(TE_meth_average[,46:49],2,function(x) dim(TE_meth_average[which(x == 37),])[1])/NUM_TE_WGBS
+apply(TE_meth_average[,50:53],2,function(x) dim(TE_meth_average[which(x == 36),])[1])
+apply(TE_meth_average[,50:53],2,function(x) dim(TE_meth_average[which(x == 36),])[1])/NUM_TE_WGBS
 
+# DNase/H3K27ac
+dim(TE_DNase_peaks[which(TE_DNase_peaks$Samples == 53),])[1]
+dim(TE_DNase_peaks[which(TE_DNase_peaks$Samples == 53),])[1]/NUM_TE
+dim(TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$Samples == 98),])[1]
+dim(TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$Samples == 98),])[1]/NUM_TE
+
+# chromHMM states
+apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x == chromHMM_TE_state$Tissues),])[1])
+apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x == chromHMM_TE_state$Tissues),])[1])/NUM_TE
+
+# 5_TxWk
+chromHMM_TE_state[which(chromHMM_TE_state$X5_TxWk == chromHMM_TE_state$Tissues),c(1:7,26)]
 # Shuffled TE control
-lapply(shuffled_chromHMM_potential,function(x) dim(x[which(x$X5_TxWk == 127 & x$States == 1),]))
+lapply(shuffled_chromHMM_potential,function(x) dim(x[which(x$X5_TxWk >= 121 & x$States == 1),]))
+lapply(shuffled_chromHMM_potential,function(x) x[which(x$X5_TxWk >= 121 & x$States == 1),])
+
+# 15_Quies (particular subfamilies?)
+test = merge(rmsk_TE_subfamily[,c(1:4,11)],aggregate(data=chromHMM_TE_state[which(chromHMM_TE_state$X15_Quies == chromHMM_TE_state$Tissues),c(1:7,26)],start~subfamily,length),by="subfamily",all.x=TRUE)
+test[is.na(test)] = 0
+test$quiescent = log2((test$start/sum(test$start))/(test$Count/NUM_TE))
+tail(test[order(test$quiescent),],n=40)
+rm(test)
 ```
 
 # Generate TE correlation matrix (move to Figure 3?)
@@ -1071,6 +1231,13 @@ hist(H3K27ac_pca$rotation[,1])
 Figure 5. Enrichment of TE subfamilies in epigenetic states in individual samples. (A) Number of samples each subfamily is enriched in each state (log odds ratio > 1.5). The total number of subfamilies enriched LOR > 1.5 in at least one sample are listed under each state. (B) Subfamilies with at least two LOR scores >1.5 in the 7_Enh state (blue squares indicate enrichment in that sample). Binary clustering, complete linkage. Columns are colored by sample metadata, and rows are colored by subfamily class. 
 
 ```{r Figure 5}
+THRESHOLD_IJK_BASE = 600
+THRESHOLD_IK_BASE = 5000
+THRESHOLD_IJK_CPG = 6
+THRESHOLD_IK_CPG = 25
+THRESHOLD_LOR = 1.5
+THRESHOLD_PC = 0.01
+
 source("R_scripts/subfamily_enrichment.R")
 
 a = ggplot(subfamily_state_sample_counts,aes(x=State,y=V1,color=class_update)) + geom_point(position=position_jitterdodge(jitter.width=0.5)) + coord_flip() + theme(axis.title.y=element_blank()) + ylab("Number of samples enriched LOR > 1.5") + scale_color_manual(values=class_colors,name="Class") + scale_y_continuous(breaks=c(0,seq(10,120,10),127),expand = c(0.01,0.01)) + geom_rect(xmin=0.5,xmax=1.5,ymin=99,ymax=127,fill="grey",color=NA) + geom_rect(xmin=1.5,xmax=2.5,ymin=54,ymax=127,fill="grey",color=NA) + geom_rect(xmin=2.5,xmax=6.5,ymin=38,ymax=127,fill="grey",color=NA) + geom_vline(xintercept=seq(1.5,20.5,1), colour='grey') + scale_x_discrete(limits = rev(levels(subfamily_state_sample_counts$State)),labels=as.vector(rev(apply(subfamily_state_sample_counts_combine,1,function(x) paste(x[1],"\n(n=",x[2],")",sep="")))))
