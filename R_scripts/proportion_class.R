@@ -64,7 +64,7 @@ class_CpG_meth$CpGs_state = apply(class_CpG_meth,1,function(x) all_CpG_meth[x[2]
 class_CpG_meth$Proportion_state = class_CpG_meth$CpGs_state_class/class_CpG_meth$CpGs_state
 
 # Add CpGs in sample
-class_CpG_meth$CpGs_sample = rep(56434896,dim(class_CpG_meth)[1])
+class_CpG_meth$CpGs_sample = rep(ALL_CPGS,dim(class_CpG_meth)[1])
 class_CpG_meth$Enrichment = log2((class_CpG_meth$CpGs_state_class/class_CpG_meth$CpGs_class)/(class_CpG_meth$CpGs_state/class_CpG_meth$CpGs_sample))
 
 # DNase
