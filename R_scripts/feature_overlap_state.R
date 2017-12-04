@@ -7,15 +7,10 @@
 
 # For TEs overlapping each feature, mean number of samples in state
 feature_state_mean = apply(rmsk_TE_measure[,15:34],2,function(y) 
-  (colMeans(rmsk_TE_measure[which(y == "yes"),c(35:49,52:55,60:62)],na.rm=TRUE)-colMeans(rmsk_TE_measure[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE))/colMeans(rmsk_TE_measure[,c(35:49,52:55,60:62)],na.rm=TRUE))
+  (colMeans(rmsk_TE_measure[which(y == "yes"),c(35:49,52:55,60:62)],na.rm=TRUE)-colMeans(rmsk_TE_measure[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE))/colMeans(rmsk_TE_measure[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE))
 
 rownames(feature_state_mean)[1:15] = chromHMM_states
 rownames(feature_state_mean)[22] = "Expression"
-feature_state_mean[1:15,] = feature_state_mean[1:15,]/1.27
-feature_state_mean[16:19,] = feature_state_mean[16:19,]/0.37
-feature_state_mean[20,] = feature_state_mean[20,]/0.53
-feature_state_mean[21,] = feature_state_mean[21,]/0.98
-feature_state_mean[22,] = feature_state_mean[22,]/0.52
 
 feature_state_mean = melt(as.matrix(feature_state_mean))
 colnames(feature_state_mean) = c("State","Cohort","Enrichment")
@@ -25,14 +20,8 @@ feature_state_mean = split_coding(feature_state_mean,2)
 # By class
 feature_state_mean_class = ddply(rmsk_TE_measure,~class_update,function(z) 
   apply(z[,15:34],2,function(y) 
-    (colMeans(z[which(y == "yes"),c(35:49,52:55,60:62)],na.rm=TRUE)-colMeans(z[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE))/colMeans(z[,c(35:49,52:55,60:62)],na.rm=TRUE)))
+    (colMeans(z[which(y == "yes"),c(35:49,52:55,60:62)],na.rm=TRUE)-colMeans(z[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE))/colMeans(z[which(y == "no"),c(35:49,52:55,60:62)],na.rm=TRUE)))
 feature_state_mean_class$State = factor(rep(c(chromHMM_states,meth_states[c(1,3,2,4)],"DNase","H3K27ac","Expression"),6),levels=c(chromHMM_states,meth_states,"DNase","H3K27ac","Expression"))
-
-feature_state_mean_class[which(feature_state_mean_class$State %in% chromHMM_states),2:21] = feature_state_mean_class[which(feature_state_mean_class$State %in% chromHMM_states),2:21]/1.27
-feature_state_mean_class[which(feature_state_mean_class$State %in% meth_states),2:21] = feature_state_mean_class[which(feature_state_mean_class$State %in% meth_states),2:21]/0.37
-feature_state_mean_class[which(feature_state_mean_class$State == "DNase"),2:21] = feature_state_mean_class[which(feature_state_mean_class$State == "DNase"),2:21]/0.53
-feature_state_mean_class[which(feature_state_mean_class$State == "H3K27ac"),2:21] = feature_state_mean_class[which(feature_state_mean_class$State == "H3K27ac"),2:21]/0.98
-feature_state_mean_class[which(feature_state_mean_class$State == "Expression"),2:21] = feature_state_mean_class[which(feature_state_mean_class$State == "Expression"),2:21]/0.52
 
 feature_state_mean_class = melt(feature_state_mean_class)
 colnames(feature_state_mean_class) = c("Class","State","Cohort","Enrichment")
