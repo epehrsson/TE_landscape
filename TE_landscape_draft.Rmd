@@ -817,7 +817,7 @@ state_order = ddply(combine_stats_class,"State",summarise,CV=sd(Samples_avg_all)
 b = ggplot(combine_stats_class,aes(x=State,y=Samples_avg_all)) + geom_point(aes(color=class_update),size=4) + scale_color_manual(values=class_colors,name="Class") + scale_x_discrete(limits=state_order[order(state_order$Range),]$State,labels=all_state_labels) + scale_y_continuous(limits=c(0,100)) + theme(axis.title.y = element_blank()) + ylab("Average % samples in state") + geom_text(data=state_order,aes(x=State,y=100,label=paste("(",round(CV,2),")",sep=""))) + coord_flip() 
 
 # Feature table
-c = ggplot(feature_state_mean[which(feature_state_mean$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-5,30)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels)
+c = ggplot(feature_state_mean[which(feature_state_mean$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels)
 
 # SINE/Alu age vs. TE metrics and number of samples in methylation states
 rmsk_TE_measure$cpgIsland_binary = as.vector(rmsk_TE_measure$cpgIsland)
@@ -879,14 +879,12 @@ test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure,family="
 summary(test)
 ```
 
-# Comparison of CpG % hypomethylated by class
+# By-chromosome potential
 
-```{r analysis Fig 3e}
-ddply(class_CpG_meth,.(State),summarise,Kruskal=unlist(kruskal.test(Proportion_class~class))["p.value"])
-ddply(class_CpG_meth[which(class_CpG_meth$Sample != "E017"),],.(State),summarise,Kruskal=unlist(kruskal.test(Proportion_class~class))["p.value"])
-
-by(class_CpG_meth,class_CpG_meth$State,function(x) pairwise.wilcox.test(x$Proportion_class,x$class,p.adj="bonf"))
-by(class_CpG_meth[which(class_CpG_meth$Sample != "E017"),],class_CpG_meth[which(class_CpG_meth$Sample != "E017"),]$State,function(x) pairwise.wilcox.test(x$Proportion_class,x$class,p.adj="bonf"))
+```{r}
+# Number of samples in state by chromosome
+chromosome_potential = aggregate(data=rmsk_TE_measure[,c(1,35:49,52:55,60:62)],.~chromosome,mean)
+apply(chromosome_potential,2,function(x) chromosome_potential[which(x > 2*sd(x)+mean(x)),c("chromosome",x)])
 ```
 
 ## Supplementary Figure 7
@@ -930,9 +928,9 @@ rmsk_TE_class_feature = split_coding(rmsk_TE_class_feature,2)
 
 a = ggplot(rmsk_TE_class_feature,aes(x=Class,y=Proportion,fill=Feature)) + geom_bar(stat="identity") + theme(axis.title.x = element_blank(),legend.title=element_blank()) +  ylab("Proportion of TEs overlapping feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),labels=genic_labels[c(8,1:7)]) + facet_wrap(~Coding,nrow=1,labeller=labeller(Coding=coding_labels))
 
-b = ggplot(feature_state_mean,aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-5,40)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Coding,labeller=labeller(Coding=coding_labels))
+b = ggplot(feature_state_mean,aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Coding,labeller=labeller(Coding=coding_labels))
 
-c = ggplot(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-5,120)) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
+c = ggplot(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,175)) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
 
 grid.arrange(a,b,c,nrow=3,heights=c(0.25,0.3,0.45))
 ```
@@ -944,12 +942,16 @@ grid.arrange(a,b,c,nrow=3,heights=c(0.25,0.3,0.45))
 table(apply(rmsk_TE[,14:31],1,function(x) sum(!is.na(x))))
 table(apply(rmsk_TE[,names(genic_labels)[1:7]],1,function(x) sum(!is.na(x))))
 
-# Proportion of TEs in each feature, overall and by class
+# Number/proportion of TEs in each feature, overall and by class
+apply(rmsk_TE[,13:32],2,function(x) length(na.omit(x)))
 feature_proportion = apply(rmsk_TE[,13:32],2,function(x) length(na.omit(x))/4430788)
+feature_proportion
 rmsk_TE_class[,c(1,12:31)]
+```
 
-# Change this to comparison with shuffled distribution
+# Shuffled control - change to comparison with shuffled distribution 
 
+```{r}
 # Class
 # Enrichment of TE classes overlapping features (LOR)
 feature_lor_class = t(apply(rmsk_TE_class[,c(1,12:31)],1,function(x) log2(as.numeric(x[2:21])/feature_proportion)))
@@ -960,7 +962,21 @@ feature_lor_class[which(abs(feature_lor_class$value) > 0.5),]
 # Subfamily 
 # Subfamilies with much higher proportion in feature
 apply(rmsk_TEother_feature_subfamily[,6:12],2,function(x) rmsk_TEother_feature_subfamily[which(x > mean(x)+2*sd(x) & rmsk_TEother_feature_subfamily$Count*x > 2),])
+```
 
+# Max expression by feature
+
+```{r}
+# Median max expression by feature
+sort(apply(rmsk_TE_measure[,15:34],2,function(y) median(rmsk_TE_measure[which(y == "yes"),]$Max_expression,na.rm=TRUE)))
+
+# Max expression by feature
+sort(apply(rmsk_TE_measure[,15:34],2,function(y) max(rmsk_TE_measure[which(y == "yes"),]$Max_expression,na.rm=TRUE)))
+```
+
+# Outliers by feature
+
+```{r}
 # Subfamilies enriched in 3'UTR and hypomethylated
 sort(table(droplevels(rmsk_TE_age[which(!(is.na(rmsk_TE_age$'3UTR')) & rmsk_TE_age$Hypomethylated > 10),]$subfamily)))
 ```
@@ -1000,13 +1016,21 @@ grid.arrange(b,c,d,e,f,nrow=5)
 # CpGs per class
 
 ```{r analysis Fig S9a}
-rmsk_TE_class[,c(1:2,12,32,35:38)]
+rmsk_TE_class[,c(1:2,12,33:39)]
 ```
 
 # TE stats
 
 ```{r analysis Fig S9b}
-# Mappability whole genome, TEs (see 8/27/17)
+# Mappability whole genome, TEs (8/27/17)
+# (awk '{sum+=($4*($3-$2));total+=$3-$2;}END{print sum/total}' wgEncodeCrgMapabilityAlign36mer.bedGraph)
+GENOME_MAP=0.789192
+GENOME_MAP
+
+# (for file in x*; do bedtools intersect -wo -a rmsk_TEother_merge.txt -b $file >> rmsk_TEother_merge_map.txt; done)
+# (awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt)
+TE_MAP=0.624207
+TE_MAP
 
 # TE metrics by overall and by class, median and mean, with p-values
 apply(rmsk_TE_measure[,c(8,10,12:14)],2,median)
@@ -1018,9 +1042,14 @@ sort(apply(aggregate(data=rmsk_TE_measure[,c(8:10,12:14)],.~class_update,mean)[,
 
 apply(rmsk_TE_measure[,c(8,10,12:14)],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"])
 
+# Max TE length by class
+aggregate(data=rmsk_TE_measure,Length~class_update,max)
+
 # Average Alu, SVA age
 mean(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
+sd(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
 mean(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
+sd(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
 ```
 
 # Supplementary Figure 10
@@ -1039,9 +1068,9 @@ c = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"
 
 d = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + facet_wrap(~class_update)
 
-e = ggplot(feature_metric_mean[which(feature_metric_mean$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0) + scale_y_discrete(limits=rev(levels(feature_metric_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp"))
+e = ggplot(feature_metric_mean[which(feature_metric_mean$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,7)) + scale_y_discrete(limits=rev(levels(feature_metric_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp"))
 
-f = ggplot(feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0) + scale_y_discrete(limits=rev(levels(feature_metric_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp")) + facet_wrap(~Class)
+f = ggplot(feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15)) + scale_y_discrete(limits=rev(levels(feature_metric_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp")) + facet_wrap(~Class)
 
 grid.arrange(a,b,c,d,e,f,nrow=3)
 ```
