@@ -208,7 +208,7 @@ subfamily_H3K27ac_sample = subfamily_H3K27ac_sample[,c(1,3:4,21,2,11:16,5:10,18,
 
 
 # Combine filtered matrices
-test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ik >= THRESHOLD_IK_CPG & subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG),]
+test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG & subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG),]
 colnames(test2)[16] = "Length_percent_jk"
 subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE),c(1:11,16:19)],
                                       test2[,c(1:11,15:18)],
@@ -218,7 +218,7 @@ subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State
 
 # Number of enrichments per subfamily x state
 subfamily_state_sample_counts = rbind(ddply(subfamily_state_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)),
-                                      ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$CpG_ijk >= THRESHOLD_IJK_CPG & x$CpG_ik >= THRESHOLD_IK_CPG)),
+                                      ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$CpG_ijk >= THRESHOLD_IJK_CPG & x$CpG_ik > THRESHOLD_IK_CPG)),
                                       ddply(subfamily_DNase_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)),
                                       ddply(subfamily_H3K27ac_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)))
                                       #ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$CpG_ik >= THRESHOLD_IK_CPG & x$CpG_ijk >= THRESHOLD_IJK_CPG & x$Sample != "E017"))    
