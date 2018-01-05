@@ -1,5 +1,8 @@
 # Add shuffled TE features
 
+load("R_datasets/shuffled_TEs_map.RData")
+rmsk_TE_shuffled = rmsk_TE_shuffled[c(1,3:10,2)]
+
 # Overlap between TEs and Refseq features
 for (i in 1:10){
   print(i)
@@ -14,18 +17,11 @@ for (i in 1:10){
     colnames(features[[j]])[8] = feature_files[j]
   }
   print("Loaded features")
-  features_merge[[i]] = reshape::merge_recurse(features,by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
-  rm(list=c("feature_files","features"))
+  features_merge = reshape::merge_recurse(features,by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
   print("Merged features")
-}
-
-load("R_datasets/shuffled_TEs_map.RData")
-
-for (i in 1:10){
-  print(i)
-  rmsk_TE_shuffled[[i]] = merge(rmsk_TE_shuffled[[i]],features_merge[[i]],by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
+  rmsk_TE_shuffled[[i]] = merge(rmsk_TE_shuffled[[i]],features_merge,by=c("chromosome","start","stop","subfamily","family","class","strand"),all.x=TRUE)
   print("Added feature overlap")
+  rm(list=c("feature_files","features","features_merge"))
 }
-rm("features_merge")
 
 save(rmsk_TE_shuffled,file="R_datasets/shuffled_TEs_feature.RData")
