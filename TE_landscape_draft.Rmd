@@ -112,6 +112,9 @@ anatomy_colors = setNames(c("#B2DF8A","#33A02C","#FB9A99","#FFED6F","#80B1D3","#
 
 # Genic features
 genic_labels = setNames(c("Promoter","5'UTR","CDS","3'UTR","Exon","Intron","Intergenic","CpG island"),c("promoters","5UTR","coding_exon","3UTR","exons","introns","intergenic","cpgIsland"))
+
+# C-Gate subfamilies
+cgate_subfams = c('AluJb','AluJo','AluS','AluSc','AluSg','AluSg1','AluSp','AluSq','AluSx','AluSz','AluY','FLAM_A','FRAM','HERV3-int','HERV9-int','HERVE-int','HERVH-int','L1HS','L1MB4','L1PA6','L2a','LTR10A','LTR16A','LTR22B','LTR31A','LTR5','LTR5_Hs','LTR9','MER11A','MER21A','MER34','MER39B','MER4B','MER54B','MER74C','Mir m','MIR3','MIRb','MLT1C','MLT2B2','MLT2B3','MSTB2','Plat_L3','RTVL-H','THE1A','THE1C','THE1D','AluJr','AluSq2','L1MB7','L1MC4','L1ME3A','L1PA11','L1PA4','LTR12','LTR12C','LTR12D','LTR13A','LTR2','LTR2B','MIR','MIRc','MLT1B')
 ```
 
 ## Define facet labels
@@ -1596,13 +1599,6 @@ ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichme
 test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),c(1:11,14:15)],.(State),function(x) x[which(x$Percent > mean(x$Percent)+2*sd(x$Percent)),])
 test
 ddply(test,.(State),function(x) length(unique(x$subfamily)))
-```
-
-### Core subfamily members
-
-```{r core subfamily members}
-# Enrichment core vs. periphery 
-# See 8/29/2016, 9/8/2016, 1/20/2017, 2/10/2017, 3/16/2017
 
 # For each subfamily x state (including not enriched), members ever in state vs. max members in state in a single sample
 test = rmsk_TE_measure[,c(4,35:49,52:55,60:61)]
@@ -1611,20 +1607,6 @@ subfamily_state_members = merge(aggregate(data=melt(test,id.var="subfamily"),val
 mean(subfamily_state_members[which(subfamily_state_members$Members > 0),]$value/subfamily_state_members[which(subfamily_state_members$Members > 0),]$Members)
 sd(subfamily_state_members[which(subfamily_state_members$Members > 0),]$value/subfamily_state_members[which(subfamily_state_members$Members > 0),]$Members)
 ddply(subfamily_state_members,.(variable),summarise,Mean=mean(na.omit(value/Members)),SD=sd(na.omit(value/Members)),Max=max(na.omit(value/Members)))
-
-# Core members of a subfamily
-subfamily_state_individual_V1 = read.table(file="enrichment/state_enriched.bed",sep='\t')
-colnames(subfamily_state_individual_V1) = c("State","chromosome","start","stop","subfamily","Samples","strand")
-subfamily_state_individual_V1$State = gsub("8_ZNF.Rpts","8_ZNF/Rpts",subfamily_state_individual_V1$State)
-subfamily_state_individual_V1 = merge(subfamily_state_individual_V1,subfamily_state_sample_counts,by=c("subfamily","State"),all.x=TRUE)
-subfamily_state_individual_V1 = subfamily_state_individual_V1[,c(3:5,1,8:9,2,6,10)]
-subfamily_state_individual_V1$Pc_of_enriched = subfamily_state_individual_V1$Samples/subfamily_state_individual_V1$V1
-
-# Average % of individual members in state in at least 25%, 50%, 75% enriched samples, by state
-test = ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)])/length(Pc_of_enriched),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)])/length(Pc_of_enriched),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])/length(Pc_of_enriched))
-aggregate(data=test[,2:5],.~State,mean)
-
-write.table(ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)]),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)]),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])),file="enrichment/subfamily_state_individual_V1_core.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
 
 ### WGBS subfamily state stats
@@ -1697,12 +1679,9 @@ test$Order = rownames(test)
 lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)],aggregate(data=subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x & subfamily_state_sample_filter$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
 ```
 
-### Subfamily enrichment clustering and stats
+### Subfamily enrichment clustering and stats (for Excel)
 
 ```{r analysis Fig S14b}
-cgate_subfams = c('AluJb','AluJo','AluS','AluSc','AluSg','AluSg1','AluSp','AluSq','AluSx','AluSz','AluY','FLAM_A','FRAM','HERV3-int','HERV9-int','HERVE-int','HERVH-int','L1HS','L1MB4','L1PA6','L2a','LTR10A','LTR16A','LTR22B','LTR31A','LTR5','LTR5_Hs','LTR9','MER11A','MER21A','MER34','MER39B','MER4B','MER54B','MER74C','Mir m','MIR3','MIRb','MLT1C','MLT2B2','MLT2B3','MSTB2','Plat_L3','RTVL-H','THE1A','THE1C','THE1D','AluJr','AluSq2','L1MB7','L1MC4','L1ME3A','L1PA11','L1PA4','LTR12','LTR12C','LTR12D','LTR13A','LTR2','LTR2B','MIR','MIRc','MLT1B')
-length(cgate_subfams)
-
 #source("R_scripts/subfamily_enrichment.R")
 source("R_scripts/TE_correlation_subfamily.R") #Requires subfamily enrichment
 
@@ -1766,21 +1745,13 @@ candidate_7Enh = c('AmnSINE1','AmnSINE2','Charlie13a','Charlie13b','Eulor12','Eu
 candidate_transcribed = c('AluYc5','Charlie10a','Charlie10b','Charlie11','Charlie12','Charlie3','Charlie6','FAM','HAL1-2a_MD','HERVK13-int','Looper','LTR13_','LTR14A','LTR3','LTR70','LTR87','MER105','MER44C','MER47B','MER68','MER68B','MER6B','MER6C','MER77B','MER82','Merlin1_HS','Ricksha_a','SVA_C','SVA_D','SVA_E','SVA_F','Tigger1a_Art','Tigger1a_Mars','Tigger2b','Tigger3a','Tigger3c','Tigger4a')
 ```
 
-### Investigate individual subfamilies
+### Investigate individual subfamilies (for Excel)
 
 ```{r analysis Fig S14d}
 #source("R_scripts/TE_correlation.R")
-rmsk_TE_subfamily_ever = aggregate(data=rmsk_TE_measure[,c(4,35:49,52:55,60:62)],.~subfamily,function(x) sum(x > 0))
+rmsk_TE_subfamily_ever = aggregate(data=rmsk_TE_measure[,c(4,35:49,52:55,60:62)],.~subfamily,function(x) sum(x > 0,na.rm=TRUE),na.action=na.pass)
 colnames(rmsk_TE_subfamily_ever)[9] = "X8_ZNF/Rpts"
 colnames(rmsk_TE_measure)[42] = "X8_ZNF/Rpts"
-
-#write_subfamily_candidates(candidate_1TssA,"1_TssA")
-#write_subfamily_candidates(candidate_2TssAFlnk,"2_TssAFlnk")
-#write_subfamily_candidates(candidate_3TxFlnk,"3_TxFlnk")
-#write_subfamily_candidates(candidate_6EnhG,"6_EnhG")
-#write_subfamily_candidates(candidate_7Enh,"7_Enh")
-#write_subfamily_candidates(candidate_transcribed,"4_Tx")
-#write_subfamily_candidates(candidate_transcribed,"5_TxWk")
 
 lapply(names(all_state_labels)[c(1:7,16:17,20:21)],function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x))
 lapply(names(all_state_labels)[c(8:15,18:19)],function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x,FALSE))
@@ -1790,7 +1761,27 @@ print_individual_TEs("enrichment/candidate_DNase_enrich.txt")
 print_individual_TEs("enrichment/candidate_H3K27ac_enrich.txt")
 ```
 
-### Individual TEs in candidate subfamilies in state by sample
+### Core subfamily members
+
+```{r core subfamily members}
+# See 8/29/2016, 9/8/2016, 1/20/2017, 2/10/2017, 3/16/2017
+
+# Core members of a subfamily (this relies on above analysis, lots of unix code)
+subfamily_state_individual_V1 = read.table(file="enrichment/state_enriched.bed",sep='\t')
+colnames(subfamily_state_individual_V1) = c("State","chromosome","start","stop","subfamily","Samples","strand")
+subfamily_state_individual_V1$State = gsub("8_ZNF.Rpts","8_ZNF/Rpts",subfamily_state_individual_V1$State)
+subfamily_state_individual_V1 = merge(subfamily_state_individual_V1,subfamily_state_sample_counts,by=c("subfamily","State"),all.x=TRUE)
+subfamily_state_individual_V1 = subfamily_state_individual_V1[,c(3:5,1,8:9,2,6,10)]
+subfamily_state_individual_V1$Pc_of_enriched = subfamily_state_individual_V1$Samples/subfamily_state_individual_V1$V1
+
+# Average % of individual members in state in at least 25%, 50%, 75% enriched samples, by state
+test = ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)])/length(Pc_of_enriched),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)])/length(Pc_of_enriched),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])/length(Pc_of_enriched))
+aggregate(data=test[,2:5],.~State,mean)
+
+write.table(ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)]),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)]),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])),file="enrichment/subfamily_state_individual_V1_core.txt",sep='\t',quote=FALSE,row.names=FALSE)
+```
+
+### Individual TEs in candidate subfamilies in state by sample (update!)
 
 ```{r analysis Fig S14e}
 candidate_1TssA_indv = read.table("candidate_1TssA_indv.txt",sep='\t')
@@ -1884,6 +1875,9 @@ sort(apply(rmsk_TE_subfamily_measure[,12:32],2,function(x) as.numeric(unlist(kru
 # Subfamily feature overlap outliers
 ggplot(melt(rmsk_TE_subfamily[,12:32]),aes(x=value)) + geom_histogram() + facet_wrap(~variable)
 lapply(c(12:13,16,19,21,24:25,28,31:32),function(x) rmsk_TE_subfamily[which(rmsk_TE_subfamily[,x] > 2*sd(rmsk_TE_subfamily[,x])+mean(rmsk_TE_subfamily[,x])),c(1:4,x)])
+
+# CGate subfamilies
+length(cgate_subfams)
 ```
 
 ### Subfamily enrichment correlation
