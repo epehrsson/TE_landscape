@@ -637,8 +637,11 @@ mean(c(exon_CpG_count$V5,rep(0,(dim(RNA_exon_unique)[1]-dim(exon_CpG_count)[1]))
 median(c(exon_CpG_count$V5,rep(0,(dim(RNA_exon_unique)[1]-dim(exon_CpG_count)[1]))))
 
 # Shuffled TE CpG stats
-load("R_datasets/shuffled_TEs_feature.RData")
+load("R_datasets/shuffled_TEs_CpG.RData")
+
 ldply(rmsk_TE_shuffled,summarise,TE_wCpG=length(CpGs[which(CpGs > 0)]),TE_wCpG_per=length(CpGs[which(CpGs > 0)])/length(CpGs),Median_all=median(CpGs),Mean_all=mean(CpGs),Median_wCpG=median(CpGs[which(CpGs > 0)]),Mean_wCpG=mean(CpGs[which(CpGs > 0)]))
+
+rm(rmsk_TE_shuffled)
 ```
 
 ### Exon expression control analysis
@@ -866,6 +869,7 @@ sum(apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x =
 
 # 5_TxWk
 chromHMM_TE_state[which(chromHMM_TE_state$X5_TxWk == chromHMM_TE_state$Tissues),c(1:7,26)]
+
 # Shuffled TE control
 lapply(shuffled_chromHMM_potential,function(x) dim(x[which(x$X5_TxWk >= 121 & x$States == 1),]))
 lapply(shuffled_chromHMM_potential,function(x) x[which(x$X5_TxWk >= 121 & x$States == 1),])
@@ -1075,31 +1079,62 @@ table(apply(rmsk_TE[,14:31],1,function(x) sum(!is.na(x))))
 table(apply(rmsk_TE[,names(genic_labels)[1:7]],1,function(x) sum(!is.na(x))))
 
 # Number/proportion of TEs in each feature, overall and by class
-apply(rmsk_TE[,13:32],2,function(x) length(na.omit(x)))
-feature_proportion = apply(rmsk_TE[,13:32],2,function(x) length(na.omit(x))/NUM_TE)
-feature_proportion
+feature_proportion = apply(rmsk_TE[,13:31],2,function(x) length(na.omit(x)))
+feature_proportion/NUM_TE
+feature_proportion_long = melt(as.matrix(feature_proportion/NUM_TE))
+colnames(feature_proportion_long) = c("Feature","X","Proportion")
 rmsk_TE_class[,c(1,12:31)]
 
 # Proportion of TEs ever in state overlapping each feature
 apply(rmsk_TE_measure[,c(35:49,52:55,60:61)],2,function(x) apply(rmsk_TE_measure[,15:33],2,function(y) dim(rmsk_TE_measure[which(x > 0 & y == "yes"),])[1]/dim(rmsk_TE_measure[which(x > 0),])[1]))
 ```
 
-### Shuffled control - change to comparison with shuffled distribution 
+### TE feature overlap control 
 
 ```{r shuffled feature distribution}
-# Distribution of shuffled TE overlaps
-shuffled_features = ldply(rmsk_TE_shuffled,function(x) apply(x[,10:31],2,function(x) length(na.omit(x))))
+load("R_datasets/shuffled_TEs_feature.RData")
+shuffled_colnames = colnames(rmsk_TE_shuffled[[1]])
+rmsk_TE_shuffled = lapply(rmsk_TE_shuffled,function(x) transform(x,class_update = convert_class(x$class)))
+rmsk_TE_shuffled = lapply(rmsk_TE_shuffled, setNames, nm = c(shuffled_colnames,"class_update"))
+
+# Number/proportion of shuffled TEs in each feature
+feature_proportion_shuffled = ldply(rmsk_TE_shuffled,function(y) apply(y[,c(10:21,25:31)],2,function(x) length(na.omit(x))))
+feature_proportion_shuffled/NUM_TE
+feature_proportion_shuffled_long = melt(as.matrix(feature_proportion_shuffled/NUM_TE))
+colnames(feature_proportion_shuffled_long) = c("Iteration","Feature","Proportion")
+
+ggplot(feature_proportion_shuffled_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=feature_proportion_long,aes(x=Feature,y=Proportion),size=3,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)])
 
 # Class
-# Enrichment of TE classes overlapping features (LOR)
-feature_lor_class = t(apply(rmsk_TE_class[,c(1,12:31)],1,function(x) log2(as.numeric(x[2:21])/feature_proportion)))
-rownames(feature_lor_class) = rmsk_TE_class$class_update
-feature_lor_class = melt(feature_lor_class)
-feature_lor_class[which(abs(feature_lor_class$value) > 0.5),]
+feature_proportion_shuffled_class = ldply(rmsk_TE_shuffled,function(z) ddply(z,~class_update,function(y) apply(y[,c(10:21,25:31)],2,function(x) length(na.omit(x))/length(x))))
+feature_proportion_shuffled_class$Iteration = rep(seq(1,10,1),each=6)
+feature_proportion_shuffled_class_long = melt(feature_proportion_shuffled_class,id.vars=c("Iteration","class_update"))
+colnames(feature_proportion_shuffled_class_long)[3:4] = c("Feature","Proportion")
 
-# Subfamily 
-# Subfamilies with much higher proportion in feature
-apply(rmsk_TEother_feature_subfamily[,6:12],2,function(x) rmsk_TEother_feature_subfamily[which(x > mean(x)+2*sd(x) & rmsk_TEother_feature_subfamily$Count*x > 2),])
+rmsk_TE_class_feature_long = melt(rmsk_TE_class[,c(1,12:30)],id.var="class_update")
+colnames(rmsk_TE_class_feature_long)[2:3] = c("Feature","Proportion")
+
+ggplot(feature_proportion_shuffled_class_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=rmsk_TE_class_feature_long,aes(x=Feature,y=Proportion),size=2,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)]) + facet_wrap(~class_update)
+
+test = merge(ddply(feature_proportion_shuffled_class_long,.(Feature,class_update),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_class_feature_long,by=c("class_update","Feature"))
+test$Zscore = (test$Proportion-test$Mean)/test$SD
+test[order(test$Zscore),]
+
+# Subfamily
+feature_proportion_shuffled_subfamily = ldply(rmsk_TE_shuffled,function(z) ddply(z,~subfamily,function(y) apply(y[,c(10:21,25:31)],2,function(x) length(na.omit(x))/length(x))))
+feature_proportion_shuffled_subfamily$Iteration = rep(seq(1,10,1),each=968)
+feature_proportion_shuffled_subfamily_long = melt(feature_proportion_shuffled_subfamily,id.vars=c("Iteration","subfamily"))
+colnames(feature_proportion_shuffled_subfamily_long)[3:4] = c("Feature","Proportion")
+
+rmsk_TE_subfamily_feature_long = melt(rmsk_TE_subfamily[,c(1,12:30)],id.var="subfamily")
+colnames(rmsk_TE_subfamily_feature_long)[2:3] = c("Feature","Proportion")
+
+test = merge(ddply(feature_proportion_shuffled_subfamily_long,.(Feature,subfamily),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_subfamily_feature_long,by=c("subfamily","Feature"))
+test$Zscore = (test$Proportion-test$Mean)/test$SD
+sort(table(test[which(test$Zscore > 2),]$Feature))
+test[which(test$Zscore > 2 & test$Feature %in% c("exons_pc","5UTR_pc","3UTR_pc")),]
+test[which(test$Zscore > 2 & test$Feature %in% c("exons_nc","5UTR_nc","3UTR_nc")),]
+test[which(test$Zscore > 2 & test$Feature =="cpgIsland"),]
 ```
 
 ### Max expression by feature
@@ -1209,6 +1244,20 @@ dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$class_update == "SVA"),])[
 dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
 sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$family)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
 sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$subfamily)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
+```
+
+### Shuffled mappability
+
+```{r}
+rmsk_TE_shuffled_map = melt(t(ldply(rmsk_TE_shuffled,function(x) x$mappability)))[,2:3]
+test = as.data.frame(cbind(rep("Real",NUM_TE),rmsk_TE$mappability))
+colnames(test) = c("Var2","value")
+rmsk_TE_shuffled_map = rbind(rmsk_TE_shuffled_map,test)
+rmsk_TE_shuffled_map$Iteration = factor(rmsk_TE_shuffled_map$Var2,levels=c(seq(1,10,1),"Real"))
+rmsk_TE_shuffled_map$mappability = as.numeric(rmsk_TE_shuffled_map$value)
+aggregate(data=rmsk_TE_shuffled_map,mappability~Iteration,mean)
+
+ggplot(rmsk_TE_shuffled_map,aes(x=mappability,fill=Iteration)) + geom_histogram(binwidth=0.05,position="dodge") + xlab("Mappability") + ylab("TEs") + scale_fill_manual(values=c(rep("grey",10),"red"))
 ```
 
 ### Supplementary Figure 10
