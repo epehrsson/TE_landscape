@@ -1089,7 +1089,7 @@ rmsk_TE_class[,c(1,12:31)]
 apply(rmsk_TE_measure[,c(35:49,52:55,60:61)],2,function(x) apply(rmsk_TE_measure[,15:33],2,function(y) dim(rmsk_TE_measure[which(x > 0 & y == "yes"),])[1]/dim(rmsk_TE_measure[which(x > 0),])[1]))
 ```
 
-### TE feature overlap control 
+### TE feature overlap control (split by coding?)
 
 ```{r shuffled feature distribution}
 load("R_datasets/shuffled_TEs_feature.RData")
@@ -1204,6 +1204,13 @@ GENOME_MAP
 # (awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt)
 TE_MAP=0.624207
 TE_MAP
+
+# Average mappability by chromHMM states
+test = lapply(metadata$Sample[c(1:11,32:35)],function(x) read.table(file=paste("/scratch/ecp/mappability/mappability_",x,"_average.txt",sep=""),sep='\t'))
+names(test) = metadata$Sample[c(1:11,32:35)]
+test = ldply(test)
+
+ggplot(test,aes(x=V1,y=V2)) + geom_boxplot() + scale_x_discrete(limits=chromHMM_states) + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + ylab("Average mappability")
 
 # TE metrics by overall and by class, median and mean, with p-values
 apply(rmsk_TE_measure[,c(8,10,12:14)],2,median)
@@ -1815,17 +1822,20 @@ print_individual_TEs("enrichment/candidate_H3K27ac_enrich.txt")
 ```{r core subfamily members}
 # See 8/29/2016, 9/8/2016, 1/20/2017, 2/10/2017, 3/16/2017
 
-# Core members of a subfamily (this relies on above analysis, lots of unix code)
+# Subfamily members in the state when the subfamily is enriched
+# This relies on above analysis, lots of unix code
 subfamily_state_individual_V1 = read.table(file="enrichment/state_enriched.bed",sep='\t')
 colnames(subfamily_state_individual_V1) = c("State","chromosome","start","stop","subfamily","Samples","strand")
 subfamily_state_individual_V1$State = gsub("8_ZNF.Rpts","8_ZNF/Rpts",subfamily_state_individual_V1$State)
 subfamily_state_individual_V1 = merge(subfamily_state_individual_V1,subfamily_state_sample_counts,by=c("subfamily","State"),all.x=TRUE)
-subfamily_state_individual_V1 = subfamily_state_individual_V1[,c(3:5,1,8:9,2,6,10)]
+subfamily_state_individual_V1 = subfamily_state_individual_V1[,c(3:5,1,8:9,7,2,6,10)]
 subfamily_state_individual_V1$Pc_of_enriched = subfamily_state_individual_V1$Samples/subfamily_state_individual_V1$V1
+subfamily_state_individual_V1$State = factor(subfamily_state_individual_V1$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
 
 # Average % of individual members in state in at least 25%, 50%, 75% enriched samples, by state
 test = ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)])/length(Pc_of_enriched),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)])/length(Pc_of_enriched),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])/length(Pc_of_enriched))
 aggregate(data=test[,2:5],.~State,mean)
+ggplot(subfamily_state_individual_V1,aes(x=Pc_of_enriched)) + geom_histogram(bins=10) + facet_wrap(~State,scale="free_y") + ylab("TEs") + xlab("Percent of enriched samples TE is in state")
 
 write.table(ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)]),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)]),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])),file="enrichment/subfamily_state_individual_V1_core.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
@@ -2201,7 +2211,7 @@ write.table(unique(human_mouse_orthologs_mm10_hypo[,2:8]),file="Mouse/mm10_ortho
 hg19_orthologs_hypo_chromHMM = read.table("Mouse/hg19_ortholog_hypo_chromHMM.txt",sep='\t')[,1:9]
 colnames(hg19_orthologs_hypo_chromHMM) = c(colnames(human_mouse_orthologs_mm10_hypo)[c(9:16)],"Human_state")
 
-# mm9 chromHMM state for mm10 TEs hypomethylated in mouse/humans
+# mm9 chromHMM state for mm10 TEs hypomethylated in mouse/human
 mm10_orthologs_hypo_chromHMM = read.table("Mouse/mm10_ortholog_hypo_chromHMM.txt",sep='\t')[,1:9]
 colnames(mm10_orthologs_hypo_chromHMM) = c(colnames(human_mouse_orthologs_mm10_hypo)[2:8],"Mouse_State","Mouse_sample_mm9")
 
@@ -2239,7 +2249,7 @@ apply(human_mouse_chromHMM_states,1,function(x) table(unique(human_mouse_ortholo
 apply(human_mouse_chromHMM_states,1,function(x) sort(table(droplevels(unique(human_mouse_orthologs_mm10_hypo[which(human_mouse_orthologs_mm10_hypo$Human_state == x[1] & human_mouse_orthologs_mm10_hypo$Mouse_State == x[2]),9:15])$human_subfamily))))
 ```
 
-```{r overlap with GENCODE}
+```{r overlap with GENCODE,eval=FALSE}
 write.table(unique(human_mouse_orthologs_mm10_hypo[which(human_mouse_orthologs_mm10_hypo$Human_state == "1_TssA" & human_mouse_orthologs_mm10_hypo$Mouse_State == "1"),9:15]),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file="Mouse/hg19_orthologs_hypo_1TssA.bed")
 ```
 
