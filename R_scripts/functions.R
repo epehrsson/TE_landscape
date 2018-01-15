@@ -175,7 +175,7 @@ plot_pca = function(pca,axes,map,colorby,legend_title,level_colors,guide=TRUE){
   }
 }
 
-plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment") 
+plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment",subfamilies=NULL) 
 {
   #Input matrix should be subfamily_state_sample_filter
   #Filter metadata based on metric
@@ -211,22 +211,55 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
   #Filter by number of samples
   test = test[which(apply(test,1,sum) >= min_sample & apply(test,1,sum) <= max_sample),]
   
+  #Filter by subfamilies of interest
+  if (!is.null(subfamilies)){ 
+    test = test[subfamilies,]
+  }
+
   #Plot
   aheatmap(test,Rowv=FALSE,Colv=FALSE,distfun="binary",breaks=0.5,legend=FALSE,color=c("white","cornflowerblue"),border_color="NA",
            annRow=data.frame(Class=rmsk_TE_subfamily[match(rownames(test),rmsk_TE_subfamily$subfamily),]$class_update),annColors=column_colors,annCol=column_metadata,annLegend=FALSE)
 }
 
-plot_binary_heatmap_indv = function(matrix,threshold1=0,threshold2=128,metadata,colors)
+plot_binary_heatmap_indv = function(individual,metric="chromHMM",from_dataframe=FALSE)
 {
-  test = dcast(matrix,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Overlap")
-  test[,setdiff(metadata$Sample,colnames(test))] = rep(NA,dim(test)[1])
-  test = test[,c(colnames(test)[1:7],as.vector(EID_metadata$Sample))]
+  #Get individual TEs from subfamily in state when enriched, all samples
+  if (from_dataframe == TRUE){
+    candidate_indv = individual
+  } else {
+    candidate_indv = read.table(individual,sep='\t')
+    colnames(candidate_indv) = c("chromosome","start","stop","subfamily","class","family","strand","State","Overlap","Sample")
+  }
+  print("Got individual TEs") 
+   
+  #Filter metadata based on metric
+  if (metric == "WGBS") {
+    metadata_matrix = metadata[which(!is.na(metadata$WGBS)),]
+  } else if (metric == "DNase") {
+    metadata_matrix = metadata[which(!is.na(metadata$DNase)),]
+  } else if (metric == "H3K27ac") {
+    metadata_matrix = metadata[which(!is.na(metadata$H3K27ac)),]
+  } else{
+    metadata_matrix = metadata
+  }
+  print("Filtered metadata")
+  
+  #Column metadata
+  column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
+  column_colors = list(Age=brewer.pal(4,"YlOrRd"),Cancer=c("white","red"),Germline=brewer.pal(6,"Dark2"),Type=brewer.pal(5,"Greens"),Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
+  
+  test = dcast(candidate_indv,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Overlap")
+  rownames(test) = apply(test,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
+  test[,setdiff(metadata_matrix$Sample,colnames(test))] = rep(NA,dim(test)[1])
+  test = test[,8:dim(test)[2]]
+  test = test[,as.vector(metadata_matrix$Sample)]
+
+  #Convert to binary
   test[is.na(test)] = 0
-  test[,8:134] <- +(test[,8:134] > 0) #Change this to % of length
-  rownames(test) = apply(test,1,function(x) paste(x[1],x[2],x[3],x[7],sep="_"))
-  test = test[,8:134]
-  #print(test[which(apply(test,1,sum) > threshold1 & apply(test,1,sum) < threshold2),])
-  aheatmap(test[which(apply(test,1,sum) > threshold1 & apply(test,1,sum) < threshold2),],Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","cornflowerblue"),breaks=0.5,legend=FALSE,labCol=NA,annCol=metadata,annColors=colors,border_color="NA")
+  test[test > 0] = 1
+
+  # Plot
+  aheatmap(test,Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","cornflowerblue"),breaks=0.5,legend=FALSE,annCol=column_metadata,annColors=column_colors,border_color="NA",annLegend=FALSE)
 }
 
 write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
