@@ -221,15 +221,21 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
            annRow=data.frame(Class=rmsk_TE_subfamily[match(rownames(test),rmsk_TE_subfamily$subfamily),]$class_update),annColors=column_colors,annCol=column_metadata,annLegend=FALSE)
 }
 
-plot_binary_heatmap_indv = function(individual,metric="chromHMM",from_dataframe=FALSE)
+plot_binary_heatmap_indv = function(individual,metric="chromHMM",highlight_samples=NULL)
 {
   #Get individual TEs from subfamily in state when enriched, all samples
-  if (from_dataframe == TRUE){
+  if (metric == "DNase" | metric == "H3K27ac"){
     candidate_indv = individual
+  } else if (metric == "WGBS") {
+    candidate_indv = read.table(individual,sep='\t')
+    colnames(candidate_indv) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap","State")
+    candidate_indv$Coverage = 1-candidate_indv$Overlap
   } else {
     candidate_indv = read.table(individual,sep='\t')
     colnames(candidate_indv) = c("chromosome","start","stop","subfamily","class","family","strand","State","Overlap","Sample")
+    candidate_indv$Coverage = candidate_indv$Overlap/(candidate_indv$stop-candidate_indv$start)
   }
+    
   print("Got individual TEs") 
    
   #Filter metadata based on metric
@@ -247,19 +253,26 @@ plot_binary_heatmap_indv = function(individual,metric="chromHMM",from_dataframe=
   #Column metadata
   column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
   column_colors = list(Age=brewer.pal(4,"YlOrRd"),Cancer=c("white","red"),Germline=brewer.pal(6,"Dark2"),Type=brewer.pal(5,"Greens"),Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
+  if (!is.null(highlight_samples)){
+    column_metadata$Enriched = factor(rep("No",dim(metadata_matrix)[1]),levels=c("No","Yes"))
+    column_metadata[which(metadata_matrix$Sample %in% highlight_samples),]$Enriched = "Yes"
+    column_colors$Enriched = c("white","black")
+  }
+  print("Assigned metadata colors")
   
-  test = dcast(candidate_indv,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Overlap")
-  rownames(test) = apply(test,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
-  test[,setdiff(metadata_matrix$Sample,colnames(test))] = rep(NA,dim(test)[1])
-  test = test[,8:dim(test)[2]]
-  test = test[,as.vector(metadata_matrix$Sample)]
-
-  #Convert to binary
-  test[is.na(test)] = 0
-  test[test > 0] = 1
-
+  candidate_indv = dcast(candidate_indv,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Coverage")
+  rownames(candidate_indv) = apply(candidate_indv,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
+  candidate_indv[,setdiff(metadata_matrix$Sample,colnames(candidate_indv))] = rep(NA,dim(candidate_indv)[1])
+  candidate_indv = candidate_indv[,8:dim(candidate_indv)[2]]
+  candidate_indv = candidate_indv[,as.vector(metadata_matrix$Sample)]
+  print("Formatted matrix")
+  
+  #Convert NA to 0
+  candidate_indv[is.na(candidate_indv)] = 0
+  print("Removed NAs")
+  
   # Plot
-  aheatmap(test,Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","cornflowerblue"),breaks=0.5,legend=FALSE,annCol=column_metadata,annColors=column_colors,border_color="NA",annLegend=FALSE)
+  aheatmap(candidate_indv,Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","red"),annCol=column_metadata,annColors=column_colors,border_color="NA",annLegend=FALSE)
 }
 
 write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
