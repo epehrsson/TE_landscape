@@ -5,14 +5,10 @@
 input_matrix=$1 #Three columns: subfamily, sample, state
 combined_output=$2
 
-# Get individual TEs in the state from candidate subfamilies, filtered to enriched samples
-python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_TE_sorted.txt $combined_output\_temp 10 8
-python ~/bin/TE_landscape/pull_individual_TEs.py $input_matrix chromHMM/all_chromHMM_other_sorted.txt $combined_output\_temp 10 8
-
-# Filter to subfamily-sample-state pairs
+# Filter subfamily-state to subfamily-sample-state trios 
 while read subfamily sample state
 do
-  awk -v OFS='\t' -v subfam=$subfamily -v state=$state -v sample=$sample '{if(($4 == subfam) && ($8 == state) && ($10 == sample)) print $0}' $combined_output\_temp >> $combined_output
+  awk -v OFS='\t' -v sample=$sample '{if($10 == sample) print $0}' chromHMM/subfamily/by_state/$subfamily\_$state\.txt >> $combined_output
 done < $input_matrix
 
 # Split by subfamily, reformat to bed file, unique TEs in state when enriched
@@ -20,5 +16,3 @@ while read subfamily state
 do
   awk -v OFS='\t' -v subfam=$subfamily -v state=$state '{if(($4 == subfam) && ($8 == state)) a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i], sep[7];}}' $combined_output > enrichment/$subfamily\_$state\_enriched.bed
 done < <(awk -v OFS='\t' '{print $1, $3}' $input_matrix | sort | uniq)
-
-rm $combined_output\_temp
