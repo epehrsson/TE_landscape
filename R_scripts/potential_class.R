@@ -72,6 +72,8 @@ TE_DNase_peaks_class = melt(as.matrix(TE_DNase_peaks_class))
 colnames(TE_DNase_peaks_class) = c("Class","Sample","Proportion")
 TE_DNase_peaks_class$State = rep("DNase",dim(TE_DNase_peaks_class)[1])
 
+colnames(TE_DNase_peaks)[62] = "Samples"
+
 # H3K27ac
 #load("R_datasets/TE_H3K27ac_peaks.RData")
 
@@ -90,6 +92,8 @@ TE_H3K27ac_peaks_class = TE_H3K27ac_peaks_class/rmsk_TE_class[match(rownames(TE_
 TE_H3K27ac_peaks_class = melt(as.matrix(TE_H3K27ac_peaks_class))
 colnames(TE_H3K27ac_peaks_class) = c("Class","Sample","Proportion")
 TE_H3K27ac_peaks_class$State = rep("H3K27ac",dim(TE_H3K27ac_peaks_class)[1])
+
+colnames(TE_H3K27ac_peaks)[107] = "Samples"
 
 # Expression
 #load("R_datasets/rna.RData")
