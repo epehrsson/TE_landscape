@@ -222,6 +222,11 @@ subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State
 
 # Number of enrichments per subfamily x state
 subfamily_state_sample_counts = ddply(subfamily_state_sample_filter,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR))
+subfamily_state_expand = expand.grid(subfamily = levels(subfamily_state_sample$subfamily),State = levels(subfamily_state_sample_combined$State))
+subfamily_state_expand = join(subfamily_state_expand,rmsk_TE_subfamily[,c("subfamily","family","class_update")],by=c("subfamily"))
+subfamily_state_sample_counts = join(subfamily_state_expand,subfamily_state_sample_counts,by=c("subfamily","family","class_update","State"),type="left")[,c(1,3,4,2,5)]
+rm(subfamily_state_expand)
+subfamily_state_sample_counts[is.na(subfamily_state_sample_counts)] = 0
 subfamily_state_sample_counts$State = factor(subfamily_state_sample_counts$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
 
 subfamily_state_sample_counts_combine = merge(aggregate(data=subfamily_state_sample_counts,V1~State,function(x) sum(x > 0)),
