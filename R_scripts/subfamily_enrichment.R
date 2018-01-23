@@ -206,22 +206,22 @@ subfamily_H3K27ac_sample$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample)[1])
 
 subfamily_H3K27ac_sample = subfamily_H3K27ac_sample[,c(1,3:4,21,2,11:16,5:10,18,20,17,19)]
 
+# Combine matrices (no filtering)
+test = subfamily_CpG_meth[,c(1:5,12:13,15:18)]
+colnames(test)[c(6:7,9)] = c("Length_ijk","Length_ik","Length_percent_jk")
+subfamily_state_sample_combined = rbind(subfamily_state_sample[,c(1:5,12:13,16:19)],test,subfamily_DNase_sample[,c(1:5,12:13,16:19)],subfamily_H3K27ac_sample[,c(1:5,12:13,16:19)])
 
 # Combine filtered matrices
-test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG & subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG),]
-colnames(test2)[16] = "Length_percent_jk"
-subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE),c(1:11,16:19)],
-                                      test2[,c(1:11,15:18)],
-                                      subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_DNase_sample$Length_ik > THRESHOLD_IK_BASE),c(1:11,16:19)],
-                                      subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_H3K27ac_sample$Length_ik > THRESHOLD_IK_BASE),c(1:11,16:19)])
+test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG & subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG),]
+colnames(test2)[c(12:13,16)] = c("Length_ijk","Length_ik","Length_percent_jk")
+subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)],
+                                      test2[,c(1:13,15:18)],
+                                      subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_DNase_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)],
+                                      subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_H3K27ac_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)])
 subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
 
 # Number of enrichments per subfamily x state
-subfamily_state_sample_counts = rbind(ddply(subfamily_state_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)),
-                                      ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$CpG_ijk >= THRESHOLD_IJK_CPG & x$CpG_ik > THRESHOLD_IK_CPG)),
-                                      ddply(subfamily_DNase_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)),
-                                      ddply(subfamily_H3K27ac_sample,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$Length_ijk >= THRESHOLD_IJK_BASE & x$Length_ik > THRESHOLD_IK_BASE)))
-                                      #ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR & x$CpG_ik >= THRESHOLD_IK_CPG & x$CpG_ijk >= THRESHOLD_IJK_CPG & x$Sample != "E017"))    
+subfamily_state_sample_counts = ddply(subfamily_state_sample_filter,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR))
 subfamily_state_sample_counts$State = factor(subfamily_state_sample_counts$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
 
 subfamily_state_sample_counts_combine = merge(aggregate(data=subfamily_state_sample_counts,V1~State,function(x) sum(x > 0)),
@@ -230,11 +230,7 @@ subfamily_state_sample_counts_combine = merge(aggregate(data=subfamily_state_sam
 subfamily_state_sample_counts_combine = subfamily_state_sample_counts_combine[match(levels(subfamily_state_sample_counts$State),subfamily_state_sample_counts_combine$State),]
 
 # Number of >1% per subfamily x state
-subfamily_state_sample_counts_pc = rbind(ddply(subfamily_state_sample,.(class_update,family,subfamily,State),function(x) sum(x$Length_percent_jk > THRESHOLD_PC & x$Length_ijk >= THRESHOLD_IJK_BASE)),
-                                         ddply(subfamily_CpG_meth,.(class_update,family,subfamily,State),function(x) sum(x$CpG_ijk_jk > THRESHOLD_PC & x$CpG_ijk >= THRESHOLD_IJK_CPG)),
-                                         ddply(subfamily_DNase_sample,.(class_update,family,subfamily,State),function(x) sum(x$Length_percent_jk > THRESHOLD_PC & x$Length_ijk >= THRESHOLD_IJK_BASE)),
-                                         ddply(subfamily_H3K27ac_sample,.(class_update,family,subfamily,State),function(x) sum(x$Length_percent_jk > THRESHOLD_PC & x$Length_ijk >= THRESHOLD_IJK_BASE)))
-
+subfamily_state_sample_counts_pc = ddply(subfamily_state_sample_combined,.(class_update,family,subfamily,State),function(x) sum(x$Length_percent_jk > THRESHOLD_PC))
 subfamily_state_sample_counts_pc_combine = merge(aggregate(data=subfamily_state_sample_counts_pc,V1~State,function(x) sum(x > 0)),
                                               dcast(aggregate(data=subfamily_state_sample_counts_pc,V1~State+class_update,function(x) sum(x > 0)),State~class_update,value.var = "V1"),
                                               by=c("State"))
