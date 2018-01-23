@@ -67,7 +67,6 @@ colnames(mnemonics_states_all)[1] = "Proportion"
 mnemonics_states_all$State = rep(chromHMM_states,2)
 mnemonics_states_all$Cohort = c(rep("Genome",15),rep("TE",15))
 mnemonics_states_all = rbind(mnemonics_states_all,states_features_noTE[,c(1:2,5)])
-mnemonics_states_all$State = factor(mnemonics_states_all$State,levels=chromHMM_states[c(1:3,6:7,4:5,8,10:12,9,13:14,15)])
 
 # WGBS proportion 
 #source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
