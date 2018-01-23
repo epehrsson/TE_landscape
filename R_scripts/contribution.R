@@ -5,10 +5,6 @@
 
 # ChromHMM contribution 
 contribution = read.table(file="chromHMM/TEother_contribution.txt",header=TRUE,sep='\t',row.names=1)
-
-# Adding composite states
-# contribution = as.data.frame(cbind(contribution,rowSums(contribution[,2:9]),rowSums(contribution[,10:16]),rowSums(contribution[,c(2:4,7:8)]),rowSums(contribution[,5:6]),rowSums(contribution[,c(10,14:15)]),rowSums(contribution[,11:13])))
-# colnames(contribution) = c("Total",chromHMM_states,"Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
 colnames(contribution) = c("Total",chromHMM_states)
 
 # TEs vs. not TEs (total is all bases across all tissues)
