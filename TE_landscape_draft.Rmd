@@ -1108,7 +1108,7 @@ feature_proportion = apply(rmsk_TE[,13:31],2,function(x) length(na.omit(x)))
 feature_proportion_long = melt(as.matrix(feature_proportion/NUM_TE))
 colnames(feature_proportion_long) = c("Feature","X","Proportion")
 
-b = ggplot(feature_proportion_shuffled_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=feature_proportion_long,aes(x=Feature,y=Proportion),size=3,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)])
+#b = ggplot(feature_proportion_shuffled_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=feature_proportion_long,aes(x=Feature,y=Proportion),size=3,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)])
 
 rmsk_TE_class_feature_long = melt(rmsk_TE_class[,c(1,12:30)],id.var="class_update")
 colnames(rmsk_TE_class_feature_long)[2:3] = c("Feature","Proportion")
@@ -1120,7 +1120,7 @@ d = ggplot(feature_state_mean,aes(x=State,y=Feature,fill=Enrichment)) + geom_til
 e = ggplot(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,175)) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
 feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]
 
-grid.arrange(a,b,c,d,e,nrow=5,heights=c(0.15,0.15,0.20,0.20,0.30))
+grid.arrange(a,c,d,e,nrow=4,heights=c(0.15,0.30,0.25,0.30))
 ```
 
 ### TE feature stats
@@ -1159,7 +1159,7 @@ sort(table(test[which(test$Zscore > 2),]$Feature))
 test[which(test$Zscore > 2 & test$Feature %in% c("exons_pc","5UTR_pc","3UTR_pc")),]
 test[which(test$Zscore > 2 & test$Feature %in% c("exons_nc","5UTR_nc","3UTR_nc")),]
 test[which(test$Zscore > 2 & test$Feature =="cpgIsland"),]
-test[which(test$Zscore > 2 & test$Feature =="promoter","promoter_pc","promoter_nc"),]
+test[which(test$Zscore > 2 & test$Feature %in% c("promoter","promoter_pc","promoter_nc")),]
 ```
 
 ### Max expression by feature
@@ -1299,15 +1299,13 @@ a = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update =
 
 b = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update != "All" & correlate_TE_state$State %in% c("Hypomethylated","Intermediate","Hypermethylated","Missing")),]),aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(limits=c("Missing","Hypermethylated","Intermediate","Hypomethylated")) + scale_x_discrete(limits=c("Length","CpGs","CpGs_per_length","JC_distance","mappability"),labels=c("Length","CpGs","CpGs/bp","Age","Mappability")) + facet_wrap(~class_update) 
 
-c = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkbflue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs"))
+c = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs"))
 
 d = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + facet_wrap(~class_update)
 
 e = ggplot(feature_metric_mean[which(feature_metric_mean$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15)) + scale_y_discrete(limits=rev(levels(feature_metric_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp"))
-feature_metric_mean[which(feature_metric_mean$Coding == "All"),]
 
 f = ggplot(feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15),scale=FALSE) + scale_y_discrete(limits=rev(levels(feature_metric_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp")) + facet_wrap(~Class)
-feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),]
 
 grid.arrange(a,b,c,d,e,f,nrow=3)
 ```
@@ -1322,6 +1320,10 @@ TE_pvalue_class_feature = ddply(rmsk_TE_measure,~class_update,function(z) apply(
 ### TE stats
 
 ```{r analysis Fig S10b}
+# From Figure S10
+feature_metric_mean[which(feature_metric_mean$Coding == "All"),]
+feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),]
+
 # Correlations between mappability, CpGs, CpGs per length, number of samples Missing (WGBS)
 # Missing: All TEs, all classes except SVA; SVA - Length, mappability, CpGs_per_length
 correlate_TE_state[which(correlate_TE_state$State == "Missing" & correlate_TE_state$Metric %in% c("mappability","CpGs","CpGs_per_length")),]
@@ -1804,7 +1806,7 @@ colnames(enrichment_pc_0.5) = c("State","subfamily","Age_PC","Anatomy_PC","Cance
 
 test = melt(rmsk_TE_subfamily_measure[,c(1,60:80)],id.vars=c("subfamily"))
 test$variable = gsub("_PC","",test$variable)
-test = merge(melt(rmsk_TE_subfamily_measure[,c(1:5,35,9,12:13,16,19,21,24:25,28,31:32,146,39:59)],id.vars=colnames(rmsk_TE_subfamily_measure)[c(1:5,35,9,12:13,16,19,21,24:25,28,31:32,146)]),test,by=c("subfamily","variable"))
+test = merge(melt(rmsk_TE_subfamily_measure[,c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81,39:59)],id.vars=colnames(rmsk_TE_subfamily_measure)[c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81)]),test,by=c("subfamily","variable"))
 colnames(test)[c(2,20:21)] = c("State","Samples_enriched","Samples_1pc")
 
 test = merge(test,enrichment_lor_0.5,by=c("State","subfamily"),all.x=TRUE)
