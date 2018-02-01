@@ -97,13 +97,13 @@ chromHMM_composite = setNames(c("Active regulatory","Active regulatory","Active 
 
 # WGBS
 meth_states = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
-meth_labels = setNames(c("Hypomethylated (<30%)","Intermediately methylated (30-70%)","Hypermethylated (>70%)","Missing data"),meth_states)
+meth_labels = setNames(c("Hypomethylated (<30%)","Intermediately methylated (30-70%)","Hypermethylated (>70%)","Missing CpG data"),meth_states)
 meth_colors = setNames(c("#F8766D","#00BFC4","#7CAE00","#C77CFF"),meth_states)
 
 # All states
 all_state_colors = c(chromHMM_colors,meth_colors,"aquamarine","tan1","black")
 names(all_state_colors)[20:22] = c("DNase","H3K27ac","Expression")
-all_state_labels = setNames(c(chromHMM_states,meth_states,"DNase","H3K27ac","RPKM > 1"),c(chromHMM_states,meth_states,"DNase","H3K27ac","Expression"))
+all_state_labels = setNames(c(chromHMM_states,meth_labels,"DNase","H3K27ac","RPKM > 1"),c(chromHMM_states,meth_states,"DNase","H3K27ac","Expression"))
 
 # TE classification
 class_colors = setNames(c("gold1","azure3","peru","lemonchiffon3","seagreen","lavenderblush4","brown1"),c("DNA","LINE","LTR","SINE","SVA","Other","RC"))
@@ -546,6 +546,15 @@ mplot(mosaic(u,shade=TRUE,return_grob=TRUE,legend=FALSE),pin=c(7,9))
 ### Compare mark analysis (get p-values and residuals)
 
 ```{r compare mark analysis}
+# Number of samples with each combination of data
+dim(metadata[which(!is.na(metadata$WGBS) & !is.na(metadata$DNase)),])[1]
+dim(metadata[which(!is.na(metadata$WGBS) & !is.na(metadata$H3K27ac)),])[1]
+dim(metadata[which(!is.na(metadata$WGBS) & !is.na(metadata$RNA)),])[1]
+dim(metadata[which(!is.na(metadata$DNase) & !is.na(metadata$H3K27ac)),])[1]
+dim(metadata[which(!is.na(metadata$DNase) & !is.na(metadata$RNA)),])[1]
+dim(metadata[which(!is.na(metadata$H3K27ac) & !is.na(metadata$RNA)),])[1]
+dim(metadata[which(!is.na(metadata$WGBS) & !is.na(metadata$DNase) & !is.na(metadata$H3K27ac) & !is.na(metadata$RNA)),])[1]
+
 # Tables for each mark
 aggregate(data=compare_marks_unique,TE_sample~DNase,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$DNase)),]$TE_sample))
 aggregate(data=compare_marks_unique,TE_sample~H3K27ac,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$H3K27ac)),]$TE_sample))
@@ -1037,6 +1046,10 @@ dcast(feature_state_mean[which(feature_state_mean$Coding == "All"),],Feature~Sta
 
 # Fig 3C
 lapply(colnames(chromosome_potential[,2:22]),function(x) {test = chromosome_potential[,c("chromosome",x)]; test$Zscore = (test[[x]]-mean(test[[x]]))/sd(test[[x]]); test = test[which(abs(test$Zscore) > 2),]; test[order(test$Zscore),]})
+
+# Number of TEs on each chromosome
+table(rmsk_TE$chromosome)
+sort(table(rmsk_TE$chromosome)/NUM_TE)
 
 # Proportion of TEs in each state on chr19
 apply(rmsk_TE_measure[,c(35:49,52:55,60:62)],2,function(x) table(rmsk_TE_measure[which(x > 0),]$chromosome)/dim(rmsk_TE_measure[which(x > 0),])[1])
@@ -1807,7 +1820,7 @@ colnames(enrichment_pc_0.5) = c("State","subfamily","Age_PC","Anatomy_PC","Cance
 test = melt(rmsk_TE_subfamily_measure[,c(1,60:80)],id.vars=c("subfamily"))
 test$variable = gsub("_PC","",test$variable)
 test = merge(melt(rmsk_TE_subfamily_measure[,c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81,39:59)],id.vars=colnames(rmsk_TE_subfamily_measure)[c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81)]),test,by=c("subfamily","variable"))
-colnames(test)[c(2,20:21)] = c("State","Samples_enriched","Samples_1pc")
+colnames(test)[c(2,25:26)] = c("State","Samples_enriched","Samples_1pc")
 
 test = merge(test,enrichment_lor_0.5,by=c("State","subfamily"),all.x=TRUE)
 test = merge(test,enrichment_pc_0.5,by=c("State","subfamily"),all.x=TRUE)
@@ -2101,7 +2114,7 @@ pie(rmsk_TE_class$Mouse_ortholog_subfamily,labels=paste(rmsk_TE_class$Mouse_orth
 
 b = ggplot(human_mouse_samples,aes(x=Test,y=Spearman)) + geom_boxplot() + ylab("Spearman correlation across TEs") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human","Mouse-mouse","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1))
 
-c = ggplot(human_mouse_samples,aes(x=Test,y=Subfamily_Spearman)) + geom_boxplot() + ylab("Spearman correlation across subfamilies") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human","Mouse-mouse","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1))
+c = ggplot(human_mouse_samples,aes(x=Test,y=Subfamily_Spearman)) + geom_boxplot() + ylab("Spearman correlation across subfamilies") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human, random tissue","Mouse-mouse, random tissue","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1))
 
 hg19_mm10_TE_WGBS_subfamily_hypo_paired_age = merge(ddply(hg19_mm10_TE_WGBS_subfamily_hypo_paired,.(subfamily),summarise,unlist(cor.test(Mouse,Human,method="spearman"))["estimate.rho"]),rmsk_TE_subfamily[c("subfamily","Age")],by="subfamily")
 colnames(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age)[2] = "Spearman_correlation"
@@ -2296,6 +2309,12 @@ apply(human_mouse_chromHMM_states,1,function(x) table(unique(human_mouse_ortholo
 
 # Summarise hg19 TE subfamily by state
 apply(human_mouse_chromHMM_states,1,function(x) sort(table(droplevels(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")])$human_subfamily))))
+
+test = apply(human_mouse_chromHMM_states,1,function(x) log2((table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")])$human_subfamily)/sum(table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")])$human_subfamily)))/(table(unique(human_mouse_orthologs_mm10[,c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")])$human_subfamily)/sum(table(unique(human_mouse_orthologs_mm10[,c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")])$human_subfamily)))))
+
+test[order(test[,1]),]
+test[order(test[,3]),]
+test[order(test[,4]),]
 ```
 
 ```{r overlap with GENCODE,eval=FALSE}
