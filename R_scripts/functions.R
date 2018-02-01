@@ -223,20 +223,17 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
 
 plot_binary_heatmap_indv = function(individual,metric="chromHMM",highlight_samples=NULL)
 {
-  #Get individual TEs from subfamily in state when enriched, all samples
-  if (metric == "DNase" | metric == "H3K27ac"){
-    candidate_indv = individual
-  } else if (metric == "WGBS") {
-    candidate_indv = read.table(individual,sep='\t')
-    colnames(candidate_indv) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap","State")
+  #Input is individual TEs from subfamily ever in state, all samples
+  candidate_indv = individual
+  print("Got individual TEs") 
+  
+  #Calculate overlap
+  if (metric == "WGBS") {
     candidate_indv$Coverage = 1-candidate_indv$Overlap
   } else {
-    candidate_indv = read.table(individual,sep='\t')
-    colnames(candidate_indv) = c("chromosome","start","stop","subfamily","class","family","strand","State","Overlap","Sample")
     candidate_indv$Coverage = candidate_indv$Overlap/(candidate_indv$stop-candidate_indv$start)
   }
-    
-  print("Got individual TEs") 
+  print("Calculated overlap")
    
   #Filter metadata based on metric
   if (metric == "WGBS") {
