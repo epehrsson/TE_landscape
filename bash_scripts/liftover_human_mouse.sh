@@ -107,3 +107,7 @@ awk -v OFS="\t" '{if($8==$15)print $0}' hg19_mm10_TE_intersect.bed > hg19_mm10_T
 # mm10 TEs with orthologs in humans	 
 #TE_landscape/Mouse/DNase_mm10/mm10_hg19_TE_intersect_same.bed	
 awk -v OFS='\t' '{print $12, $13, $14, $15, $16, $17, $18}' ~/TE_landscape/Mouse/hg19_mm10_TE_intersect_same.bed | sort | uniq > mm10_hg19_TE_intersect_same.bed
+
+# Test to confirm I am not missing orthologs by filtering repeats (1/19/18)
+ awk -v OFS='\t' '{print $6, $7, $8, $11, $12, $13, $10}' features/mouse/rmsk_mm10.txt | bedtools intersect -wo -a Mouse/rmsk_TE_mm10.bed -b - > Mouse/hg19_mm10_repeat_intersect.bed
+ awk -v OFS="\t" '{if($8==$15)print $0}' Mouse/hg19_mm10_repeat_intersect.bed > Mouse/hg19_mm10_repeat_intersect_same.bed
