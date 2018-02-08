@@ -16,3 +16,6 @@ while read subfamily state
 do
   awk -v OFS='\t' -v subfam=$subfamily -v state=$state '{if(($4 == subfam) && ($8 == state)) a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i], sep[7];}}' $combined_output > enrichment/$subfamily\_$state\_enriched.bed
 done < <(awk -v OFS='\t' '{print $1, $3}' $input_matrix | sort | uniq)
+
+# For 8_ZNF/Rpts
+#  while read subfamily state; do awk -v OFS='\t' -v subfam=$subfamily '{if($4 == subfam) a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i], sep[7];}}' enrichment/candidate_8_ZNF.Rpts_chromHMM.txt > enrichment/$subfamily\_8_ZNF.Rpts_enriched.bed; done < <(awk -v OFS='\t' '{print $1, $3}' enrichment/candidate_8_ZNF.Rpts_enrich.txt | sort | uniq)
