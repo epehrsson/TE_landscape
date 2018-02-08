@@ -40,6 +40,15 @@ awk -v OFS='\t' '{print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_promoter
 #genic_features/RefSeq/refseq_promoters_unique_std.txt	
 awk -v OFS='\t' '{if($1 !~ /_/) print $0}' refseq_promoters_unique.txt > refseq_promoters_unique_std.txt
 
+# Number overlapping each other
+ sort -k1,1V -k2,2n -k3,3n ~/genic_features/RefSeq/refseq_promoters_unique_std.txt | bedtools merge -i - > test.txt
+
+# Unique Refseq exon coordinates, filtered to standard chromosomes
+ awk -v OFS='\t' '{if($1 !~ /_/) print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_exons.txt | sort | uniq > ~/genic_features/RefSeq/refseq_exons_unique.txt
+
+# Number overlapping each other
+ sort -k1,1V -k2,2n -k3,3n ~/genic_features/RefSeq/refseq_exons_unique.txt | bedtools merge -i - > test.txt
+
 # GENCODE
 
 # Extended to 500bp downstream	 
