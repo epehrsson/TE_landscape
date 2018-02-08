@@ -12,3 +12,6 @@ bedtools intersect -wo -a human_mouse_hypo_1TssA.bed -b ~/genic_features/Gencode
 # Update 10/3/2017
 ## Overlap with GENCODE promoters 
 bedtools intersect -wo -a hg19_orthologs_hypo_1TssA.bed -b ~/genic_features/Gencode/Gencodev19_promoter.txt > hg19_orthologs_hypo_1TssA_Gencode.txt
+
+10/3/2017       TE_landscape/Mouse/hg19_orthologs_hypo_1TssA.bed
+10/3/2017       TE_landscape/Mouse/hg19_orthologs_hypo_1TssA_Gencode.txt
