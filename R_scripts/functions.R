@@ -108,7 +108,7 @@ correlate_spearman = function(matrix, indpt_var, response_vars){ #For all TEs, c
 }
 
 # Enrichment
-enrichment_proportion = function(matrix,enrichment,threshold,metric){
+enrichment_proportion = function(matrix,enrichment,threshold,metric,members_threshold=0){
   #Cannot process more than one state at a time
   if (metric == "chromHMM"){
     metadata_matrix = metadata
@@ -120,9 +120,9 @@ enrichment_proportion = function(matrix,enrichment,threshold,metric){
   proportions = list()
   
   for (i in 1:6) {
-    filtered_matrix = matrix[,c("subfamily",enrichment,categories[i])]
-    colnames(filtered_matrix) = c("subfamily","Enrichment","Category")
-    aggregate_matrix = aggregate(data=filtered_matrix,Enrichment~subfamily+Category,function(x) sum(x > threshold))
+    filtered_matrix = matrix[,c("subfamily",enrichment,categories[i],"Members")]
+    colnames(filtered_matrix) = c("subfamily","Enrichment","Category","Members")
+    aggregate_matrix = ddply(filtered_matrix,.(subfamily,Category),function(x) dim(x[which(x$Enrichment > threshold & x$Members >= members_threshold),])[1])
     colnames(aggregate_matrix)[3] = c("Enriched")
     aggregate_matrix$Metadata = rep(categories[i],dim(aggregate_matrix)[1])
     proportions[[i]] = aggregate_matrix
