@@ -23,6 +23,14 @@ while read line ; do awk -v OFS='\t' -v class=$line '{if($5 == class) print $0}'
 awk -v OFS='\t' '{if($5 == "Other") print $0}' all_chromHMM_other_sorted.txt > all_chromHMM_SVA_sorted.txt
 awk -v OFS='\t' '{if($5 != "Other") print $0}' all_chromHMM_other_sorted.txt > all_chromHMM_Other_sorted.txt
 
+# TEs by subfamily and state
+ awk '{if(($8 == "2_TssAFlnk") || ($8 == "3_TxFlnk") || ($8 == "4_Tx") || ($8 == "5_TxWk") || ($8 == "6_EnhG") || ($8 == "7_Enh") || ($8 == "1_TssA")) print > "chromHMM/subfamily/by_state/"$4"_"$8".txt"}' chromHMM/all_chromHMM_TE_sorted.txt
+ awk '{if(($8 == "2_TssAFlnk") || ($8 == "3_TxFlnk") || ($8 == "4_Tx") || ($8 == "5_TxWk") || ($8 == "6_EnhG") || ($8 == "7_Enh") || ($8 == "1_TssA")) print > "chromHMM/subfamily/by_state/"$4"_"$8".txt"}' chromHMM/all_chromHMM_other_sorted.txt
+ awk '{if(($8 != "2_TssAFlnk") && ($8 != "3_TxFlnk") && ($8 != "4_Tx") && ($8 != "5_TxWk") && ($8 != "6_EnhG") && ($8 != "7_Enh") && ($8 != "1_TssA") && ($8 != "8_ZNF/Rpts")) print > "chromHMM/subfamily/by_state/"$4"_"$8".txt"}' chromHMM/all_chromHMM_TE_sorted.txt
+ awk '{if(($8 != "2_TssAFlnk") && ($8 != "3_TxFlnk") && ($8 != "4_Tx") && ($8 != "5_TxWk") && ($8 != "6_EnhG") && ($8 != "7_Enh") && ($8 != "1_TssA") && ($8 != "8_ZNF/Rpts")) print > "chromHMM/subfamily/by_state/"$4"_"$8".txt"}' chromHMM/all_chromHMM_other_sorted.txt
+ awk '{if($8 == "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_8_ZNF.Rpts.txt"}' chromHMM/all_chromHMM_other_sorted.txt                    
+ awk '{if($8 == "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_8_ZNF.Rpts.txt"}' chromHMM/all_chromHMM_TE_sorted.txt
+
 # Refseq promoters
 #TE_landscape/chromHMM/Refseq_promoters/chromHMM_refseq_promoters_unique_sorted.txt
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $8, $10]+=$9;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], a[i];}}' chromHMM_refseq_promoters_unique.txt | sort -k1,1V -k2,2n -k3,3n -k6,6 > chromHMM_refseq_promoters_unique_sorted.txt

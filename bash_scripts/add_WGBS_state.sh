@@ -17,3 +17,6 @@ awk -v OFS='\t' '{if($9 == "NA") print $0, "Missing"; else if ($9 < 0.3) print $
 while read line ; do awk -v OFS='\t' -v class=$line '{if($5 == class) print $0}' TE_WGBS_state_sorted.txt > $line\_WGBS_state_sorted.txt; done < ../features/TEs/class/TE_class.txt
 awk -v OFS='\t' '{if($5 == "Other") print $0}' TE_WGBS_state_sorted.txt > SVA_WGBS_state_sorted.txt
 awk -v OFS='\t' '{if(($5 != "Other") && ($5 != "LINE") && ($5 != "SINE") && ($5 != "DNA") && ($5 != "LTR")) print $0}' TE_WGBS_state_sorted.txt > Other_WGBS_state_sorted.txt
+
+# Methylation state by subfamily x state
+ awk '{print > "WGBS/subfamily/by_state/"$4"_"$10".txt"}' WGBS/TE_WGBS_state_sorted.txt
