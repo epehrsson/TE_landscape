@@ -32,3 +32,11 @@ python ~/bin/TE_landscape/state_sharing_inter.py TE_WGBS_state_sorted.txt methyl
 # WGBS inter switching, by class
 #TE_landscape/WGBS/class/[class]_WGBS_state_sorted.txt_inter.txt [6 files]		
 for file in *WGBS_state_sorted.txt; do python ~/bin/TE_landscape/state_sharing_inter.py $file ../methylation_states.txt $file\_inter.txt 7 9; done
+
+# Number of states per TE x sample (11/30/17)
+ python ~/bin/TE_landscape/state_sharing_intra_lite.py chromHMM/all_chromHMM_other_sorted.txt chromHMM/chromHMM_states.txt chromHMM/all_chromHMM_other_state_counts.txt
+ python ~/bin/TE_landscape/state_sharing_intra_lite.py chromHMM/all_chromHMM_TE_sorted.txt chromHMM/chromHMM_states.txt chromHMM/all_chromHMM_TE_state_counts.txt
+
+# Number of TE x sample with CpGs in more than one state (11/30/17)
+  python ~/bin/TE_landscape/shared_meth_CpG.py WGBS/TE_CpG_Meth_state.txt WGBS/TE_CpG_state_counts.txt
+
