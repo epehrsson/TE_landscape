@@ -57,9 +57,6 @@ RNA_TE_agnostic_subfamily = aggregate(data=RNA_TE_agnostic[,c(4:6,8:60)],.~class
 # Max average expression per subfamily
 RNA_TE_agnostic_subfamily$Max_expression = apply(RNA_TE_agnostic_subfamily[,5:56],1,max)
 
-# Number of samples mean subfamily expression is >1 RPKM
-RNA_TE_agnostic_subfamily$Expressed_samples = apply(RNA_TE_agnostic_subfamily[,5:56],1,function(x) sum(x > 1))
-
 # Exons
 # Average expression per Refseq exon
 RNA_refseq_exon = read.table("RNAseq/refseq_exons_average.txt",sep='\t')
