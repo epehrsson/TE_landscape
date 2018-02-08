@@ -3,6 +3,8 @@
 # 2/2/2017, 2/3/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/24/2017, 6/5/2017, 6/12/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017, 9/19/2017
 
 # chromHMM 
+# Difference between hg19 chromosome lengths and chromHMM annotation (11/9/17)
+ awk -v OFS='\t' '{chr[$1]+=$3-$2}END{for(i in chr){print i, chr[i]}}' raw_data/chromHMM/E001_15_coreMarks_mnemonics.bed
 
 # Combines bp counts of state per sample into one file
 #TE_landscape/chromHMM/combine_states.sh	
