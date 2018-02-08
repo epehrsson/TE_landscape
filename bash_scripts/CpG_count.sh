@@ -32,3 +32,10 @@ awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,S
 # Shuffled TEs
 #TE_landscape/WGBS/shuffled/TE_CpG_count_#.txt [10 files]
  for j in {1..10}; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(k in a){split(k,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[k];}}' rmsk_TE_shuffle_$j\_Meth.bed > TE_CpG_count_$j.txt; done
+
+# Exons (1/3/18)
+ awk -v OFS='\t' '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i];}}' WGBS/refseq_exons_unique_CpG_Meth.bed > WGBS/refseq_exons_unique_CpG_count.txt
+
+# Mouse TEs (12/7/17)
+ awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_WGBS.bed > Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_CpG_count.txt
+
