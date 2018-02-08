@@ -18,3 +18,10 @@ awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt
 
 # Shuffled TEs intersect with mappability
 for i in {1..10}; do for file in mappability/x*; do bedtools intersect -wo -a rmsk_TE_shuffle_$i\.txt -b $file >> mappability/rmsk_TE_shuffle_$i\_mappabililty.bed; done; done
+
+# Average mappability by chromHMM state (1/9/18-1/10/18)
+ split -l 5000000 ~/TE_landscape/mappability/wgEncodeCrgMapabilityAlign36mer.bedGraph
+ while read line; do echo $line; for file in x*; do bedtools intersect -wo -a $file -b ~/TE_landscape/raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> mappabililty_$line\.bed; done; done < ~/TE_landscape/sample_lists/mnemonics.txt
+ python ~/bin/TE_landscape/calculate_average_mappability.py mappabililty_E001.bed ~/TE_landscape/chromHMM/chromHMM_states.txt mappability_E001_average.txt
+ while read line; do echo $line; for file in x*; do bedtools intersect -wo -a $file -b ~/TE_landscape/raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> mappabililty_$line\.bed; done; python ~/bin/TE_landscape/calculate_average_mappability.py mappabililty_$line\.bed ~/TE_landscape/chromHMM/chromHMM_states.txt mappability_$line\_average.txt; done < mnemonics.txt
+
