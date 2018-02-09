@@ -1566,11 +1566,12 @@ rm(list=c("DNase_pca","H3K27ac_pca","enhancer_matrix_pca","enhancer_matrix"))
 ### Set thresholds 
 
 ```{r set enrichment thresholds}
-THRESHOLD_IJK_BASE = 600
-THRESHOLD_IK_BASE = 5000
-THRESHOLD_IJK_CPG = 6
-THRESHOLD_IK_CPG = 50
-THRESHOLD_LOR = 1.5
+THRESHOLD_IJK_BASE = 0
+THRESHOLD_IK_BASE = 0
+THRESHOLD_IJK_CPG = 0
+THRESHOLD_IK_CPG = 0
+THRESHOLD_IJK_MEMBERS = 3
+THRESHOLD_LOR = 0
 THRESHOLD_PC = 0.01
 ```
 
@@ -1719,13 +1720,13 @@ ddply(subfamily_state_members,.(variable),summarise,Mean=mean(na.omit(value/Memb
 
 ```{r Figure S13, echo=FALSE}
 
-a = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac"))
+a = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac")) + ylim(0,7)
   
 b = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac"))
 
 c = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac"))
 
-d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac"))
+d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac")) + ylim(0,7)
   
 e = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=c(chromHMM_states[1:14],meth_states[c(1:2,4)],"DNase","H3K27ac"))
 
@@ -1809,13 +1810,13 @@ lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched
 
 ### Subfamily enrichment clustering and stats (for Excel)
 
-```{r analysis Fig S14b, eval=FALSE}
+```{r enrichment clusters, eval=FALSE}
 #source("R_scripts/subfamily_enrichment.R")
 source("R_scripts/TE_correlation_subfamily.R") #Requires subfamily enrichment
 
-enrichment_lor = c(lapply(chromHMM_states,function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,"chromHMM",3)),
-                      lapply(meth_states,function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,"WGBS",3)),
-                      lapply(c("DNase","H3K27ac"),function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,x,3)))
+enrichment_lor = c(lapply(chromHMM_states,function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,"chromHMM")),
+                      lapply(meth_states,function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,"WGBS")),
+                      lapply(c("DNase","H3K27ac"),function(x) enrichment_proportion(subfamily_state_sample_filter[which(subfamily_state_sample_filter$State == x),],"Enrichment",THRESHOLD_LOR,x)))
 names(enrichment_lor) = c(chromHMM_states,meth_states,"DNase","H3K27ac")
 enrichment_lor_0.5 = ldply(enrichment_lor,function(x) x[which(x$Proportion > 0.5 & x$Enriched > 1),])
 enrichment_lor_0.5 = dcast(aggregate(data = enrichment_lor_0.5[,c(1:3,5)], Category~.id+subfamily+Metadata, paste, collapse = ','),.id+subfamily~Metadata,value.var="Category")
@@ -1831,12 +1832,15 @@ colnames(enrichment_pc_0.5) = c("State","subfamily","Age_PC","Anatomy_PC","Cance
 
 test = melt(rmsk_TE_subfamily_measure[,c(1,60:80)],id.vars=c("subfamily"))
 test$variable = gsub("_PC","",test$variable)
-test = merge(melt(rmsk_TE_subfamily_measure[,c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81,39:59)],id.vars=colnames(rmsk_TE_subfamily_measure)[c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81)]),test,by=c("subfamily","variable"))
-colnames(test)[c(2,25:26)] = c("State","Samples_enriched","Samples_1pc")
+test = merge(melt(rmsk_TE_subfamily_measure[,c(1,39:59)],id.vars=c("subfamily")),test,by=c("subfamily","variable"))
+colnames(test)[2:4] = c("State","Samples_enriched","Samples_1pc")
 
 test = merge(test,enrichment_lor_0.5,by=c("State","subfamily"),all.x=TRUE)
 test = merge(test,enrichment_pc_0.5,by=c("State","subfamily"),all.x=TRUE)
 write.table(test,file="enrichment/state_subfamily_clusters.txt",sep='\t',row.names = FALSE,quote = FALSE)
+
+# Subfamily features
+write.table(rmsk_TE_subfamily_measure[,c(1:5,35,33:34,37:38,7,9,12:13,16,19,21,24:25,28,31:32,81)],file="enrichment/subfamily_features.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Investigate individual subfamilies (for Excel)
@@ -1848,8 +1852,7 @@ rmsk_TE_subfamily_ever = aggregate(data=rmsk_TE_measure[,c(4,35:49,52:55,60:62)]
 colnames(rmsk_TE_subfamily_ever)[9] = "X8_ZNF/Rpts"
 colnames(rmsk_TE_measure)[42] = "X8_ZNF/Rpts"
 
-lapply(names(all_state_labels)[c(1:7,16:17,20:21)],function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x))
-lapply(names(all_state_labels)[c(8:15,18:19)],function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x,FALSE))
+lapply(names(all_state_labels),function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x,FALSE))
 
 # Get individual members in DNase or H3K27ac
 print_individual_TEs("enrichment/candidate_DNase_enrich.txt")
