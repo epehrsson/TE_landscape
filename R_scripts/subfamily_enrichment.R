@@ -212,12 +212,12 @@ colnames(test)[c(12:13,15)] = c("Length_ijk","Length_ik","Length_percent_jk")
 subfamily_state_sample_combined = rbind(subfamily_state_sample[,c(1:13,16:19)],test,subfamily_DNase_sample[,c(1:13,16:19)],subfamily_H3K27ac_sample[,c(1:13,16:19)])
 
 # Combine filtered matrices
-test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG & subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG),]
+test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG & subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG & subfamily_CpG_meth$Members >= THRESHOLD_IJK_MEMBERS),]
 colnames(test2)[c(12:13,16)] = c("Length_ijk","Length_ik","Length_percent_jk")
-subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)],
+subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_state_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)],
                                       test2[,c(1:13,15:18)],
-                                      subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_DNase_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)],
-                                      subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_H3K27ac_sample$Length_ik > THRESHOLD_IK_BASE),c(1:13,16:19)])
+                                      subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_DNase_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_DNase_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)],
+                                      subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_H3K27ac_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_H3K27ac_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)])
 subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
 
 # Number of enrichments per subfamily x state
