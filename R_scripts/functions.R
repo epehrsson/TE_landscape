@@ -283,7 +283,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   }
   
   # Statistics for candidate subfamilies
-  test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily %in% candidate_list & subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state),],.(subfamily),summarise,Min = min(Members),Max = max(Members),Median = median(Members))
+  test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily %in% candidate_list & subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state),],.(subfamily),summarise,Min = min(Members),Max = max(Members),Median = median(Members))
   if (state %in% chromHMM_states){
     test = merge(test,rmsk_TE_subfamily_ever[,c("subfamily",stateX)],by="subfamily")
   } else {
@@ -312,7 +312,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   }
   
   # Write samples where candidate subfamilies are enriched in state	 
-  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > 1.5 & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enrich.txt",sep=""))
+  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enrich.txt",sep=""))
 }
 
 print_individual_TEs = function(subfamily_state_sample){
@@ -333,11 +333,10 @@ print_individual_TEs = function(subfamily_state_sample){
     test[[i]] = melt(test[[i]],id.vars=c("chromosome","start","stop","subfamily","family","class","strand"))
   }
   test = ldply(test)
-  write.table(test,file=paste("enrichment/candidate_",state,".txt",sep=""),sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE)
-  
   test_instance = aggregate(data=test,variable~chromosome+start+stop+subfamily+family+class+strand,length)
   lapply(unique(test_instance$subfamily),function(x) write.table(test_instance[which(test_instance$subfamily == x),c(1:4,8,7)],file=paste("enrichment/",x,"_",state,"_enriched.bed",sep=""),sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE))
 }
+
 get_subfamily_in_state = function(subfamily,state,metric){
   # Get subfamily members ever in state
   if (metric=="chromHMM"){
