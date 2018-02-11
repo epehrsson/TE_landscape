@@ -294,7 +294,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   colnames(test)[8] = "Samples_enriched"
   test = merge(test,rmsk_TE_subfamily[,c(1,4)],by="subfamily")
   colnames(test)[9] = "Members"
-  print(test[,c(1,6:7,8,9,5,2:4)])
+  write.table(test[,c(1,6:7,8,9,5,2:4)],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_stat.txt",sep=""))
   
   # Write enriched subfamily coordinates
   if (print_coords == TRUE){
@@ -312,7 +312,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   }
   
   # Write samples where candidate subfamilies are enriched in state	 
-  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enrich.txt",sep=""))
+  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enriched.txt",sep=""))
 }
 
 print_individual_TEs = function(subfamily_state_sample){
