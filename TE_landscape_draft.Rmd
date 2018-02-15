@@ -1860,10 +1860,6 @@ colnames(rmsk_TE_subfamily_ever)[9] = "X8_ZNF/Rpts"
 colnames(rmsk_TE_measure)[42] = "X8_ZNF/Rpts"
 
 lapply(names(all_state_labels)[1:21],function(x) write_subfamily_candidates(subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == x & subfamily_state_sample_counts$V1 > 1),]$subfamily,x,FALSE))
-
-# Get individual members in DNase or H3K27ac
-print_individual_TEs("enrichment/candidate_DNase_enriched.txt")
-print_individual_TEs("enrichment/candidate_H3K27ac_enriched.txt")
 ```
 
 ### Core subfamily members
