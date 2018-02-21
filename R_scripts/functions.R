@@ -110,11 +110,7 @@ correlate_spearman = function(matrix, indpt_var, response_vars){ #For all TEs, c
 # Enrichment
 enrichment_proportion = function(matrix,enrichment,threshold,metric,members_threshold=0){
   #Cannot process more than one state at a time
-  if (metric == "chromHMM"){
-    metadata_matrix = metadata
-  } else {
-    metadata_matrix = metadata[which(!is.na(metadata[[metric]])),]
-  }
+  metadata_matrix = filter_metadata(metadata,metric)
 
   categories = c("Age","Anatomy","Cancer","Germline","Group","Type")
   proportions = list()
@@ -175,10 +171,7 @@ plot_pca = function(pca,axes,map,colorby,legend_title,level_colors,guide=TRUE){
   }
 }
 
-plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment",subfamilies=NULL) 
-{
-  #Input matrix should be subfamily_state_sample_filter
-  #Filter metadata based on metric
+filter_metadata = function(metadata,metric){
   if (metric == "WGBS") {
     metadata_matrix = metadata[which(!is.na(metadata$WGBS)),]
   } else if (metric == "DNase") {
@@ -188,6 +181,14 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
   } else{
     metadata_matrix = metadata
   }
+}
+
+plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment",subfamilies=NULL) 
+{
+  #Input matrix should be subfamily_state_sample_filter
+  
+  #Filter metadata based on metric
+  metadata_matrix = filter_metadata(metadata,metric)
   
   #Column metadata
   column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
@@ -227,24 +228,8 @@ plot_binary_heatmap_indv = function(individual,metric="chromHMM",highlight_sampl
   candidate_indv = individual
   print("Got individual TEs") 
   
-  #Calculate overlap
-  if (metric == "WGBS") {
-    candidate_indv$Coverage = 1-candidate_indv$Overlap
-  } else {
-    candidate_indv$Coverage = candidate_indv$Overlap/(candidate_indv$stop-candidate_indv$start)
-  }
-  print("Calculated overlap")
-   
   #Filter metadata based on metric
-  if (metric == "WGBS") {
-    metadata_matrix = metadata[which(!is.na(metadata$WGBS)),]
-  } else if (metric == "DNase") {
-    metadata_matrix = metadata[which(!is.na(metadata$DNase)),]
-  } else if (metric == "H3K27ac") {
-    metadata_matrix = metadata[which(!is.na(metadata$H3K27ac)),]
-  } else{
-    metadata_matrix = metadata
-  }
+  metadata_matrix = filter_metadata(metadata,metric)
   print("Filtered metadata")
   
   #Column metadata
@@ -344,15 +329,26 @@ get_subfamily_in_state = function(subfamily,state,metric){
     colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","State","Overlap","Sample")
   } else if (metric=="WGBS") {
     subfamily_in_state = read.table(paste("WGBS/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap","State")
+    colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap")
   } else if (metric=="DNase" | metric=="H3K27ac"){
-    matrix = get(paste("TE_",metric,"_overlap",sep=""))
-    subfamily_in_state = melt(matrix[which(matrix$subfamily == subfamily),c(1:5,7:ncol(matrix))],
-                              id.vars=c("chromosome","start","stop","subfamily","class_update","family","strand"))
+    subfamily_in_state = read.table(paste(metric,"/subfamily/",subfamily,"_",state,".txt",sep=""),sep='\t')
     colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap")
   }
+  print("Loaded matrix")
+  
+  #Calculate overlap
+  if (metric == "WGBS") {
+    subfamily_in_state = merge(subfamily_in_state,TE_meth_average[,c("chromosome","start","stop","subfamily","class","family","strand","CpGs")],by=c("chromosome","start","stop","subfamily","class","family","strand"))
+    subfamily_in_state$Coverage = subfamily_in_state$Overlap/subfamily_in_state$CpGs
+  } else {
+    subfamily_in_state$Coverage = subfamily_in_state$Overlap/(subfamily_in_state$stop-subfamily_in_state$start)
+  }
+  print("Calculated overlap")
+  
   return(subfamily_in_state)
 }
+
+
 
 get_enriched_samples = function(subfamily,state,enrichment=THRESHOLD_LOR){
   samples = as.vector(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily == subfamily 
@@ -376,7 +372,7 @@ investigate_candidate_indv = function(subfamily,state,metric,enrichment=THRESHOL
     samples = NULL
   }
   if (print_fig == "TRUE"){
-    png(paste("enrichment/heatmaps/Heatmap_",subfamily,"_",state,"_enriched",enrichment,".png",sep=""))
+    png(paste("enrichment/heatmaps/Heatmap_",subfamily,"_",state,"_",enrichment,".png",sep=""))
   }
   
   plot_binary_heatmap_indv(subfamily_in_state,metric=metric,highlight_samples=samples)
@@ -384,4 +380,53 @@ investigate_candidate_indv = function(subfamily,state,metric,enrichment=THRESHOL
   if (print_fig == "TRUE"){
     dev.off()
   }
+}
+
+enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score_threshold=1,category_threshold=0.5,sample_threshold=1,TE_threshold=3){
+  print(subfamily)
+  
+  # Filter metadata
+  metadata_matrix = filter_metadata(metadata,metric)
+  metadata_table = ddply(melt(metadata_matrix[,c(1,4:9)],id.var="Sample"),.(variable,value),summarise,Num=length(Sample))
+  colnames(metadata_table) = c("Category","Grouping","Category_samples")
+  print("Filtered metadata")
+  
+  # Read in subfamily members ever in state
+  subfamily_in_state = get_subfamily_in_state(subfamily,state,metric)
+  print("Got individual TEs")
+  
+  # Add missing samples 
+  subfamily_matrix = dcast(subfamily_in_state,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Coverage")
+  subfamily_matrix[,setdiff(metadata_matrix$Sample,colnames(subfamily_matrix))] = rep(NA,dim(subfamily_matrix)[1])
+  subfamily_matrix[is.na(subfamily_matrix)] = 0
+  subfamily_matrix = melt(subfamily_matrix,id.vars=c("chromosome","start","stop","subfamily","class","family","strand"))
+  colnames(subfamily_matrix)[8:9] = c("Sample","Coverage")
+  print("Added missing samples")
+  
+  # Add metadata
+  subfamily_matrix = merge(subfamily_matrix,metadata_matrix[,c("Sample","Age","Anatomy","Cancer","Germline","Group","Type")])
+  subfamily_matrix = melt(subfamily_matrix,id.vars=c("chromosome","start","stop","subfamily","class","family","strand","Sample","Coverage"))
+  colnames(subfamily_matrix)[10:11] = c("Category","Grouping")
+  print("Added metadata")
+  
+  # Fraction of sample category each TE is in state
+  TE_category_matrix = ddply(subfamily_matrix,.(chromosome,start,stop,subfamily,family,class,strand,Category,Grouping),here(summarise),Samples=sum(Coverage > coverage_threshold))
+  print("Fraction of sample category each TE is in state")
+  
+  # Fraction of all samples each TE is in state
+  TE_matrix = ddply(unique(subfamily_matrix[,1:9]),.(chromosome,start,stop,subfamily,family,class,strand),here(summarise),All=sum(Coverage > coverage_threshold))
+  TE_category_matrix = merge(TE_category_matrix,TE_matrix,by=c("chromosome","start","stop","subfamily","class","family","strand"),all.x=TRUE)
+  print("Fraction of all samples each TE is in state")
+  
+  # Score specificity of TE to that grouping - percent of group samples TE is in state vs all other samples
+  TE_category_matrix = merge(TE_category_matrix,metadata_table,by=c("Category","Grouping"),all.x=TRUE)
+  TE_category_matrix$Proportion = TE_category_matrix$Samples/TE_category_matrix$Category_samples
+  TE_category_matrix$Score = TE_category_matrix$Proportion/((TE_category_matrix$All-TE_category_matrix$Samples)/(dim(metadata_matrix)[1]-TE_category_matrix$Category_samples))
+  print("Calculating TE score")
+  
+  # Find categories with at least xx TEs with score xx
+  category_matrix = ddply(TE_category_matrix,.(Category,Grouping,Category_samples),here(summarise),TEs=length(Category[which(Score > score_threshold & Proportion > category_threshold & Samples > sample_threshold)]))
+  print("Finding categories over threshold")
+  
+  return(category_matrix[which(category_matrix$TEs >= TE_threshold),])
 }
