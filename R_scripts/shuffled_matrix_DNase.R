@@ -1,7 +1,5 @@
 # Load shuffled TE potential matrices, DNase
 
-library(reshape2)
-
 # Number of overlaps between shuffled TEs, DNase peaks
 shuffled_DNase_potential = lapply(list.files(path="DNase/shuffled/",pattern="_DNase_peaks.txt",full.names = TRUE),function(x) read.table(x,sep='\t'))
 shuffled_DNase_potential = lapply(shuffled_DNase_potential, setNames, nm =c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks","Overlap"))
