@@ -2,15 +2,10 @@
 # See 8/24/2016, 8/25/2016, 9/28/2016, 2/6/2017, 2/9/2017, 6/15/2017
 
 # Proportion of genome, TEs overlapping each RefSeq feature and vice-versa
-feature_overlap_cast = read.table("features/intersect_features/feature_overlap.txt",sep='\t',header=TRUE)
-feature_overlap_cast[5,5] = feature_overlap_cast[5,4] #Adding intergenic stranded
-feature_overlap_cast$Genome_percent_genome = feature_overlap_cast$Genome/3095693983
-feature_overlap_cast$TEs_percent_TE = feature_overlap_cast$TEs/1389947349
-feature_overlap_cast$TEs_strand_percent_TE = feature_overlap_cast$TEs_strand/1389947349
-feature_overlap_cast$Genome_percent_TE = feature_overlap_cast$TEs/feature_overlap_cast$Genome
+feature_overlap$Genome_percent_genome = feature_overlap$Genome/GENOME_WIDTH
+feature_overlap$TEs_percent_TE = feature_overlap$TEs/MERGED_TE_WIDTH
+feature_overlap$TEs_strand_percent_TE = feature_overlap$TEs_strand/MERGED_TE_WIDTH
+feature_overlap$Genome_percent_TE = feature_overlap$TEs/feature_overlap$Genome
 
-feature_overlap_long = melt(feature_overlap_cast,id.vars = c("Feature","Cohort"))
+feature_overlap_long = melt(feature_overlap[,c(2:3,11:14)],id.vars = c("Feature","Coding"))
 colnames(feature_overlap_long)[3:4] = c("Measure","Percent")
-feature_overlap_long = feature_overlap_long[which(feature_overlap_long$Measure %in% colnames(feature_overlap_cast)[6:9]),]
-feature_overlap_long$Cohort = factor(feature_overlap_long$Cohort,levels=levels(feature_overlap_long$Cohort)[c(1,3,2)])
-feature_overlap_long$Feature = factor(feature_overlap_long$Feature,levels=levels(feature_overlap_long$Feature)[c(7,2,3,1,4,6,5)])
