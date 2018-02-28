@@ -23,9 +23,10 @@ TE_meth_average$Intermediate_noIMR90 = apply(TE_meth_average,1,function(x) sum(a
 TE_meth_average$Missing_noIMR90 = apply(TE_meth_average,1,function(x) sum(is.na(as.numeric(x[c(8:17,19:44)]))))
 
 # Adding Unconfident class
-TE_meth_average$class_update = TE_meth_average$class
-TE_meth_average$class_update = factor(TE_meth_average$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
-TE_meth_average[which(TE_meth_average$class == "Other"),]$class_update = "SVA"
-TE_meth_average[which(TE_meth_average$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC")),]$class_update = "Other"
+TE_meth_average$class_update = convert_class(TE_meth_average$class)
+
+# Adding number of states
+TE_meth_average$States = apply(TE_meth_average[,46:49],1,function(x) sum(x > 0))
+TE_meth_average$States_noIMR90 = apply(TE_meth_average[,50:53],1,function(x) sum(x > 0))
 
 save(TE_meth_average,file="R_datasets/TE_meth_average.RData")
