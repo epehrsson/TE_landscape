@@ -17,7 +17,14 @@ rm(shuffled_WGBS_CpG)
 print("Combined WGBS and CpG matrices")
 
 # Number of samples TE is in each methylation state (IMR90, no IMR90)
-shuffled_WGBS_average = lapply(shuffled_WGBS_average,function(y) transform(y,Hypomethylated = apply(y,1,function(x) sum(x[8:44] < 0.3,na.rm=TRUE)),Hypermethylated = apply(y,1,function(x) sum(x[8:44] > 0.7,na.rm=TRUE)),Intermediate = apply(y,1,function(x) sum(x[8:44] <= 0.7 & x[8:44] >= 0.3,na.rm=TRUE)),Missing = apply(y,1,function(x) sum(is.na(x[8:44]))),Hypomethylated_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] < 0.3,na.rm=TRUE)),Hypermethylated_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] > 0.7,na.rm=TRUE)),Intermediate_noIMR90 = apply(y,1,function(x) sum(x[c(8:17,19:44)] <= 0.7 & x[c(8:17,19:44)] >= 0.3,na.rm=TRUE)),Missing_noIMR90 = apply(y,1,function(x) sum(is.na(x[c(8:17,19:44)])))))
+shuffled_WGBS_average = lapply(shuffled_WGBS_average,function(y) transform(y,Hypomethylated = apply(y,1,function(x) sum(as.numeric(x[8:44]) < 0.3,na.rm=TRUE)),
+                                                                           Hypermethylated = apply(y,1,function(x) sum(as.numeric(x[8:44]) > 0.7,na.rm=TRUE)),
+                                                                           Intermediate = apply(y,1,function(x) sum(as.numeric(x[8:44]) <= 0.7 & as.numeric(x[8:44]) >= 0.3,na.rm=TRUE)),
+                                                                           Missing = apply(y,1,function(x) sum(is.na(x[8:44]))),
+                                                                           Hypomethylated_noIMR90 = apply(y,1,function(x) sum(as.numeric(x[c(8:17,19:44)]) < 0.3,na.rm=TRUE)),
+                                                                           Hypermethylated_noIMR90 = apply(y,1,function(x) sum(as.numeric(x[c(8:17,19:44)]) > 0.7,na.rm=TRUE)),
+                                                                           Intermediate_noIMR90 = apply(y,1,function(x) sum(as.numeric(x[c(8:17,19:44)]) <= 0.7 & as.numeric(x[c(8:17,19:44)]) >= 0.3,na.rm=TRUE)),
+                                                                           Missing_noIMR90 = apply(y,1,function(x) sum(is.na(x[c(8:17,19:44)])))))
 print("Calculating methylation states")
 
 save(shuffled_WGBS_average,file="R_datasets/shuffled_WGBS.RData")

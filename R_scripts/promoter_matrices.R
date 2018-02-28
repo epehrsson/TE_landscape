@@ -1,7 +1,5 @@
 # Creates matrices of promoter x number of samples in each state for all 4 measures
 
-library(reshape2)
-
 # Number of samples each promoter is in each chromHMM state
 chromHMM_promoter_state = read.table("chromHMM/Refseq_promoters/potential_refseq_promoters_unique.txt",sep='\t',header=TRUE)
 
@@ -9,13 +7,13 @@ chromHMM_promoter_state = read.table("chromHMM/Refseq_promoters/potential_refseq
 promoter_meth_average = read.table("WGBS/Refseq_promoters/refseq_promoter_unique_CpG_Meth_average.txt",sep='\t',header=TRUE)
 
 # Number of samples promoter is in each methylation state (IMR90, no IMR90)
-promoter_meth_average$Hypomethylated = apply(promoter_meth_average,1,function(x) sum(x[5:41] < 0.3,na.rm=TRUE))
-promoter_meth_average$Hypermethylated = apply(promoter_meth_average,1,function(x) sum(x[5:41] > 0.7,na.rm=TRUE))
-promoter_meth_average$Intermediate = apply(promoter_meth_average,1,function(x) sum(x[5:41] <= 0.7 & x[5:41] >= 0.3,na.rm=TRUE))
+promoter_meth_average$Hypomethylated = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[5:41]) < 0.3,na.rm=TRUE))
+promoter_meth_average$Hypermethylated = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[5:41]) > 0.7,na.rm=TRUE))
+promoter_meth_average$Intermediate = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[5:41]) <= 0.7 & as.numeric(x[5:41]) >= 0.3,na.rm=TRUE))
 promoter_meth_average$Missing = apply(promoter_meth_average,1,function(x) sum(is.na(x[5:41])))
-promoter_meth_average$Hypomethylated_noIMR90 = apply(promoter_meth_average,1,function(x) sum(x[c(5:14,16:41)] < 0.3,na.rm=TRUE))
-promoter_meth_average$Hypermethylated_noIMR90 = apply(promoter_meth_average,1,function(x) sum(x[c(5:14,16:41)] > 0.7,na.rm=TRUE))
-promoter_meth_average$Intermediate_noIMR90 = apply(promoter_meth_average,1,function(x) sum(x[c(5:14,16:41)] <= 0.7 & x[c(5:14,16:41)] >= 0.3,na.rm=TRUE))
+promoter_meth_average$Hypomethylated_noIMR90 = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[c(5:14,16:41)]) < 0.3,na.rm=TRUE))
+promoter_meth_average$Hypermethylated_noIMR90 = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[c(5:14,16:41)]) > 0.7,na.rm=TRUE))
+promoter_meth_average$Intermediate_noIMR90 = apply(promoter_meth_average,1,function(x) sum(as.numeric(x[c(5:14,16:41)]) <= 0.7 & as.numeric(x[c(5:14,16:41)]) >= 0.3,na.rm=TRUE))
 promoter_meth_average$Missing_noIMR90 = apply(promoter_meth_average,1,function(x) sum(is.na(x[c(5:14,16:41)])))
 
 # Number of overlaps between promoters, DNase peaks
