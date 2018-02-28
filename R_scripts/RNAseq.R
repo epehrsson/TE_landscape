@@ -1,8 +1,6 @@
 # Load RNA matrices (TEs and exons)
 # See 3/1/2017, 3/2/2017, 3/3/2017, 3/7/2017, 6/8/2017, 6/11/2017, 6/14/2017, 8/1/2017
 
-library(plyr)
-
 # Normalization factors per sample
 RNA_metadata = read.table("raw_data/RNAseq/all.EGID.N.readlength",sep='\t',header=TRUE)
 
@@ -46,16 +44,7 @@ RNA_TE_agnostic$Expressed_samples_noCancer = apply(RNA_TE_agnostic[,9:60],1,func
 RNA_TE_agnostic$Max_expression = apply(RNA_TE_agnostic[,9:60],1,max)
 
 # Updating class
-RNA_TE_agnostic$class_update = RNA_TE_agnostic$class
-RNA_TE_agnostic$class_update = factor(RNA_TE_agnostic$class_update,levels=c("DNA","LINE","LTR","SINE","Other","RC","Unconfident","SVA"))
-RNA_TE_agnostic[which(RNA_TE_agnostic$class == "Other"),]$class_update = "SVA"
-RNA_TE_agnostic[which(RNA_TE_agnostic$class %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC")),]$class_update = "Other"
-
-# Average expression per subfamily
-RNA_TE_agnostic_subfamily = aggregate(data=RNA_TE_agnostic[,c(4:6,8:60)],.~class+family+subfamily,mean)
-
-# Max average expression per subfamily
-RNA_TE_agnostic_subfamily$Max_expression = apply(RNA_TE_agnostic_subfamily[,5:56],1,max)
+RNA_TE_agnostic$class_update = convert_class(RNA_TE_agnostic$class)
 
 # Exons
 # Average expression per Refseq exon
@@ -79,4 +68,4 @@ RNA_refseq_exon_agnostic$Expressed_samples = apply(RNA_refseq_exon_agnostic[,8:5
 # Max expression per exon
 RNA_refseq_exon_agnostic$Max_expression = apply(RNA_refseq_exon_agnostic[,8:59],1,max)
 
-save(list=c("RNA_TE","RNA_TE_agnostic","RNA_TE_agnostic_subfamily","RNA_refseq_exon","RNA_refseq_exon_agnostic"),file="R_datasets/rna.RData")
+save(list=c("RNA_TE","RNA_TE_agnostic","RNA_refseq_exon","RNA_refseq_exon_agnostic"),file="R_datasets/rna.RData")
