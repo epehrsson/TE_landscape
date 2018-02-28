@@ -5,11 +5,7 @@
 rmsk_TE = read.table(file="features/TEs/rmsk_TEother.txt",sep='\t')
 colnames(rmsk_TE) = c("chromosome","start","stop","subfamily","class","family","strand")
 rmsk_TE$Length = rmsk_TE$stop-rmsk_TE$start
-
-rmsk_TE$class_update = rmsk_TE$class
-rmsk_TE$class_update = factor(rmsk_TE$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
-rmsk_TE[which(rmsk_TE$class == "Other"),]$class_update = "SVA"
-rmsk_TE[which(rmsk_TE$class %in% c("DNA?","LINE?","SINE?","LTR?","Unknown","Unknown?","RC")),]$class_update = "Other"
+rmsk_TE$class_update = convert_class(rmsk_TE$class)
 
 # Add mappability per TE
 rmsk_TE_map36 = rbind(read.table("mappability/rmsk_TE_mappability_36mer.txt",sep='\t'),read.table("mappability/rmsk_other_mappability_36mer.txt",sep='\t'))
