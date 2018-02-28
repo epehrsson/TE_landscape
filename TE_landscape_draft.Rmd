@@ -148,9 +148,10 @@ hg19_genome = read.table("raw_data/hg19.genome",sep='\t',header=TRUE)
 GENOME_WIDTH = sum(as.numeric(hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes),]$size))
 GENOME_WIDTH_noY = sum(as.numeric(hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes & hg19_genome$chrom != "chrY"),]$size))
 
-# CpGs
-ALL_CPGS = 56434896
-TE_CPGS = 28373958
+# Total widths
+CHROMHMM_TOTAL_WIDTH = 121*GENOME_WIDTH + 6*GENOME_WIDTH_noY
+DNASE_TOTAL_WIDTH = 47*GENOME_WIDTH + 6*GENOME_WIDTH_noY
+H3K27AC_TOTAL_WIDTH = 92*GENOME_WIDTH + 6*GENOME_WIDTH_noY
 
 # TEs 
 NUM_TE = dim(rmsk_TE)[1]
@@ -161,6 +162,23 @@ NUM_TE_WGBS = dim(TE_meth_average)[1]
 MERGED_TE_WIDTH = 1389947349
 # awk '{if($1 != "chrY") sum+=$3-$2}END{print sum}' features/TEs/merge/rmsk_TEother_merge.txt
 MERGED_TE_WIDTH_noY = 1375898142
+
+# Total widths
+CHROMHMM_TE_WIDTH = 121*MERGED_TE_WIDTH + 6*MERGED_TE_WIDTH_noY
+DNASE_TE_WIDTH = 47*MERGED_TE_WIDTH + 6*MERGED_TE_WIDTH_noY
+H3K27AC_TE_WIDTH = 92*MERGED_TE_WIDTH + 6*MERGED_TE_WIDTH_noY
+
+# CpGs
+ALL_CPGS = 56434896
+TE_CPGS = 28373958
+
+# Feature lengths
+feature_overlap = as.data.frame(matrix(readLines("features/intersect_features/feature_overlap.txt"),ncol=5,byrow=TRUE))
+colnames(feature_overlap) = c("Cohort","Genome","Genome_noY","TEs","TEs_stranded")
+feature_overlap$Cohort = gsub("refseq_","",feature_overlap$Cohort)
+feature_overlap = split_coding(feature_overlap,cohort_column = 1)
+feature_overlap[,2:5] = apply(feature_overlap[,2:5],2,function(x) as.numeric(x))
+feature_overlap = feature_overlap[,c(1,6:7,2:5)]
 ```
 
 ## Calculate TE class and subfamily stats
@@ -168,14 +186,6 @@ MERGED_TE_WIDTH_noY = 1375898142
 ```{r calculate TE stats}
 source("R_scripts/TE_class_stats.R")
 source("R_scripts/TE_subfamily_stats.R")
-```
-
-## Generate other matrices
-
-```{r generate other matrices}
-source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
-source("~/TE_landscape/R_scripts/DNase_overlap.R")
-source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
 ```
 
 # Introduction
@@ -188,6 +198,9 @@ apply(metadata[,c(1,10:13)],2,function(x) dim(metadata[which(!is.na(x)),])[1])
 
 # Samples with each metric, not excluded 
 apply(metadata[,c(1,10:13)],2,function(x) dim(metadata[which(!is.na(x) & metadata$Exclude == "Include"),])[1])
+
+# Samples with each metric, no Y
+apply(metadata[,c(1,10:13)],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "No"),])[1])
 ```
 
 ## Basic TE statistics
@@ -232,11 +245,18 @@ length(unique(rmsk_TE$subfamily))
 
 ```{r Figure 1, fig.width=7, fig.height=5, echo=FALSE}
 source("R_scripts/proportion.R")
-source("R_scripts/contribution.R")
 
 a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_wrap(~Group,nrow=2,scales="free",labeller=labeller(Group = mark_labels))
 
-b = ggplot(contribution_TE[which(contribution_TE$Cohort == "TE"),],aes(x=State,y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=contribution_TE$State[1:21]) + geom_text(aes(label=round(100*Proportion,1)),position="stack",hjust=1)
+contribution = c(mnemonics_states_TE$Total/mnemonics_states_genome$Total,
+                 colSums(TE_CpG_meth)/colSums(all_CpG_meth),
+                 sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),
+                 sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)))
+names(contribution)[c(1:16,21:22)] = c("Total",chromHMM_states,"DNase","H3K27ac")
+contribution = melt(as.matrix(contribution[2:22]))[c(1,3)]
+colnames(contribution) = c("State","Proportion")
+
+b = ggplot(contribution,aes(x=reorder(State,-Proportion,max),y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH) + scale_fill_manual(values=all_state_colors,guide=FALSE) + geom_text(aes(label=round(100*Proportion,1)),position="stack",hjust=1)
 
 legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Group,nrow=4))
 
@@ -259,17 +279,18 @@ sum(combined_proportion[which(combined_proportion$Coding == "All" & combined_pro
 ddply(combined_proportion,.(State),function(x) x[which(x$Proportion < sum(x[which(x$Feature == "TE"),]$Proportion)),])
 
 # Proportion of all genomic bases in TEs
-(121*MERGED_TE_WIDTH+5*MERGED_TE_WIDTH_noY)/(121*GENOME_WIDTH+5*GENOME_WIDTH_noY)
+CHROMHMM_TE_WIDTH/CHROMHMM_TOTAL_WIDTH
 
 # Contribution
-contribution_TE[which(contribution_TE$Cohort == "TE"),]
+contribution
 
 # Contribution, composite states
-contribution_composite = as.data.frame(cbind(rowSums(contribution[,2:9]),rowSums(contribution[,10:16]),rowSums(contribution[,c(2:4,7:8)]),rowSums(contribution[,5:6]),rowSums(contribution[,c(10,14:15)]),rowSums(contribution[,11:13])))
-colnames(contribution_composite) = c("Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
-contribution_composite = as.data.frame(t(contribution_composite[1:3,]))
-contribution_composite = (contribution_composite/contribution_composite$Total)[,2:3]
-contribution_composite
+contribution_composite = cbind(mnemonics_states_TE$Total,mnemonics_states_genome$Total)
+colnames(contribution_composite) = c("TE","Genome")
+composite = as.data.frame(rbind(colSums(contribution_composite[2:9,]),colSums(contribution_composite[10:16,]),colSums(contribution_composite[c(2:4,7:8),]),colSums(contribution_composite[5:6,]),colSums(contribution_composite[c(10,14:15),]),colSums(contribution_composite[11:13,])))
+composite = composite$TE/composite$Genome
+names(composite) = c("Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
+composite
 ```
 
 ### Average proportion of TE CpGs hypomethylated per sample
@@ -307,7 +328,7 @@ ggplot(cpg,aes(x=Methylation,fill=Sample)) + geom_density(alpha=0.5,adjust=10) +
 ```
 
 ```{r Figure S1b-d, echo=FALSE}
-source("R_scripts/proportion_investigation.R")
+source("R_scripts/proportion_investigation.R") # Requires proportion
 
 # Bases/CpGs in state by sample
 b = ggplot(all_state_proportion[which(all_state_proportion$Cohort == "Genome"),],aes(x=Sample,y=Bases,fill=State)) + geom_bar(stat="identity") + ylab("Bases/CpGs in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.ticks.x=element_blank(),axis.title.x=element_blank()) + facet_wrap(~Mark,nrow=2,scales="free",labeller=labeller(Mark = mark_labels))
@@ -376,7 +397,7 @@ TE_MAP
 source("R_scripts/feature_overlap.R")
 source("R_scripts/proportion_class.R") #Requires proportion.R
 
-a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Cohort)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels[1:7]) + scale_fill_discrete(labels=c("All","Protein-Coding","Non-coding")) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
+a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels[1:7]) + scale_fill_discrete(labels=coding_labels) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
 
 b = ggplot(combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Group,labeller=labeller(Coding=coding_labels))
 
@@ -605,7 +626,7 @@ test2$TE_sample_norm_proportion = test2$TE_sample_norm.y/test2$TE_sample_norm.x
 
 **Supplementary Figure 4. Potential controls.** (A-B) Potential metrics with shuffled TEs (n=`NUM_TE`), 10 iterations. Actual TE values are indicated with red dot. (C-D) Potential metrics with unique Refseq promoters. (E-F) Expression potential metrics with unique Refseq exons. 
 
-```{r Figure S4, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 2","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure S4, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 2","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 source("R_scripts/potential_shuffled.R")
 source("R_scripts/potential_promoter.R")
 source("R_scripts/potential_exon.R")
@@ -803,9 +824,6 @@ a = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(binwidth=1,fill="bl
 b = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(binwidth=1,fill="blue",color="grey",alpha=0.5) + scale_x_continuous(limits=c(0,15)) + geom_histogram(data = chromHMM_TE_state,aes(x=Max_states_intra),binwidth=1,fill="darkred",color="grey",alpha=0.5) + ylab("Number of TEs") + xlab("Number of chromHMM states") + facet_wrap(~class_update,scales="free")
 
 # WGBS states
-TE_meth_average$States = apply(TE_meth_average[,46:49],1,function(x) sum(x > 0))
-TE_meth_average$States_noIMR90 = apply(TE_meth_average[,50:53],1,function(x) sum(x > 0))
-
 c = ggplot(TE_meth_average,aes(x=States)) + geom_histogram(binwidth=1,fill="blue",color="grey",alpha=0.5) + ylab("Number of TEs") + xlab("Number of methylation states")
 
 # WGBS states by class
@@ -976,7 +994,7 @@ ggplot(TE_state_correlation_filter,aes(x=State1,y=State2,fill=Correlation)) + ge
 
 **Figure 3. Correlation of TE activity with phylogeny and TE features.** (A) Total proportion of each TE class in each state across all samples. (B) Average proportion of samples a TE is in a state, by class. Ordered by decreasing range. Coefficient of variation in parentheses. (C) Difference in proportion of samples a TE is in a state by overlap with RefSeq genic features, normalized by overall average. (D) TE subfamily age (Jukes-Cantor evolutionary distance) vs. average number of CpGs per kbp. (E) TE subfamily age (Jukes-Cantor evolutionary distance) vs. range of proportion of TEs hypomethylated per sample (n=37). 
 
-```{r Figure 3, fig.width=7, fig.height=7, echo=FALSE, cache=TRUE, dependson=c("Figure 1","Figure 2","Figure S6","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure 3, fig.width=7, fig.height=7, echo=FALSE, cache=TRUE, dependson=c("Figure 1","Figure 2","Figure S6","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/potential_class.R") #Run in state_switching.R
 #source("R_scripts/potential.R")
 source("R_scripts/TE_correlation.R")
@@ -1113,7 +1131,7 @@ merge(ddply(RNA_TE_agnostic,.(class_update),summarise,Proportion_expressed=sum(E
 
 **Supplementary Figure 8. Epigenetic state by feature overlap.** (A) Proportion of TEs in each class overlapping RefSeq features. TEs may overlap multiple features. (B) Difference in proportion of samples a TE is in a state by overlap with RefSeq genic features, normalized by overall average, including features split by protein-coding/non-coding. (C) By class. 
 
-```{r Figure S8, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure S8, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/feature_overlap_state.R")
 source("R_scripts/shuffled_feature_overlap.R")
 
@@ -1195,7 +1213,7 @@ sort(apply(rmsk_TE_measure[,15:34],2,function(y) max(rmsk_TE_measure[which(y == 
 
 **Supplementary Figure 9. TE metrics by class.** (A) Proportion of all TEs (left), TE subfamilies (middle), and length (bp; right) in each TE class. Blue slice represents the length of the non-TE genome. (B) Density plot of mappability per TE, by class. (D) Density plot of TE age (Jukes-Cantor evolutionary distance from consensus) per TE, by class. (G) CpGs per TE and proportion of TEs with CpGs by class. 
 
-```{r Figure S9, echo=FALSE, cache=TRUE, dependson=c("Figure 3","Figure S8","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure S9, echo=FALSE, cache=TRUE, dependson=c("Figure 3","Figure S8","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/TE_class_stats.R")
 #source("R_scripts/TE_correlation.R")
 
@@ -1354,7 +1372,7 @@ mean(rmsk_TE_measure[which(apply(rmsk_TE_measure,1,function(x) sum(as.numeric(x[
 
 **Figure 4. Variation in TE activity by sample classification.** (A) Proportion of each state in TEs by sample, colored by Roadmap groups. Black line represents median across all samples for that state. For WGBS, proportion is CpGs instead of bases. (B) Average CpG methylation level by sample for all CpGs, CpGs in TEs, and CpGs not in TEs. (C) Principal coordinate analysis on TEs in the 6_EnhG or 7_Enh enhancer states in each sample. 
 
-```{r Figure 4, fig.width=7, fig.height=5, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 1","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure 4, fig.width=7, fig.height=5, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 1","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/proportion.R")
 source("R_scripts/proportion_by_sample.R") #Requires proportion.R
 
@@ -1466,7 +1484,7 @@ tail(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),])
 
 ### Sample groups in each category that are significantly different than all other samples in the proportion of that state in TEs (p<0.05, Wilcox tests with Bonferroni correction).
 
-```{r Figure S11, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","Figure 4","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r Figure S11, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","Figure 4","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/proportion_class.R")
 #source("R_scripts/WGBS_sample_CpG_average.R")
 source("R_scripts/PCA.R")
@@ -1566,12 +1584,12 @@ rm(list=c("DNase_pca","H3K27ac_pca","enhancer_matrix_pca","enhancer_matrix"))
 ### Set thresholds 
 
 ```{r set enrichment thresholds}
-THRESHOLD_IJK_BASE = 0
-THRESHOLD_IK_BASE = 0
-THRESHOLD_IJK_CPG = 0
-THRESHOLD_IK_CPG = 0
-THRESHOLD_IJK_MEMBERS = 3
-THRESHOLD_LOR = 0
+THRESHOLD_IJK_BASE = 600
+THRESHOLD_IK_BASE = 5000
+THRESHOLD_IJK_CPG = 6
+THRESHOLD_IK_CPG = 50
+THRESHOLD_IJK_MEMBERS = 1
+THRESHOLD_LOR = 1.5
 THRESHOLD_PC = 0.01
 ```
 
@@ -1580,7 +1598,7 @@ THRESHOLD_PC = 0.01
 **Figure 5. Enrichment of TE subfamilies in epigenetic states in individual samples.** (A) Number of samples each subfamily is enriched in each state (log odds ratio > 1.5). The total number of subfamilies enriched LOR > 1.5 in at least one sample are listed under each state. (B) Subfamilies with at least two LOR scores >1.5 in the 7_Enh state (blue squares indicate enrichment in that sample). Binary clustering, complete linkage. Columns are colored by sample metadata, and rows are colored by subfamily class. 
 
 ```{r Figure 5, fig.width=7, fig.height=9, echo=FALSE}
-source("R_scripts/subfamily_enrichment.R")
+source("R_scripts/subfamily_enrichment.R") # Requires proportion.R
 
 a = ggplot(subfamily_state_sample_counts,aes(x=State,y=V1,color=class_update)) + geom_point(position=position_jitterdodge(jitter.width=0.5)) + coord_flip() + theme(axis.title.y=element_blank()) + ylab("Number of samples enriched LOR > 1.5") + scale_color_manual(values=class_colors,name="Class") + scale_y_continuous(breaks=c(0,seq(10,120,10),127),expand = c(0.01,0.01)) + geom_rect(xmin=0.5,xmax=1.5,ymin=99,ymax=127,fill="grey",color=NA) + geom_rect(xmin=1.5,xmax=2.5,ymin=54,ymax=127,fill="grey",color=NA) + geom_rect(xmin=2.5,xmax=6.5,ymin=38,ymax=127,fill="grey",color=NA) + geom_vline(xintercept=seq(1.5,20.5,1), colour='grey') + scale_x_discrete(limits = rev(levels(subfamily_state_sample_counts$State)),labels=as.vector(rev(apply(subfamily_state_sample_counts_combine,1,function(x) paste(x[1],"\n(n=",x[2],")",sep="")))))
 
@@ -1746,7 +1764,7 @@ grid.arrange(a,b,c,d,e,f,legend,nrow=3,ncol=3,layout_matrix=cbind(c(1,2,3),c(4,5
 
 ### WGBS subfamily state stats
 
-```{r analysis Fig S13c, cache=TRUE, cache.lazy=FALSE, dependson=c("setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats","generate other matrices")}
+```{r analysis Fig S13c, cache=TRUE, cache.lazy=FALSE, dependson=c("setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 
 # Subfamilies with all members in a state in a sample
