@@ -1,45 +1,9 @@
 # Contribution (TEs, Refseq)
 # See 4/26/2016, 4/27/2016, 5/2/2016, 5/18/2016, 5/19/2016, 6/27/2016, 2/3/2017, 2/9/2017, 3/2/2017, 5/12/2017, 8/7/2017
 
-#library(reshape2)
-
 # ChromHMM contribution 
 contribution = read.table(file="chromHMM/TEother_contribution.txt",header=TRUE,sep='\t',row.names=1)
 colnames(contribution) = c("Total",chromHMM_states)
-
-# TEs vs. not TEs (total is all bases across all tissues)
-contribution_TE = as.data.frame(t(contribution[1:3,]))
-contribution_TE = (contribution_TE/contribution_TE$Total)[,2:3]
-
-# WGBS contribution
-# Proportion of CpGs in each state in TEs across all samples (with/without IMR90)
-#source("~/TE_landscape/R_scripts/WGBS_sample_CpG_state.R")
-wgbs = melt(colSums(TE_CpG_meth)/colSums(all_CpG_meth))
-colnames(wgbs) = c("TE")
-wgbs$"Non-TE" = 1 - wgbs$TE
-contribution_TE = rbind(contribution_TE,wgbs)
-rm(wgbs)
-
-# colSums(TE_CpG_meth[rownames(TE_CpG_meth) != "E017",])/colSums(all_CpG_meth[rownames(all_CpG_meth) != "E017",])
-
-# DNase contribution
-# Total DNase width in TEs, all samples
-#source("~/TE_landscape/R_scripts/DNase_overlap.R")
-contribution_TE = rbind(contribution_TE,c(1-sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width))))
-rownames(contribution_TE)[21] = "DNase"
-
-# H3K27ac contribution
-# Proportion of all peaks in TEs
-#source("~/TE_landscape/R_scripts/H3K27ac_overlap.R")
-contribution_TE = rbind(contribution_TE,c(1-sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)),sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width))))
-rownames(contribution_TE)[22] = "H3K27ac"
-
-# Combine all
-contribution_TE$State = rownames(contribution_TE)
-contribution_TE = melt(contribution_TE,id.vars="State")
-colnames(contribution_TE)[2:3] = c("Cohort","Proportion")
-contribution_TE = contribution_TE[order(contribution_TE$Cohort,contribution_TE$Proportion),]
-contribution_TE = contribution_TE[which(contribution_TE$State != "Total"),]
 
 # Refseq genic features
 # Contribution to each chromHMM state
