@@ -44,13 +44,13 @@ class_CpG_meth$class = convert_class(class_CpG_meth$class)
 
 # Proportion of class in each state across all samples
 class_CpG_meth_total = aggregate(data=class_CpG_meth[,2:6],.~class,sum)
-class_CpG_meth_total[,2:5] = class_CpG_meth_total[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total$class,rmsk_TE_class$class_update),]$CpGs*37)
+class_CpG_meth_total[,2:5] = class_CpG_meth_total[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total$class,rmsk_TE_class$class_update),]$CpGs*sample_counts["All","WGBS"])
 class_CpG_meth_total = melt(class_CpG_meth_total,id.vars="class")
 colnames(class_CpG_meth_total) = c("class","State","Proportion")
 
 # Proportion of class in each state across all samples, no IMR90
 class_CpG_meth_total_noIMR90 = aggregate(data=class_CpG_meth[which(class_CpG_meth$Sample != "E017"),2:6],.~class,sum)
-class_CpG_meth_total_noIMR90[,2:5] = class_CpG_meth_total_noIMR90[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total_noIMR90$class,rmsk_TE_class$class_update),]$CpGs*36)
+class_CpG_meth_total_noIMR90[,2:5] = class_CpG_meth_total_noIMR90[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total_noIMR90$class,rmsk_TE_class$class_update),]$CpGs*sample_counts["Include","WGBS"])
 
 # By sample - Add CpGs in class in sample
 class_CpG_meth$CpGs_class = rowSums(class_CpG_meth[,3:6])
