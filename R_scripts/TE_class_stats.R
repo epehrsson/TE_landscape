@@ -55,10 +55,10 @@ class_lengths[which(class_lengths$class == "Other"),]$class = "SVA"
 class_lengths[which(class_lengths$class == "Unconfident_RC"),]$class = "Other"
 rmsk_TE_class$Total_length = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length
 rmsk_TE_class$Total_length_noY = class_lengths[match(rmsk_TE_class$class_update,class_lengths$class),]$Total_length_noY
-rmsk_TE_class$chromHMM_total_width = 121*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
-rmsk_TE_class$WGBS_total_width = 37*rmsk_TE_class$Total_length
-rmsk_TE_class$DNase_total_width = 47*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
-rmsk_TE_class$H3K27ac_total_width = 92*rmsk_TE_class$Total_length + 6*rmsk_TE_class$Total_length_noY
+rmsk_TE_class$chromHMM_total_width = as.numeric(sample_counts["chrY","chromHMM"])*rmsk_TE_class$Total_length + as.numeric(sample_counts["All","chromHMM"]-sample_counts["chrY","chromHMM"])*rmsk_TE_class$Total_length_noY
+rmsk_TE_class$WGBS_total_width = as.numeric(sample_counts["chrY","WGBS"])*rmsk_TE_class$Total_length + as.numeric(sample_counts["All","WGBS"]-sample_counts["chrY","WGBS"])*rmsk_TE_class$Total_length_noY
+rmsk_TE_class$DNase_total_width = as.numeric(sample_counts["chrY","DNase"])*rmsk_TE_class$Total_length + as.numeric(sample_counts["All","DNase"]-sample_counts["chrY","DNase"])*rmsk_TE_class$Total_length_noY
+rmsk_TE_class$H3K27ac_total_width = as.numeric(sample_counts["chrY","H3K27ac"])*rmsk_TE_class$Total_length + as.numeric(sample_counts["All","H3K27ac"]-sample_counts["chrY","H3K27ac"])*rmsk_TE_class$Total_length_noY
 rm(class_lengths)
 
 rmsk_TE_class = rmsk_TE_class[c(1:3,5,6,4),]
