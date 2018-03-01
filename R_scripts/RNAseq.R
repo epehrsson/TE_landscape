@@ -68,4 +68,7 @@ RNA_refseq_exon_agnostic$Expressed_samples = apply(RNA_refseq_exon_agnostic[,8:5
 # Max expression per exon
 RNA_refseq_exon_agnostic$Max_expression = apply(RNA_refseq_exon_agnostic[,8:59],1,max)
 
-save(list=c("RNA_TE","RNA_TE_agnostic","RNA_refseq_exon","RNA_refseq_exon_agnostic"),file="R_datasets/rna.RData")
+# Remove exons on non-standard chromosomes and reduce matrix to unique exons
+RNA_exon_unique = unique(RNA_refseq_exon_agnostic[which(RNA_refseq_exon_agnostic$chromosome %in% standard_chromosomes),c(1:3,6:61)])
+
+save(list=c("RNA_TE","RNA_TE_agnostic","RNA_refseq_exon","RNA_refseq_exon_agnostic","RNA_exon_unique"),file="R_datasets/rna.RData")
