@@ -23,16 +23,13 @@ convert_class = function(class_vector){
   return(class_vector)
 }
 
-split_coding = function(feature_matrix,cohort_column=2,new_features=c()){
-  cohorts = c("cpgIsland","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","CDS","CDS_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic")
-  features = c("cpgIsland","promoters","5UTR","CDS","3UTR","exons","introns","intergenic")
-  
-  feature_matrix$Cohort = gsub("coding_exon","CDS",feature_matrix$Cohort)
-  feature_matrix$Cohort = factor(feature_matrix$Cohort,levels=c(new_features,cohorts))
-  feature_matrix$Feature = factor(apply(feature_matrix,1,function(x) unlist(strsplit(as.character(x[cohort_column]),"_"))[1]),levels=c(new_features,features))
-  feature_matrix$Coding = apply(feature_matrix,1,function(x) unlist(strsplit(as.character(x[cohort_column]),"_"))[2])
+split_coding = function(feature_matrix,new_features=c()){
+  to_split = gsub("coding_exon","CDS",feature_matrix$Cohort)
+  feature_matrix$Feature = factor(unlist(lapply(to_split,function(x) unlist(strsplit(as.character(x),"_"))[1])),levels=c(new_features,features))
+  feature_matrix$Coding = unlist(lapply(to_split,function(x) unlist(strsplit(as.character(x),"_"))[2]))
   feature_matrix[which(is.na(feature_matrix$Coding)),]$Coding = "All"
   feature_matrix$Coding = factor(feature_matrix$Coding,levels=c("All","pc","nc"))
+  feature_matrix$Cohort = factor(feature_matrix$Cohort,levels=c(new_features,cohorts))
   
   return(feature_matrix)
 }
