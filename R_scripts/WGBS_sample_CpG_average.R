@@ -24,10 +24,5 @@ CpG_feature_meth_average = rbind(droplevels(CpG_meth_average[which(CpG_meth_aver
 CpG_feature_meth_average = CpG_feature_meth_average[order(CpG_feature_meth_average$Cohort,CpG_feature_meth_average$Methylation),]
 
 # Convert to coding/non-coding
-CpG_feature_meth_average$Cohort = gsub("coding_exon","CDS",CpG_feature_meth_average$Cohort)
-CpG_feature_meth_average$Cohort = factor(CpG_feature_meth_average$Cohort,levels=c("All","TE","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","CDS","CDS_pc","3UTR","3UTR_pc","3UTR_nc","exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic"))
-CpG_feature_meth_average$Feature = factor(apply(CpG_feature_meth_average,1,function(x) unlist(strsplit(as.character(x[1]),"_"))[1]),levels=c("All","TE","promoters","5UTR","CDS","3UTR","exons","introns","intergenic"))
-CpG_feature_meth_average$Coding = apply(CpG_feature_meth_average,1,function(x) unlist(strsplit(as.character(x[1]),"_"))[2])
-CpG_feature_meth_average[which(is.na(CpG_feature_meth_average$Coding)),]$Coding = "All"
-CpG_feature_meth_average$Coding = factor(CpG_feature_meth_average$Coding,levels=c("All","pc","nc"))
-CpG_feature_meth_average = CpG_feature_meth_average[which(CpG_feature_meth_average$Cohort != "CDS_pc"),]
+CpG_feature_meth_average = split_coding(CpG_feature_meth_average,new_features=c("All","TE"))
+CpG_feature_meth_average = CpG_feature_meth_average[which(CpG_feature_meth_average$Cohort != "coding_exon_pc"),]
