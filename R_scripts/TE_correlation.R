@@ -36,4 +36,4 @@ rmsk_TE_measure[which(is.na(rmsk_TE_measure$H3K27ac)),]$H3K27ac = 0
 # Add number of samples expressed per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,RNA_TE_agnostic[,c(TE_coordinates,"Expressed_samples","Max_expression")],by=TE_coordinates)
 
-rmsk_TE_measure = rmsk_TE_measure[,c(TE_coordinates,"class_update",measure_metrics,measure_features,measure_states,measure_states_extra)]
+rmsk_TE_measure = rmsk_TE_measure[,c(TE_coordinates,"class_update",measure_metrics,cohorts,measure_states,measure_states_extra)]
