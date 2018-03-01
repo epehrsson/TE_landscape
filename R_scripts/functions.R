@@ -51,12 +51,7 @@ sample_distribution = function(TE_matrix,columns,samples){
 
 cumulative_distribution = function(TE_matrix,columns,samples){ #TE_matrix is matrix of TEs x state listing number of samples, columns is state columns, samples is number of samples
   #Generating distribution matrix
-  dist_TE = data.frame(Samples = seq(0,samples))
-  for (i in columns){
-    dist_TE = merge(dist_TE,as.data.frame(table(as.integer(TE_matrix[,i]))),by.x="Samples",by.y="Var1",all=TRUE)
-    colnames(dist_TE)[length(colnames(dist_TE))] = colnames(TE_matrix)[i]
-  }
-  dist_TE[is.na(dist_TE)] = 0
+  dist_TE = sample_distribution(TE_matrix,columns,samples)
   
   #Generating cumulative distribution matrix
   if (length(columns) > 1){
