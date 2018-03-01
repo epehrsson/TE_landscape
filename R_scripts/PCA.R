@@ -6,13 +6,13 @@
 # Configure matrices
 TE_DNase_binary = TE_DNase_peaks[,1:60]
 TE_DNase_binary[,8:60] = ifelse(TE_DNase_binary[,8:60]>0, 1, 0)
-TE_DNase_binary[which(TE_DNase_binary$chromosome == "chrY"),which(colnames(TE_DNase_binary) %in% c("E116", "E117", "E123", "E124", "E126", "E127"))] = NA
+TE_DNase_binary[which(TE_DNase_binary$chromosome == "chrY"),as.vector(metadata[which(metadata$chrY == "No"),]$Sample)] = NA
 TE_DNase_binary = TE_DNase_binary[which(apply(TE_DNase_binary[,8:60],1,var) != 0),]
 rownames(TE_DNase_binary) = apply(TE_DNase_binary,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
 
 TE_H3K27ac_binary = TE_H3K27ac_peaks[,1:105]
 TE_H3K27ac_binary[,8:105] = ifelse(TE_H3K27ac_binary[,8:105]>0, 1, 0)
-TE_H3K27ac_binary[which(TE_H3K27ac_binary$chromosome == "chrY"),which(colnames(TE_H3K27ac_binary) %in% c("E116", "E117", "E123", "E124", "E126", "E127"))] = NA
+TE_H3K27ac_binary[which(TE_H3K27ac_binary$chromosome == "chrY"),as.vector(metadata[which(metadata$chrY == "No"),]$Sample)] = NA
 TE_H3K27ac_binary = TE_H3K27ac_binary[which(apply(TE_H3K27ac_binary[,8:105],1,var) != 0),]
 rownames(TE_H3K27ac_binary) = apply(TE_H3K27ac_binary,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
 

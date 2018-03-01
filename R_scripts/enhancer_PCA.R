@@ -4,7 +4,7 @@
 # Matrix of TEs
 enhancer_matrix = rbind(read.table("chromHMM/enhancer_matrix.txt",sep='\t',header=TRUE),read.table("chromHMM/enhancer_matrix_other.txt",sep='\t',header=TRUE))
 enhancer_matrix = enhancer_matrix[which(apply(enhancer_matrix[,8:134],1,function(x) sum(x > 0)) > 0),]
-enhancer_matrix[which(enhancer_matrix$chromosome == "chrY"),which(colnames(enhancer_matrix) %in% c("E116", "E117", "E123", "E124", "E126", "E127"))] = NA
+enhancer_matrix[which(enhancer_matrix$chromosome == "chrY"),as.vector(metadata[which(metadata$chrY == "No"),]$Sample)] = NA
 rownames(enhancer_matrix) = apply(enhancer_matrix,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
 
 # Compute PCA
