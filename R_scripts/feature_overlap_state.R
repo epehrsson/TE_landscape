@@ -7,21 +7,20 @@
 
 # For TEs overlapping each feature, mean number of samples in state
 feature_state_mean = apply(rmsk_TE_measure[,cohorts],2,function(y) 
-  (colMeans(rmsk_TE_measure[which(y > 0),measure_states],na.rm=TRUE)-colMeans(rmsk_TE_measure[which(y == 0),measure_states],na.rm=TRUE))/colMeans(rmsk_TE_measure[which(y == 0),measure_states],na.rm=TRUE))
+  (colMeans(rmsk_TE_measure[which(y > 0),states],na.rm=TRUE)-colMeans(rmsk_TE_measure[which(y == 0),states],na.rm=TRUE))/colMeans(rmsk_TE_measure[which(y == 0),states],na.rm=TRUE))
 
-rownames(feature_state_mean)[1:15] = chromHMM_states
-rownames(feature_state_mean)[22] = "Expression"
+rownames(feature_state_mean)[22] = "Expressed_samples"
 
 feature_state_mean = melt(as.matrix(feature_state_mean))
 colnames(feature_state_mean) = c("State","Cohort","Enrichment")
-feature_state_mean$State = factor(feature_state_mean$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac","Expression"))
+feature_state_mean$State = factor(feature_state_mean$State,levels=states)
 feature_state_mean = split_coding(feature_state_mean,2)
 
 # By class
 feature_state_mean_class = ddply(rmsk_TE_measure,~class_update,function(z) 
   apply(z[,cohorts],2,function(y) 
-    (colMeans(z[which(y > 0),measure_states],na.rm=TRUE)-colMeans(z[which(y == 0),measure_states],na.rm=TRUE))/colMeans(z[which(y == 0),measure_states],na.rm=TRUE)))
-feature_state_mean_class$State = factor(rep(c(chromHMM_states,meth_states[c(1,3,2,4)],"DNase","H3K27ac","Expression"),6),levels=c(chromHMM_states,meth_states,"DNase","H3K27ac","Expression"))
+    (colMeans(z[which(y > 0),states],na.rm=TRUE)-colMeans(z[which(y == 0),states],na.rm=TRUE))/colMeans(z[which(y == 0),states],na.rm=TRUE)))
+feature_state_mean_class$State = factor(rep(c(chromHMM_states,meth_states[c(1,3,2,4)],"DNase","H3K27ac","Expressed_samples"),6),levels=states)
 
 feature_state_mean_class = melt(feature_state_mean_class)
 colnames(feature_state_mean_class) = c("Class","State","Cohort","Enrichment")

@@ -3,16 +3,18 @@
 
 #source("R_scripts/TE_correlation.R")
 
+a = length(c(states,measure_states_extra))
+
 # Correlation between TE metrics and number of samples in state
-correlate_TE_state = rbind(correlate_spearman(rmsk_TE_measure,"JC_distance",c(measure_states,measure_states_extra)), 
-                           correlate_spearman(rmsk_TE_measure,"Length",c(measure_states,measure_states_extra)),  
-                           correlate_spearman(rmsk_TE_measure,"mappability",c(measure_states,measure_states_extra)), 
-                           correlate_spearman(rmsk_TE_measure,"CpGs",c(measure_states,measure_states_extra)), 
-                           correlate_spearman(rmsk_TE_measure,"CpGs_per_length",c(measure_states,measure_states_extra)))
-correlate_TE_state$Metric = c(rep("JC_distance",175),rep("Length",175),rep("mappability",175),rep("CpGs",175),rep("CpGs_per_length",175))
+correlate_TE_state = rbind(correlate_spearman(rmsk_TE_measure,"JC_distance",c(states,measure_states_extra)), 
+                           correlate_spearman(rmsk_TE_measure,"Length",c(states,measure_states_extra)),  
+                           correlate_spearman(rmsk_TE_measure,"mappability",c(states,measure_states_extra)), 
+                           correlate_spearman(rmsk_TE_measure,"CpGs",c(states,measure_states_extra)), 
+                           correlate_spearman(rmsk_TE_measure,"CpGs_per_length",c(states,measure_states_extra)))
+correlate_TE_state$Metric = c(rep("JC_distance",a*7),rep("Length",a*7),rep("mappability",a*7),rep("CpGs",a*7),rep("CpGs_per_length",a*7))
 correlate_TE_state$p.value = as.numeric(as.character(correlate_TE_state$p.value))
 correlate_TE_state$estimate.rho = as.numeric(as.character(correlate_TE_state$estimate.rho))
-correlate_TE_state$State = factor(correlate_TE_state$State,levels=c(measure_states,measure_states_extra))
+correlate_TE_state$State = factor(correlate_TE_state$State,levels=c(states,measure_states_extra))
 correlate_TE_state$class_update = factor(correlate_TE_state$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
 
 # Correlation between TE metrics
