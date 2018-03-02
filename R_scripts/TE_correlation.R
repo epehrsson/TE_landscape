@@ -16,12 +16,14 @@ contrasts(rmsk_TE_measure$class_update) <- contr.sum
 rmsk_TE_measure[is.na(rmsk_TE_measure)] = 0
 
 # Add number of samples in chromHMM state per TE
-rmsk_TE_measure = merge(rmsk_TE_measure,chromHMM_TE_state[,c(TE_coordinates,chromHMM_states_X,"States","Max_states_intra")],by=TE_coordinates)
+rmsk_TE_measure = merge(rmsk_TE_measure,chromHMM_TE_state[,c(TE_coordinates,chromHMM_states,"States","Max_states_intra")],by=TE_coordinates)
+rmsk_TE_measure = rename(rmsk_TE_measure,c("States"="States.chromHMM"))
 
 # Add number of samples in methylation state per TE
-rmsk_TE_measure = merge(rmsk_TE_measure,TE_meth_average[,c(TE_coordinates,"CpGs",meth_states)],by=TE_coordinates,all.x=TRUE)
+rmsk_TE_measure = merge(rmsk_TE_measure,TE_meth_average[,c(TE_coordinates,"CpGs",meth_states,"States")],by=TE_coordinates,all.x=TRUE)
 rmsk_TE_measure[which(is.na(rmsk_TE_measure$CpGs)),]$CpGs = 0
 rmsk_TE_measure$CpGs_per_length = rmsk_TE_measure$CpGs/rmsk_TE_measure$Length
+rmsk_TE_measure = rename(rmsk_TE_measure,c("States"="States.WGBS"))
 
 # Add number of samples overlapping DNase peak per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,TE_DNase_peaks[,c(TE_coordinates,"Samples")],by=TE_coordinates,all.x=TRUE)
@@ -36,4 +38,4 @@ rmsk_TE_measure[which(is.na(rmsk_TE_measure$H3K27ac)),]$H3K27ac = 0
 # Add number of samples expressed per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,RNA_TE_agnostic[,c(TE_coordinates,"Expressed_samples","Max_expression")],by=TE_coordinates)
 
-rmsk_TE_measure = rmsk_TE_measure[,c(TE_coordinates,"class_update",measure_metrics,cohorts,measure_states,measure_states_extra)]
+rmsk_TE_measure = rmsk_TE_measure[,c(TE_coordinates,"class_update",measure_metrics,cohorts,states,measure_states_extra)]
