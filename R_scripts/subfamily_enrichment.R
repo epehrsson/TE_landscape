@@ -55,8 +55,6 @@ subfamily_state_sample[which(is.na(subfamily_state_sample$Members)),]$Members = 
 subfamily_state_sample[which(is.na(subfamily_state_sample$Percent)),]$Percent = 0
 rm(subfamily_state_sample_members)
 
-subfamily_state_sample = subfamily_state_sample[,c(1:2,5,3,4,12:17,6:11,19:20)]
-
 
 # WGBS (CpGs)
 # Proportion of subfamily CpGs in methylation state by sample
@@ -69,7 +67,7 @@ subfamily_CpG_meth = melt(subfamily_CpG_meth,id.vars=c("Sample","subfamily"))
 colnames(subfamily_CpG_meth)[3:4] = c("State","CpG_ijk")
 
 # CpGs per subfamily
-subfamily_CpG_meth = merge(subfamily_CpG_meth,rmsk_TE_subfamily[,c(1:3,33)],by=c("subfamily"),all.x=TRUE)
+subfamily_CpG_meth = merge(subfamily_CpG_meth,rmsk_TE_subfamily[,c("subfamily","family","class_update","CpGs")],by=c("subfamily"),all.x=TRUE)
 colnames(subfamily_CpG_meth)[7] = "CpG_ik"
 
 # Proportion of all CpGs in methylation state by sample
@@ -93,9 +91,8 @@ subfamily_CpG_members[is.na(subfamily_CpG_members)] = 0
 
 subfamily_CpG_meth = merge(subfamily_CpG_meth,subfamily_CpG_members,by=c("subfamily","Sample","State"),all.x=TRUE)
 rm(subfamily_CpG_members)
+# Divide by number of members with CpGs in subfamily
 subfamily_CpG_meth$Percent = apply(subfamily_CpG_meth,1,function(x) as.numeric(x[17])/rmsk_TE_subfamily[match(x[1],rmsk_TE_subfamily$subfamily),]$Count_CpGs)
-
-subfamily_CpG_meth = subfamily_CpG_meth[,c(1,5:6,3,2,11:16,4,7:10,17:18)]
 
 
 # DNase 
@@ -105,17 +102,16 @@ colnames(subfamily_DNase_sample) = c("subfamily","Sample","Length_ijk")
 
 # Length of subfamily
 subfamily_DNase_sample_expand = expand.grid(subfamily = levels(rmsk_TE_subfamily$subfamily),Sample = levels(subfamily_DNase_sample$Sample))
-subfamily_DNase_sample_expand = join(subfamily_DNase_sample_expand,rmsk_TE_subfamily[,c("subfamily","family","class_update","Total_length")],by=c("subfamily"))
+subfamily_DNase_sample_expand = join(subfamily_DNase_sample_expand,rmsk_TE_subfamily[,c("subfamily","family","class_update")],by=c("subfamily"))
 subfamily_DNase_sample = join(subfamily_DNase_sample_expand,subfamily_DNase_sample,by=c("subfamily","Sample"),type="left")
-colnames(subfamily_DNase_sample)[5] = "Length_ik"
-subfamily_DNase_sample$Length_ik = ifelse(metadata[match(subfamily_DNase_sample$Sample,metadata$Sample),]$chrY == "Yes",
-                                          subfamily_DNase_sample$Length_ik,
-                                          rmsk_TE_subfamily[match(subfamily_DNase_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length_noY)
 subfamily_DNase_sample[is.na(subfamily_DNase_sample$Length_ijk),]$Length_ijk = 0
+subfamily_DNase_sample$Length_ik = ifelse(metadata[match(subfamily_DNase_sample$Sample,metadata$Sample),]$chrY == "Yes",
+                                          rmsk_TE_subfamily[match(subfamily_DNase_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length,
+                                          rmsk_TE_subfamily[match(subfamily_DNase_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length_noY)
 rm(subfamily_DNase_sample_expand)
 
 # Total length of DNase peaks per sample
-subfamily_DNase_sample = merge(subfamily_DNase_sample,DNase_stats[,c(1,4)],by=c("Sample"),all.x=TRUE)
+subfamily_DNase_sample = merge(subfamily_DNase_sample,DNase_stats[,c("Sample","Total_width")],by=c("Sample"),all.x=TRUE)
 colnames(subfamily_DNase_sample)[7] = "Length_jk"
 
 # Total length of sample
@@ -142,11 +138,9 @@ TE_DNase_peaks_members$Percent = TE_DNase_peaks_members$Members/TE_DNase_peaks_m
 
 # Added to enrichment matrix
 subfamily_DNase_sample = merge(subfamily_DNase_sample,TE_DNase_peaks_members,by=c("subfamily","Sample"),all.x=TRUE)
-subfamily_DNase_sample[which(is.na(subfamily_DNase_sample$Percent)),17:20] = 0
+subfamily_DNase_sample[which(is.na(subfamily_DNase_sample$Percent)),c("Count","Members","DNase_peaks","Percent")] = 0
 subfamily_DNase_sample[which(subfamily_DNase_sample$subfamily == "Tigger2a_Car"),]$Count = 2
 subfamily_DNase_sample$State = rep("DNase",dim(subfamily_DNase_sample)[1])
-
-subfamily_DNase_sample = subfamily_DNase_sample[,c(1,3:4,21,2,11:16,5:10,18,20,17,19)]
 
 
 # H3K27ac 
@@ -156,17 +150,16 @@ colnames(subfamily_H3K27ac_sample) = c("subfamily","Sample","Length_ijk")
 
 # Length of subfamily
 subfamily_H3K27ac_sample_expand = expand.grid(subfamily = levels(rmsk_TE_subfamily$subfamily),Sample = levels(subfamily_H3K27ac_sample$Sample))
-subfamily_H3K27ac_sample_expand = join(subfamily_H3K27ac_sample_expand,rmsk_TE_subfamily[,c("subfamily","family","class_update","Total_length")],by=c("subfamily"))
+subfamily_H3K27ac_sample_expand = join(subfamily_H3K27ac_sample_expand,rmsk_TE_subfamily[,c("subfamily","family","class_update")],by=c("subfamily"))
 subfamily_H3K27ac_sample = join(subfamily_H3K27ac_sample_expand,subfamily_H3K27ac_sample,by=c("subfamily","Sample"),type="left")
-colnames(subfamily_H3K27ac_sample)[5] = "Length_ik"
-subfamily_H3K27ac_sample$Length_ik = ifelse(metadata[match(subfamily_H3K27ac_sample$Sample,metadata$Sample),]$chrY == "Yes",
-                                          subfamily_H3K27ac_sample$Length_ik,
-                                          rmsk_TE_subfamily[match(subfamily_H3K27ac_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length_noY)
 subfamily_H3K27ac_sample[is.na(subfamily_H3K27ac_sample$Length_ijk),]$Length_ijk = 0
+subfamily_H3K27ac_sample$Length_ik = ifelse(metadata[match(subfamily_H3K27ac_sample$Sample,metadata$Sample),]$chrY == "Yes",
+                                          rmsk_TE_subfamily[match(subfamily_H3K27ac_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length,
+                                          rmsk_TE_subfamily[match(subfamily_H3K27ac_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Total_length_noY)
 rm(subfamily_H3K27ac_sample_expand)
 
 # Total length of H3K27ac peaks per sample
-subfamily_H3K27ac_sample = merge(subfamily_H3K27ac_sample,H3K27ac_stats[,c(1,4)],by=c("Sample"),all.x=TRUE)
+subfamily_H3K27ac_sample = merge(subfamily_H3K27ac_sample,H3K27ac_stats[,c("Sample","Total_width")],by=c("Sample"),all.x=TRUE)
 colnames(subfamily_H3K27ac_sample)[7] = "Length_jk"
 
 # Total length of sample
@@ -193,25 +186,28 @@ TE_H3K27ac_peaks_members$Percent = TE_H3K27ac_peaks_members$Members/TE_H3K27ac_p
 
 # Added to enrichment matrix
 subfamily_H3K27ac_sample = merge(subfamily_H3K27ac_sample,TE_H3K27ac_peaks_members,by=c("subfamily","Sample"),all.x=TRUE)
-subfamily_H3K27ac_sample[which(is.na(subfamily_H3K27ac_sample$Percent)),17:20] = 0
+subfamily_H3K27ac_sample[which(is.na(subfamily_H3K27ac_sample$Percent)),c("Count","Members","H3K27ac_peaks","Percent")] = 0
 subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$subfamily == "Tigger2a_Car"),]$Count = 2
 subfamily_H3K27ac_sample$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample)[1])
 
-subfamily_H3K27ac_sample = subfamily_H3K27ac_sample[,c(1,3:4,21,2,11:16,5:10,18,20,17,19)]
 
 # Combine matrices (no filtering)
-test = subfamily_CpG_meth[,c(1:13,15:18)]
-colnames(test)[c(12:13,15)] = c("Length_ijk","Length_ik","Length_percent_jk")
-subfamily_state_sample_combined = rbind(subfamily_state_sample[,c(1:13,16:19)],test,subfamily_DNase_sample[,c(1:13,16:19)],subfamily_H3K27ac_sample[,c(1:13,16:19)])
+columns = c("subfamily","family","class_update","State","Sample",sample_categories,enrichment_names[c(1:2,5:8)])
+subfamily_state_sample_combined = rbind(subfamily_state_sample[,columns],
+                                        rename(subfamily_CpG_meth,c("CpG_ijk"="Length_ijk","CpG_ik"="Length_ik","CpG_ijk_jk"="Length_percent_jk"))[,columns],
+                                        subfamily_DNase_sample[,columns],
+                                        subfamily_H3K27ac_sample[,columns])
 
 # Combine filtered matrices
-test2 = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG & subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG & subfamily_CpG_meth$Members >= THRESHOLD_IJK_MEMBERS),]
-colnames(test2)[c(12:13,16)] = c("Length_ijk","Length_ik","Length_percent_jk")
-subfamily_state_sample_filter = rbind(subfamily_state_sample[which(subfamily_state_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_state_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_state_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)],
-                                      test2[,c(1:13,15:18)],
-                                      subfamily_DNase_sample[which(subfamily_DNase_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_DNase_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_DNase_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)],
-                                      subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$Length_ijk >= THRESHOLD_IJK_BASE & subfamily_H3K27ac_sample$Length_ik > THRESHOLD_IK_BASE & subfamily_H3K27ac_sample$Members >= THRESHOLD_IJK_MEMBERS),c(1:13,16:19)])
-subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
+test2 = rbind(subfamily_state_sample[,columns],
+              subfamily_DNase_sample[,columns],
+              subfamily_H3K27ac_sample[,columns])
+test2 = test2[which(test2$Length_ijk >= THRESHOLD_IJK_BASE & test2$Length_ik > THRESHOLD_IK_BASE & test2$Members >= THRESHOLD_IJK_MEMBERS),]
+test = subfamily_CpG_meth[which(subfamily_CpG_meth$CpG_ijk >= THRESHOLD_IJK_CPG & subfamily_CpG_meth$CpG_ik > THRESHOLD_IK_CPG & subfamily_CpG_meth$Members >= THRESHOLD_IJK_MEMBERS),]
+subfamily_state_sample_filter = rbind(test2,rename(test,c("CpG_ijk"="Length_ijk","CpG_ik"="Length_ik","CpG_ijk_jk"="Length_percent_jk"))[,columns])
+subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=states[1:21])
+rm(test)
+rm(test2)
 
 # Number of enrichments per subfamily x state
 subfamily_state_sample_counts = ddply(subfamily_state_sample_filter,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR))
@@ -220,7 +216,7 @@ subfamily_state_expand = join(subfamily_state_expand,rmsk_TE_subfamily[,c("subfa
 subfamily_state_sample_counts = join(subfamily_state_expand,subfamily_state_sample_counts,by=c("subfamily","family","class_update","State"),type="left")[,c(1,3,4,2,5)]
 rm(subfamily_state_expand)
 subfamily_state_sample_counts[is.na(subfamily_state_sample_counts)] = 0
-subfamily_state_sample_counts$State = factor(subfamily_state_sample_counts$State,levels=c(chromHMM_states,meth_states,"DNase","H3K27ac"))
+subfamily_state_sample_counts$State = factor(subfamily_state_sample_counts$State,levels=states[1:21])
 
 subfamily_state_sample_counts_combine = merge(aggregate(data=subfamily_state_sample_counts,V1~State,function(x) sum(x > 0)),
                                               dcast(aggregate(data=subfamily_state_sample_counts,V1~State+class_update,function(x) sum(x > 0)),State~class_update,value.var = "V1"),
