@@ -39,6 +39,7 @@ class_CpG_meth$Sample = rep(as.vector(metadata[which(!is.na(metadata$WGBS)),]$Sa
 class_CpG_meth = class_CpG_meth[,c(7,6,2:5)]
 colnames(class_CpG_meth)[2:6] = c("class",meth_states)
 class_CpG_meth[is.na(class_CpG_meth)] = 0
+class_CpG_meth[,meth_states] = class_CpG_meth[,meth_states]/2
 class_CpG_meth = class_CpG_meth[which(class_CpG_meth$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
 class_CpG_meth$class = convert_class(class_CpG_meth$class)
 

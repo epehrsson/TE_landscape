@@ -58,13 +58,13 @@ mnemonics_states_all = rbind(mnemonics_states_all,states_features_noTE[,c(1:2,5)
 # All CpGs
 all_CpG_meth = read.table("WGBS/all_CpG_Meth_states.txt",sep=" ")
 rownames(all_CpG_meth) = metadata[which(!is.na(metadata$WGBS)),]$Sample
-all_CpG_meth = all_CpG_meth[,2:5]
+all_CpG_meth = all_CpG_meth[,2:5]/2
 colnames(all_CpG_meth) = meth_states
 
 # CpGs in TEs
 TE_CpG_meth = read.table("WGBS/CpG_TE_Meth_states.txt",sep=" ")
 rownames(TE_CpG_meth) = metadata[which(!is.na(metadata$WGBS)),]$Sample
-TE_CpG_meth = TE_CpG_meth[,2:5]
+TE_CpG_meth = TE_CpG_meth[,2:5]/2
 colnames(TE_CpG_meth) = meth_states
 TE_CpG_meth[is.na(TE_CpG_meth)] = 0
 
@@ -73,6 +73,7 @@ feature_CpG_meth = read.table("WGBS/Refseq_features/CpG_feature_Meth_states.txt"
 feature_CpG_meth$Sample = rep(metadata[which(!is.na(metadata$WGBS)),]$Sample,18)
 colnames(feature_CpG_meth)[1:5] = c(meth_states,"Cohort")
 feature_CpG_meth[is.na(feature_CpG_meth)] = 0
+feature_CpG_meth[,meth_states] = feature_CpG_meth[,meth_states]/2
 feature_CpG_meth$Cohort = gsub("CpG_refseq_", "", feature_CpG_meth$Cohort)
 feature_CpG_meth$Cohort = gsub("_merge_noTE_Meth", "", feature_CpG_meth$Cohort)
 feature_CpG_meth$Cohort = gsub("_noTE_Meth", "", feature_CpG_meth$Cohort)

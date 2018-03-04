@@ -6,10 +6,11 @@ TE_meth_average = read.table("WGBS/TE_CpG_Meth_new_average.txt",sep='\t',header=
 
 # Number of CpGs per TE
 TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
-colnames(TE_CpG_count) = c("chromosome","start","stop","subfamily","class","family","strand","CpGs")
+colnames(TE_CpG_count) = c(TE_coordinates[c(1:4,6,5,7)],"CpGs")
+TE_CpG_count$CpGs = TE_CpG_count$CpGs/2
 
 # Methylation level for TEs with at least one CpG
-TE_meth_average = merge(TE_meth_average,TE_CpG_count,by=c("chromosome","start","stop","subfamily","class","family","strand"))
+TE_meth_average = merge(TE_meth_average,TE_CpG_count,by=TE_coordinates[c(1:4,6,5,7)])
 rm(TE_CpG_count)
 
 # Number of samples TE is in each methylation state (IMR90, no IMR90)

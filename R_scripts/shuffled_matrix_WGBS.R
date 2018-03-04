@@ -6,12 +6,13 @@ print("Loaded WGBS matrices")
 
 # Number of CpGs per TE
 shuffled_WGBS_CpG = lapply(list.files(path="WGBS/shuffled/",pattern="TE_CpG_count_",full.names = TRUE),function(x) read.table(x,sep='\t'))
-shuffled_WGBS_CpG = lapply(shuffled_WGBS_CpG, setNames, nm =c("chromosome","start","stop","subfamily","class","family","strand","CpGs"))
+shuffled_WGBS_CpG = lapply(shuffled_WGBS_CpG, setNames, nm =c(TE_coordinates[c(1:4,6,5,7)],"CpGs"))
 print("Loaded CpG matrices")
 
 # Methylation level for TEs with at least one CpG
 for (i in 1:10){
-  shuffled_WGBS_average[[i]] = merge(shuffled_WGBS_average[[i]],shuffled_WGBS_CpG[[i]],by=c("chromosome","start","stop","subfamily","class","family","strand"))
+  shuffled_WGBS_average[[i]] = merge(shuffled_WGBS_average[[i]],shuffled_WGBS_CpG[[i]],by=TE_coordinates[c(1:4,6,5,7)])
+  shuffled_WGBS_average[[i]]$CpGs = shuffled_WGBS_average[[i]]$CpGs/2
 }
 rm(shuffled_WGBS_CpG)
 print("Combined WGBS and CpG matrices")

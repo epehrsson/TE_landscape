@@ -63,6 +63,7 @@ subfamily_CpG_meth$V1 = mapvalues(subfamily_CpG_meth$V1,seq(4,40,1),as.vector(me
 subfamily_CpG_meth = subfamily_CpG_meth[,c(1,6,2:5)]
 colnames(subfamily_CpG_meth) = c("Sample","subfamily",meth_states)
 subfamily_CpG_meth[is.na(subfamily_CpG_meth)] = 0
+subfamily_CpG_meth[,meth_states] = subfamily_CpG_meth[,meth_states]/2
 subfamily_CpG_meth = melt(subfamily_CpG_meth,id.vars=c("Sample","subfamily"))
 colnames(subfamily_CpG_meth)[3:4] = c("State","CpG_ijk")
 
