@@ -305,7 +305,7 @@ print_individual_TEs = function(subfamily_state_sample){
       print("Error: not DNase or H3K27ac")
     }
     test[[i]] = matrix[which(matrix$subfamily == subfamily & matrix[[sample]] > 0),c(colnames(matrix)[1:7],sample)]
-    test[[i]] = melt(test[[i]],id.vars=c("chromosome","start","stop","subfamily","family","class","strand"))
+    test[[i]] = melt(test[[i]],id.vars=TE_coordinates)
   }
   test = ldply(test)
   test_instance = aggregate(data=test,variable~chromosome+start+stop+subfamily+family+class+strand,length)
@@ -316,19 +316,20 @@ get_subfamily_in_state = function(subfamily,state,metric){
   # Get subfamily members ever in state
   if (metric=="chromHMM"){
     subfamily_in_state = read.table(paste("chromHMM/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","State","Overlap","Sample")
+    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"State","Overlap","Sample")
   } else if (metric=="WGBS") {
     subfamily_in_state = read.table(paste("WGBS/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap")
+    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap")
+    subfamily_in_state$Overlap = subfamily_in_state$Overlap/2
   } else if (metric=="DNase" | metric=="H3K27ac"){
     subfamily_in_state = read.table(paste(metric,"/subfamily/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Overlap")
+    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap")
   }
   print("Loaded matrix")
   
   #Calculate overlap
   if (metric == "WGBS") {
-    subfamily_in_state = merge(subfamily_in_state,TE_meth_average[,c("chromosome","start","stop","subfamily","class","family","strand","CpGs")],by=c("chromosome","start","stop","subfamily","class","family","strand"))
+    subfamily_in_state = merge(subfamily_in_state,TE_meth_average[,c(TE_coordinates[c(1:4,6,5,7)],"CpGs")],by=c(TE_coordinates[c(1:4,6,5,7)]))
     subfamily_in_state$Coverage = subfamily_in_state$Overlap/subfamily_in_state$CpGs
   } else {
     subfamily_in_state$Coverage = subfamily_in_state$Overlap/(subfamily_in_state$stop-subfamily_in_state$start)
@@ -389,13 +390,13 @@ enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score
   subfamily_matrix = dcast(subfamily_in_state,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Coverage")
   subfamily_matrix[,setdiff(metadata_matrix$Sample,colnames(subfamily_matrix))] = rep(NA,dim(subfamily_matrix)[1])
   subfamily_matrix[is.na(subfamily_matrix)] = 0
-  subfamily_matrix = melt(subfamily_matrix,id.vars=c("chromosome","start","stop","subfamily","class","family","strand"))
+  subfamily_matrix = melt(subfamily_matrix,id.vars=c(TE_coordinates[c(1:4,6,5,7)]))
   colnames(subfamily_matrix)[8:9] = c("Sample","Coverage")
   print("Added missing samples")
   
   # Add metadata
   subfamily_matrix = merge(subfamily_matrix,metadata_matrix[,c("Sample","Age","Anatomy","Cancer","Germline","Group","Type")])
-  subfamily_matrix = melt(subfamily_matrix,id.vars=c("chromosome","start","stop","subfamily","class","family","strand","Sample","Coverage"))
+  subfamily_matrix = melt(subfamily_matrix,id.vars=c(TE_coordinates[c(1:4,6,5,7)],"Sample","Coverage"))
   colnames(subfamily_matrix)[10:11] = c("Category","Grouping")
   print("Added metadata")
   
@@ -405,7 +406,7 @@ enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score
   
   # Fraction of all samples each TE is in state
   TE_matrix = ddply(unique(subfamily_matrix[,1:9]),.(chromosome,start,stop,subfamily,family,class,strand),here(summarise),All=sum(Coverage > coverage_threshold))
-  TE_category_matrix = merge(TE_category_matrix,TE_matrix,by=c("chromosome","start","stop","subfamily","class","family","strand"),all.x=TRUE)
+  TE_category_matrix = merge(TE_category_matrix,TE_matrix,by=TE_coordinates[c(1:4,6,5,7)],all.x=TRUE)
   print("Fraction of all samples each TE is in state")
   
   # Score specificity of TE to that grouping - percent of group samples TE is in state vs all other samples
