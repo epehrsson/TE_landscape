@@ -33,9 +33,9 @@ TE_meth_average_class_stats[,2:4] = apply(TE_meth_average_class_stats[,2:4],2,fu
 
 # Proportion of TEs in each methylation state by class by sample
 TE_meth_average_state_class = ddply(TE_meth_average,~class_update,function(y) 
-  as.data.frame(cbind(apply(y[,8:44],2,function(x) sum(na.omit(as.numeric(x)) < 0.3)/length(x)),
-                      apply(y[,8:44],2,function(x) sum(na.omit(as.numeric(x)) <= 0.7 & na.omit(as.numeric(x)) >= 0.3)/length(x)),
-                      apply(y[,8:44],2,function(x) sum(na.omit(as.numeric(x)) > 0.7)/length(x)),
+  as.data.frame(cbind(apply(y[,8:44],2,function(x) sum(na.omit(x) < 0.3)/length(x)),
+                      apply(y[,8:44],2,function(x) sum(na.omit(x) <= 0.7 & na.omit(x) >= 0.3)/length(x)),
+                      apply(y[,8:44],2,function(x) sum(na.omit(x) > 0.7)/length(x)),
                       apply(y[,8:44],2,function(x) sum(is.na(x))/length(x)))))
 colnames(TE_meth_average_state_class)[2:5] = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
 TE_meth_average_state_class$Sample = rep(colnames(TE_meth_average)[8:44],6)

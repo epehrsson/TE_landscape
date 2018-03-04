@@ -44,10 +44,10 @@ promoter_state_sample_count$Proportion = ifelse(metadata[match(promoter_state_sa
 promoter_state_sample_count$State = factor(promoter_state_sample_count$State,levels=chromHMM_states)
 
 # Number of promoters in each WGBS state by sample
-promoter_meth_average_state = as.data.frame(cbind(apply(promoter_meth_average[,7:41],2,function(x) sum(as.numeric(na.omit(x)) < 0.3)/length(x)),
-                                                  apply(promoter_meth_average[,7:41],2,function(x)  sum(as.numeric(na.omit(x)) <= 0.7 & as.numeric(na.omit(x)) >= 0.3)/length(x)),
-                                                  apply(promoter_meth_average[,7:41],2,function(x) sum(as.numeric(na.omit(x)) > 0.7)/length(x)),
-                                                  apply(promoter_meth_average[,7:41],2,function(x) sum(is.na(x))/length(x))))
+promoter_meth_average_state = as.data.frame(cbind(apply(promoter_meth_average[,5:41],2,function(x) sum(as.numeric(na.omit(x)) < 0.3)/length(x)),
+                                                  apply(promoter_meth_average[,5:41],2,function(x)  sum(as.numeric(na.omit(x)) <= 0.7 & as.numeric(na.omit(x)) >= 0.3)/length(x)),
+                                                  apply(promoter_meth_average[,5:41],2,function(x) sum(as.numeric(na.omit(x)) > 0.7)/length(x)),
+                                                  apply(promoter_meth_average[,5:41],2,function(x) sum(is.na(x))/length(x))))
 colnames(promoter_meth_average_state) = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
 promoter_meth_average_state = promoter_meth_average_state[order(promoter_meth_average_state$Hypermethylated + promoter_meth_average_state$Missing),]
 
