@@ -103,8 +103,8 @@ colnames(DNase_features) = c("Sample","Bases","Cohort")
 DNase_features$Cohort = gsub("refseq_", "", DNase_features$Cohort)
 DNase_features$Cohort = gsub("_merge_noTE_DNase", "", DNase_features$Cohort)
 DNase_features$Cohort = gsub("_noTE_DNase", "", DNase_features$Cohort)
-DNase_features$Cohort = gsub("coding_exon", "CDS", DNase_features$Cohort)
 DNase_features = DNase_features[which(!(DNase_features$Cohort %in% c("genes","genes_nc","genes_pc"))),]
+DNase_features[which(is.na(DNase_features$Bases)),]$Bases = 0
 
 # Proportion of RefSeq features overlapping DNase peaks, averaged
 DNase_features$Genome = apply(DNase_features,1,function(x) ifelse(x[1] %in% as.vector(metadata[which(metadata$chrY == "Yes"),]$Sample),
@@ -114,6 +114,10 @@ colnames(DNase_features)[c(2,4)] = c("Total_width_in_feature","Feature_width")
 DNase_features$Proportion = DNase_features$Total_width_in_feature/DNase_features$Feature_width
 
 # Proportion of TEs overlapping DNase peaks, across all samples
+if(sum(count_na(DNase_features[,2:4])) > 53){
+  print("Check DNase")
+}
+
 DNase_proportion = aggregate(data=DNase_features[,2:4],.~Cohort,sum)
 DNase_proportion[20,] = c("Genome",sum(as.numeric(DNase_stats$Total_width)),DNASE_TOTAL_WIDTH)
 DNase_proportion[21,] = c("TE",sum(as.numeric(DNase_stats$Total_width_in_TE)),DNASE_TE_WIDTH)
@@ -135,7 +139,7 @@ colnames(H3K27ac_features) = c("Sample","Bases","Cohort")
 H3K27ac_features$Cohort = gsub("refseq_", "", H3K27ac_features$Cohort)
 H3K27ac_features$Cohort = gsub("_merge_noTE_H3K27ac", "", H3K27ac_features$Cohort)
 H3K27ac_features$Cohort = gsub("_noTE_H3K27ac", "", H3K27ac_features$Cohort)
-H3K27ac_features$Cohort = gsub("coding_exon", "CDS", H3K27ac_features$Cohort)
+H3K27ac_features[which(is.na(H3K27ac_features$Bases)),]$Bases = 0
 
 # Proportion of RefSeq features overlapping H3K27ac peaks, averaged
 H3K27ac_features$Genome = apply(H3K27ac_features,1,function(x) ifelse(x[1] %in% as.vector(metadata[which(metadata$chrY == "Yes"),]$Sample),
@@ -145,6 +149,10 @@ colnames(H3K27ac_features)[c(2,4)] = c("Total_width_in_feature","Feature_width")
 H3K27ac_features$Proportion = H3K27ac_features$Total_width_in_feature/H3K27ac_features$Feature_width
 
 # Proportion of TEs overlapping H3K27ac peaks, across all samples
+if(sum(count_na(H3K27ac_features[,2:4])) > 98){
+  print("Check H3K27ac")
+}
+
 H3K27ac_proportion = aggregate(data=H3K27ac_features[,2:4],.~Cohort,sum)
 H3K27ac_proportion[20,] = c("Genome",sum(as.numeric(H3K27ac_stats$Total_width)),H3K27AC_TOTAL_WIDTH)
 H3K27ac_proportion[21,] = c("TE",sum(as.numeric(H3K27ac_stats$Total_width_in_TE)),H3K27AC_TE_WIDTH)
