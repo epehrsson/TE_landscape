@@ -139,8 +139,10 @@ TE_DNase_peaks_members$Percent = TE_DNase_peaks_members$Members/TE_DNase_peaks_m
 
 # Added to enrichment matrix
 subfamily_DNase_sample = merge(subfamily_DNase_sample,TE_DNase_peaks_members,by=c("subfamily","Sample"),all.x=TRUE)
-subfamily_DNase_sample[which(is.na(subfamily_DNase_sample$Percent)),c("Count","Members","DNase_peaks","Percent")] = 0
-subfamily_DNase_sample[which(subfamily_DNase_sample$subfamily == "Tigger2a_Car"),]$Count = 2
+subfamily_DNase_sample[which(is.na(subfamily_DNase_sample$Percent)),c("Members","DNase_peaks","Percent")] = 0
+subfamily_DNase_sample[which(is.na(subfamily_DNase_sample$Count)),]$Count = ifelse(metadata[match(subfamily_DNase_sample$Sample,metadata$Sample),]$chrY == "Yes",
+                                                                                   rmsk_TE_subfamily[match(subfamily_DNase_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count,
+                                                                                   rmsk_TE_subfamily[match(subfamily_DNase_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count_noY)
 subfamily_DNase_sample$State = rep("DNase",dim(subfamily_DNase_sample)[1])
 
 
@@ -187,8 +189,10 @@ TE_H3K27ac_peaks_members$Percent = TE_H3K27ac_peaks_members$Members/TE_H3K27ac_p
 
 # Added to enrichment matrix
 subfamily_H3K27ac_sample = merge(subfamily_H3K27ac_sample,TE_H3K27ac_peaks_members,by=c("subfamily","Sample"),all.x=TRUE)
-subfamily_H3K27ac_sample[which(is.na(subfamily_H3K27ac_sample$Percent)),c("Count","Members","H3K27ac_peaks","Percent")] = 0
-subfamily_H3K27ac_sample[which(subfamily_H3K27ac_sample$subfamily == "Tigger2a_Car"),]$Count = 2
+subfamily_H3K27ac_sample[which(is.na(subfamily_H3K27ac_sample$Percent)),c("Members","H3K27ac_peaks","Percent")] = 0
+subfamily_H3K27ac_sample[which(is.na(subfamily_H3K27ac_sample$Count)),]$Count = ifelse(metadata[match(subfamily_H3K27ac_sample$Sample,metadata$Sample),]$chrY == "Yes",
+                                                                                   rmsk_TE_subfamily[match(subfamily_H3K27ac_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count,
+                                                                                   rmsk_TE_subfamily[match(subfamily_H3K27ac_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count_noY)
 subfamily_H3K27ac_sample$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample)[1])
 
 
