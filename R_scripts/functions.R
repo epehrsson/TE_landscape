@@ -1,3 +1,8 @@
+count_na = function(data_frame){
+  counts = apply(data_frame,2,function(x) sum(is.na(x)))
+  return(counts)
+}
+
 kruskal_if = function(x,variableA,variableB){ #Where x is data frame subset, variableA are values to be split, variableB is column to be tested
   if(length(unique(x[[variableB]])) > 1){
     p_value = unlist(kruskal.test(x[[variableA]] ~ x[[variableB]]))["p.value"]
@@ -288,28 +293,6 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   
   # Write samples where candidate subfamilies are enriched in state	 
   write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enriched.txt",sep=""))
-}
-
-print_individual_TEs = function(subfamily_state_sample){
-  input_matrix = read.table(file=subfamily_state_sample,sep='\t')
-  test = list()
-  for (i in 1:dim(input_matrix)[1]){
-    subfamily = as.character(input_matrix[i,1])
-    sample = as.character(input_matrix[i,2])
-    state = as.character(input_matrix[i,3])
-    if (state == "DNase"){
-      matrix = TE_DNase_peaks
-    } else if (state == "H3K27ac"){
-      matrix = TE_H3K27ac_peaks
-    } else {
-      print("Error: not DNase or H3K27ac")
-    }
-    test[[i]] = matrix[which(matrix$subfamily == subfamily & matrix[[sample]] > 0),c(colnames(matrix)[1:7],sample)]
-    test[[i]] = melt(test[[i]],id.vars=TE_coordinates)
-  }
-  test = ldply(test)
-  test_instance = aggregate(data=test,variable~chromosome+start+stop+subfamily+family+class+strand,length)
-  lapply(unique(test_instance$subfamily),function(x) write.table(test_instance[which(test_instance$subfamily == x),c(1:4,8,7)],file=paste("enrichment/",x,"_",state,"_enriched.bed",sep=""),sep='\t',quote=FALSE,row.names=FALSE,col.names=FALSE))
 }
 
 get_subfamily_in_state = function(subfamily,state,metric){
