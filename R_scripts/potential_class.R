@@ -54,7 +54,7 @@ potential_TE_DNase_class_stats$State = rep("DNase",6)
 # Proportion of TEs overlapping DNase peak by class by sample
 TE_DNase_peaks_class = aggregate(data=TE_DNase_peaks[,c(8:61)],.~class_update,function(x) sum(x > 0))
 TE_DNase_peaks_class = melt(TE_DNase_peaks_class,id.var="class_update")
-colnames(TE_DNase_peaks_class) = c("Class","Sample","Proportion")
+colnames(TE_DNase_peaks_class) = c("Class","Sample","Count")
 TE_DNase_peaks_class$Proportion = TE_DNase_peaks_class$Count/ifelse(metadata[match(TE_DNase_peaks_class$Sample,metadata$Sample),]$chrY == "Yes",
                                                                     rmsk_TE_class[match(TE_DNase_peaks_class$Class,rmsk_TE_class$class_update),]$Count,
                                                                     rmsk_TE_class[match(TE_DNase_peaks_class$Class,rmsk_TE_class$class_update),]$Count_noY)
@@ -74,7 +74,7 @@ potential_TE_H3K27ac_class_stats$State = rep("H3K27ac",6)
 # Proportion of TEs overlapping H3K27ac peak by class by sample
 TE_H3K27ac_peaks_class = aggregate(data=TE_H3K27ac_peaks[,c(8:106)],.~class_update,function(x) sum(x > 0))
 TE_H3K27ac_peaks_class = melt(TE_H3K27ac_peaks_class,id.var="class_update")
-colnames(TE_H3K27ac_peaks_class) = c("Class","Sample","Proportion")
+colnames(TE_H3K27ac_peaks_class) = c("Class","Sample","Count")
 TE_H3K27ac_peaks_class$Proportion = TE_H3K27ac_peaks_class$Count/ifelse(metadata[match(TE_H3K27ac_peaks_class$Sample,metadata$Sample),]$chrY == "Yes",
                                                                     rmsk_TE_class[match(TE_H3K27ac_peaks_class$Class,rmsk_TE_class$class_update),]$Count,
                                                                     rmsk_TE_class[match(TE_H3K27ac_peaks_class$Class,rmsk_TE_class$class_update),]$Count_noY)
@@ -93,7 +93,7 @@ RNA_potential_class_stats$State = rep("Expressed_samples",6)
 # Proportion of TEs expressed RPKM > 1 by class by sample
 RNA_RPKM_class = aggregate(data=RNA_TE_agnostic[,c(9:60,64)],.~class_update,function(x) sum(x > 1))
 RNA_RPKM_class = melt(RNA_RPKM_class,id.var="class_update")
-colnames(RNA_RPKM_class) = c("Class","Sample","Proportion")
+colnames(RNA_RPKM_class) = c("Class","Sample","Count")
 RNA_RPKM_class$Proportion = RNA_RPKM_class$Count/ifelse(metadata[match(RNA_RPKM_class$Sample,metadata$Sample),]$chrY == "Yes",
                                                                         rmsk_TE_class[match(RNA_RPKM_class$Class,rmsk_TE_class$class_update),]$Count,
                                                                         rmsk_TE_class[match(RNA_RPKM_class$Class,rmsk_TE_class$class_update),]$Count_noY)
