@@ -33,7 +33,7 @@ H3K27ac_samples$H3K27ac = rep("H3K27ac",dim(H3K27ac_samples)[2])
 metadata = merge(metadata,H3K27ac_samples,by.x="Sample",by.y="V1",all.x=TRUE)
 rm(H3K27ac_samples)
 
-RNA_samples = read.table("sample_lists/RNAseq_samples.txt") #Does not include those that failed
+RNA_samples = read.table("sample_lists/RNA_samples_agnostic.txt")
 RNA_samples$RNA = rep("RNA",dim(RNA_samples)[2])
 metadata = merge(metadata,RNA_samples,by.x="Sample",by.y="V1",all.x=TRUE)
 rm(RNA_samples)
