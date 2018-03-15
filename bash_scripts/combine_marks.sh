@@ -27,10 +27,10 @@ awk '{print>$8}' TE_combine_marks.txt
 for file in E*; do cut -f1-8,11,13,15 $file | sort | uniq | awk -v OFS='\t' '{a[$8,$9,$10,$11]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i];}}' - >> combine_marks_counts.txt; done &
 awk -v OFS='\t' '{a[$2,$3,$4]+=$5}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' combine_marks_counts.txt
 
-# Adding RNA-seq to the mark comprison
-#TE_landscape/RNAseq/rmsk_TE_rpkm.txt
+# Adding RNA-seq to the mark comparison
+#TE_landscape/RNAseq/rmsk_TE_rpkm.txt (from R)
+
 #TE_landscape/compare_marks/TE_combine_marks_RNA.txt
-write.table(melt(RNA_TE_agnostic[,1:60],id.vars=c(colnames(RNA_TE_agnostic)[1:7])),file="RNAseq/rmsk_TE_rpkm.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')
 ln -s ~/TE_landscape/RNAseq/rmsk_TE_rpkm.txt .
 awk '{print>$8}' rmsk_TE_rpkm.txt &
 ln -s ~/TE_landscape/compare_marks/TE_combine_marks.txt .
