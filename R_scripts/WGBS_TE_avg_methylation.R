@@ -30,4 +30,7 @@ TE_meth_average$class_update = convert_class(TE_meth_average$class)
 TE_meth_average$States = apply(TE_meth_average[,46:49],1,function(x) sum(x > 0))
 TE_meth_average$States_noIMR90 = apply(TE_meth_average[,50:53],1,function(x) sum(x > 0))
 
+# Write out for WGBS state
+write.table(melt(TE_meth_average[,1:44],id.vars = TE_coordinates),file="WGBS/TE_WGBS_state.txt",sep='\t',quote=FALSE,row.names=FALSE)
+
 save(TE_meth_average,file="R_datasets/TE_meth_average.RData")

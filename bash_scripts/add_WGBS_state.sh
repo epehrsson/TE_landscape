@@ -3,7 +3,6 @@
 
 # Methylation level of each TE x sample	 
 #TE_landscape/WGBS/TE_WGBS_state.txt	
-write.table(melt(TE_meth_average[,1:44],id.vars = c("chromosome","start","stop","subfamily","class","family","strand")),file="TE_WGBS_state.txt",sep='\t',quote=FALSE,row.names=FALSE)
 # Removed header	
 
 # Methylation level of each TE x sample, sorted	 
