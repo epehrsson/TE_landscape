@@ -112,23 +112,23 @@ TE_H3K27ac_peaks_sample$State = rep("H3K27ac",sample_counts["All","H3K27ac"])
 # RNA-seq potential
 
 # Distribution of TEs with RPKM >1
-RNA_potential = sample_distribution(RNA_TE_agnostic,61,sample_counts["All","RNA"])
+RNA_potential = sample_distribution(RNA_TE,64,sample_counts["All","RNA"])
 colnames(RNA_potential)[2] = "Expressed_samples"
-RNA_potential_cum = cumulative_distribution(RNA_TE_agnostic,61,sample_counts["All","RNA"])
+RNA_potential_cum = cumulative_distribution(RNA_TE,64,sample_counts["All","RNA"])
 RNA_potential_cum$State = rep("Expressed_samples",sample_counts["All","RNA"])
 RNA_potential_stats = potential_stats(RNA_potential,1,sample_counts["All","RNA"])
 RNA_potential_stats$State = "Expressed_samples"
 
 # Distribution of TEs with RPKM >1, no cancer cell lines/IMR90
-RNA_potential_noCancer = sample_distribution(RNA_TE_agnostic,62,sample_counts["Include","RNA"])
+RNA_potential_noCancer = sample_distribution(RNA_TE,65,sample_counts["Include","RNA"])
 colnames(RNA_potential_noCancer)[2] = "Expressed_samples"
-RNA_potential_noCancer_cum = cumulative_distribution(RNA_TE_agnostic,62,sample_counts["Include","RNA"])
+RNA_potential_noCancer_cum = cumulative_distribution(RNA_TE,65,sample_counts["Include","RNA"])
 RNA_potential_noCancer_cum$State = rep("Expressed_samples",sample_counts["Include","RNA"])
 RNA_potential_noCancer_stats = potential_stats(RNA_potential_noCancer,1,sample_counts["Include","RNA"])
 RNA_potential_noCancer_stats$State = "Expressed_samples"
 
 # Proportion of TEs with RPKM >1, by sample
-RNA_RPKM_sample = as.data.frame(apply(RNA_TE_agnostic[,9:60],2,function(x) sum(x > 1)))
+RNA_RPKM_sample = as.data.frame(apply(RNA_TE[,8:63],2,function(x) sum(x > 1)))
 colnames(RNA_RPKM_sample) = "Count"
 RNA_RPKM_sample$Proportion = ifelse(metadata[match(rownames(RNA_RPKM_sample),metadata$Sample),]$chrY == "Yes",
                                     RNA_RPKM_sample$Count/NUM_TE,

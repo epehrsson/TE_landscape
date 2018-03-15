@@ -84,14 +84,14 @@ colnames(TE_H3K27ac_peaks)[107] = "Samples"
 
 # Expression
 
-RNA_potential_class = ddply(RNA_TE_agnostic,~class_update,function(x) sample_distribution(x,61,sample_counts["All","RNA"]))
+RNA_potential_class = ddply(RNA_TE,~class_update,function(x) sample_distribution(x,64,sample_counts["All","RNA"]))
 
 RNA_potential_class_stats = ddply(RNA_potential_class,~class_update,function(x) potential_stats(x[,2:3],1,sample_counts["All","RNA"]))
 RNA_potential_class_stats$class_update = factor(RNA_potential_class_stats$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
 RNA_potential_class_stats$State = rep("Expressed_samples",6)
 
 # Proportion of TEs expressed RPKM > 1 by class by sample
-RNA_RPKM_class = aggregate(data=RNA_TE_agnostic[,c(9:60,64)],.~class_update,function(x) sum(x > 1))
+RNA_RPKM_class = aggregate(data=RNA_TE[,c(8:63,67)],.~class_update,function(x) sum(x > 1))
 RNA_RPKM_class = melt(RNA_RPKM_class,id.var="class_update")
 colnames(RNA_RPKM_class) = c("Class","Sample","Count")
 RNA_RPKM_class$Proportion = RNA_RPKM_class$Count/ifelse(metadata[match(RNA_RPKM_class$Sample,metadata$Sample),]$chrY == "Yes",
