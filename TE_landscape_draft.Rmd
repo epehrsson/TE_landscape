@@ -1,4 +1,4 @@
----
+ ---
 title: "TE landscape Draft"
 author: "Erica Pehrsson"
 date: "`r Sys.Date()`"
@@ -491,19 +491,19 @@ sum(apply(chromHMM_TE_state[c(16,20,21)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 
 ```{r analysis Fig 2c}
 # Average number of samples a TE is expressed RPKM > 0
-mean(apply(RNA_TE_agnostic[,9:60],1,function(x) sum(x > 0)))
+mean(apply(RNA_TE[,8:63],1,function(x) sum(x > 0)))
 
-table(RNA_TE_agnostic$Expressed_samples)
-table(RNA_TE_agnostic$Expressed_samples)/dim(RNA_TE_agnostic)[1]
+table(RNA_TE$Expressed_samples)
+table(RNA_TE$Expressed_samples)/dim(RNA_TE)[1]
 
 # Maximum expression
-#hist(RNA_TE_agnostic$Max_expression)
-median(RNA_TE_agnostic$Max_expression)
-median(RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),]$Max_expression)
-max(RNA_TE_agnostic$Max_expression)
-tail(RNA_TE_agnostic[order(RNA_TE_agnostic$Max_expression),],n=20)
+#hist(RNA_TE$Max_expression)
+median(RNA_TE$Max_expression)
+median(RNA_TE[which(RNA_TE$Expressed_samples > 0),]$Max_expression)
+max(RNA_TE$Max_expression)
+tail(RNA_TE[order(RNA_TE$Max_expression),],n=20)
 
-cor.test(RNA_TE_agnostic$Max_expression,RNA_TE_agnostic$Expressed_samples,method="spearman")
+cor.test(RNA_TE$Max_expression,RNA_TE$Expressed_samples,method="spearman")
 ```
 
 ### Supplementary Figure 3
@@ -758,24 +758,24 @@ rm(rmsk_TE_shuffled)
 
 ```{r exon control analysis}
 # Average number of samples an exon is expressed RPKM > 0
-mean(apply(RNA_exon_unique[,5:56],1,function(x) sum(x > 0)))
+mean(apply(RNA_refseq_exon[,5:60],1,function(x) sum(x > 0)))
 
-table(RNA_exon_unique$Expressed_samples)
-table(RNA_exon_unique$Expressed_samples)/NUM_EXON
+table(RNA_refseq_exon$Expressed_samples)
+table(RNA_refseq_exon$Expressed_samples)/NUM_EXON
 
 # Maximum expression
-#hist(RNA_exon_unique$Max_expression)
-median(RNA_exon_unique$Max_expression)
-median(RNA_exon_unique[which(RNA_exon_unique$Expressed_samples > 0),]$Max_expression)
-max(RNA_exon_unique$Max_expression)
-tail(RNA_exon_unique[order(RNA_exon_unique$Max_expression),],n=20)
+#hist(RNA_refseq_exon$Max_expression)
+median(RNA_refseq_exon$Max_expression)
+median(RNA_refseq_exon[which(RNA_refseq_exon$Expressed_samples > 0),]$Max_expression)
+max(RNA_refseq_exon$Max_expression)
+tail(RNA_refseq_exon[order(RNA_refseq_exon$Max_expression),],n=20)
 
 # Average TE vs. exon expression
-TE_express = unlist(RNA_TE_agnostic[,9:60])
+TE_express = unlist(RNA_TE[,8:63])
 median(TE_express)
 median(TE_express[which(TE_express > 1)])
 rm(TE_express)
-exon_express = unlist(RNA_exon_unique[,5:56])
+exon_express = unlist(RNA_refseq_exon[,5:60])
 median(exon_express)
 median(exon_express[which(exon_express > 1)])
 rm(exon_express)
@@ -1149,8 +1149,8 @@ grid.arrange(a,b,legend1,nrow=2,layout_matrix=rbind(c(1,2),c(3,3)),heights=c(0.9
 ### Max expression by class
 
 ```{r analysis Fig S7}
-merge(ddply(RNA_TE_agnostic,.(class_update),summarise,Proportion_expressed=sum(Expressed_samples > 0)/length(Expressed_samples),Max_median=median(Max_expression)),
-      ddply(RNA_TE_agnostic[which(RNA_TE_agnostic$Expressed_samples > 0),],.(class_update),summarise,Max_median_expressed=median(Max_expression)),by="class_update")
+merge(ddply(RNA_TE,.(class_update),summarise,Proportion_expressed=sum(Expressed_samples > 0)/length(Expressed_samples),Max_median=median(Max_expression)),
+      ddply(RNA_TE[which(RNA_TE$Expressed_samples > 0),],.(class_update),summarise,Max_median_expressed=median(Max_expression)),by="class_update")
 ```
 
 ### Supplementary Figure 8
