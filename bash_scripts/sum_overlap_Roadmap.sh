@@ -4,7 +4,11 @@
 
 # chromHMM 
 # Difference between hg19 chromosome lengths and chromHMM annotation (11/9/17)
- awk -v OFS='\t' '{chr[$1]+=$3-$2}END{for(i in chr){print i, chr[i]}}' raw_data/chromHMM/E001_15_coreMarks_mnemonics.bed
+## Genome: chromHMM misses 2583 from all chromosomes and 2417 from all but chrY (3/1/18)
+awk -v OFS='\t' '{chr[$1]+=$3-$2}END{for(i in chr){print i, chr[i]}}' raw_data/chromHMM/E001_15_coreMarks_mnemonics.bed
+
+# Features: not missing any bases, indicating all unannotated bases are intergenic
+for file in chromHMM/Refseq_features/intersect/chromHMM_*.bed; do awk -v OFS='\t' -v feature=$(basename $file .bed) '{a[$9]+=$8}END{for(i in a){print feature, a[i]}}' $file | sort | uniq; done < features/features.txt
 
 # Combines bp counts of state per sample into one file
 #TE_landscape/chromHMM/combine_states.sh	
@@ -17,6 +21,9 @@ for file in chromHMM_bedfiles/E*_15_coreMarks_mnemonics.bed; do awk 'BEGIN{SUM=0
 # Table of number of bases in each state in each sample	
 #TE_landscape/chromHMM/genome/mnemonics_state.txt	
 bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_bedfiles/*state
+
+# By chromosome
+ while read line; do awk -v OFS='\t' -v sample=$line '{a[$1,$4]+=$3-$2}END{for(i in a){split(i,sep,SUBSEP); print sample, sep[1], sep[2], a[i];}}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed; done < sample_lists/mnemonics.txt > chromHMM/chromosome_states.txt
 
 # Merged TEs
 #TE_landscape/chromHMM/TEs/sample_summaries/TE_merge/E#_15_coreMarks_mnemonics.bed_TE_merge_state [127 files]
