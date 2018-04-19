@@ -49,6 +49,9 @@ for file in chromHMM_promoter/*.bed; do suffix=$(basename $file | cut -d '_' -f1
 #TE_landscape/DNase/rmsk_TEother_DNase_peaks.txt
 #TE_landscape/DNase/rmsk_TEother_DNase_peaks_filter.txt
 
+# TEs by subfamily and state
+awk -v OFS='\t' '{print $1, $2, $3, $4, $5, $6, $7, $8, $10 > "DNase/subfamily/"$4"_DNase.txt"}' DNase/rmsk_TEother_DNase_peaks_filter.txt &
+
 # Refseq promoters
 #TE_landscape/DNase/Refseq_promoters/refseq_promoters_unique_DNase_peaks.txt
 python ~/bin/TE_landscape/DNase_peaks_promoter.py ~/genic_features/RefSeq/refseq_promoters_unique_std.txt ../../sample_lists/DNase_samples.txt refseq_promoters_unique_DNase_peaks.txt
@@ -64,6 +67,9 @@ for i in {1..10}; do python ~/bin/TE_landscape/DNase_peaks.py rmsk_TE_shuffle_$i
 #TE_landscape/H3K27ac/rmsk_TEother_H3K27ac_peaks_filter.txt
 python ~/bin/TE_landscape/H3K27ac_peaks.py ../rmsk_TEother.txt H3K27ac_samples.txt rmsk_TEother_H3K27ac_peaks.txt
 awk -v OFS='\t' '{if($9 > 0) print $0}' rmsk_TEother_H3K27ac_peaks.txt > rmsk_TEother_H3K27ac_peaks_filter.txt
+
+# TEs by subfamily and state
+awk -v OFS='\t' '{print $1, $2, $3, $4, $5, $6, $7, $8, $10 > "H3K27ac/subfamily/"$4"_H3K27ac.txt"}' H3K27ac/rmsk_TEother_H3K27ac_peaks_filter.txt &
 
 # Refseq promoters
 #TE_landscape/H3K27ac/Refseq_promoters/refseq_promoters_unique_H3K27ac_peaks.txt
