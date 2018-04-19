@@ -1,3 +1,6 @@
+---
+output: word_document
+---
  ---
 title: "TE landscape Draft"
 author: "Erica Pehrsson"
@@ -511,23 +514,34 @@ cor.test(RNA_TE$Max_expression,RNA_TE$Expressed_samples,method="spearman")
 ```{r Figure S3, echo=FALSE}
 source("R_scripts/compare_marks.R")
 
-a = xtabs(TE_sample_norm ~ chromHMM+WGBS, data=compare_marks_all)
+WGBS_norm = aggregate(data=compare_marks_unique,TE_sample~WGBS,function(x) sum(x))
+DNase_norm = aggregate(data=compare_marks_unique,TE_sample~DNase,function(x) sum(x))
+H3K27ac_norm = aggregate(data=compare_marks_unique,TE_sample~H3K27ac,function(x) sum(x))
+RNA_norm = aggregate(data=compare_marks_unique,TE_sample~RNA,function(x) sum(x))
+
+a = xtabs(TE_sample ~ chromHMM+WGBS, data=compare_marks_all)
 names(dimnames(test)) = c("chromHMM","WGBS")
+a = t(apply(a,1,function(x) x*(WGBS_norm[match(WGBS_norm$WGBS,colnames(a)),]$TE_sample/colSums(a))))
 
-b = xtabs(TE_sample_norm ~ WGBS+chromHMM, data=compare_marks_all)
+b = xtabs(TE_sample ~ WGBS+chromHMM, data=compare_marks_all)
 names(dimnames(test)) = c("WGBS","chromHMM")
+b = t(apply(b,2,function(x) x*(WGBS_norm[match(WGBS_norm$WGBS,rownames(b)),]$TE_sample/rowSums(b))))
 
-c = xtabs(TE_sample_norm ~ DNase+chromHMM, data=compare_marks_all)
+c = xtabs(TE_sample ~ DNase+chromHMM, data=compare_marks_all)
 names(dimnames(test)) = c("DNase","chromHMM")
+c = t(apply(c,2,function(x) x*(DNase_norm[match(DNase_norm$DNase,rownames(c)),]$TE_sample/rowSums(c))))
 
-d = xtabs(TE_sample_norm ~ H3K27ac+chromHMM, data=compare_marks_all)
+d = xtabs(TE_sample ~ H3K27ac+chromHMM, data=compare_marks_all)
 names(dimnames(test)) = c("H3K27ac","chromHMM")
+d = t(apply(d,2,function(x) x*(H3K27ac_norm[match(H3K27ac_norm$H3K27ac,rownames(d)),]$TE_sample/rowSums(d))))
 
-e = xtabs(TE_sample_norm ~ RNA+chromHMM, data=compare_marks_all)
+e = xtabs(TE_sample ~ RNA+chromHMM, data=compare_marks_all)
 names(dimnames(test)) = c("RNA","chromHMM")
+e = t(apply(e,2,function(x) x*(RNA_norm[match(RNA_norm$RNA,rownames(e)),]$TE_sample/rowSums(e))))
 
-f = xtabs(TE_sample_norm ~ chromHMM+DNase, data=compare_marks_all)
+f = xtabs(TE_sample ~ chromHMM+DNase, data=compare_marks_all)
 names(dimnames(test)) = c("chromHMM","DNase")
+f = t(apply(f,1,function(x) x*(DNase_norm[match(DNase_norm$DNase,colnames(f)),]$TE_sample/colSums(f))))
 
 g = xtabs(TE_sample ~ WGBS+DNase, data=compare_marks_unique)
 names(dimnames(test)) = c("WGBS","DNase")
@@ -541,8 +555,9 @@ names(dimnames(test)) = c("H3K27ac","WGBS")
 j = xtabs(TE_sample ~ RNA+WGBS, data=compare_marks_unique)
 names(dimnames(test)) = c("RNA","WGBS")
 
-k = xtabs(TE_sample_norm ~ chromHMM+H3K27ac, data=compare_marks_all)
+k = xtabs(TE_sample ~ chromHMM+H3K27ac, data=compare_marks_all)
 names(dimnames(test)) = c("chromHMM","H3K27ac")
+k = t(apply(k,1,function(x) x*(H3K27ac_norm[match(H3K27ac_norm$H3K27ac,colnames(k)),]$TE_sample/colSums(k))))
 
 l = xtabs(TE_sample ~ WGBS+H3K27ac, data=compare_marks_unique)
 names(dimnames(test)) = c("WGBS","H3K27ac")
@@ -556,8 +571,9 @@ names(dimnames(test)) = c("H3K27ac","DNase")
 o = xtabs(TE_sample ~ RNA+DNase, data=compare_marks_unique)
 names(dimnames(test)) = c("RNA","DNase")
 
-p = xtabs(TE_sample_norm ~ chromHMM+RNA, data=compare_marks_all)
+p = xtabs(TE_sample ~ chromHMM+RNA, data=compare_marks_all)
 names(dimnames(test)) = c("chromHMM","RNA")
+p = t(apply(p,1,function(x) x*(RNA_norm[match(RNA_norm$RNA,colnames(p)),]$TE_sample/colSums(p))))
 
 q = xtabs(TE_sample ~ WGBS+RNA, data=compare_marks_unique)
 names(dimnames(test)) = c("WGBS","RNA")
@@ -582,7 +598,7 @@ mplot(mosaic(a,shade=TRUE,return_grob=TRUE,legend=FALSE),mosaic(b,shade=TRUE,ret
       mosaic(q,shade=TRUE,return_grob=TRUE,legend=FALSE),mosaic(r,shade=TRUE,return_grob=TRUE,legend=FALSE),
       mosaic(s,shade=TRUE,return_grob=TRUE,legend=FALSE),mosaic(t,shade=TRUE,return_grob=TRUE,legend=FALSE),pin=c(7,9))
 
-u = xtabs(TE_sample_norm ~ chromHMM+WGBS+DNase+H3K27ac+RNA, data=compare_marks_all)
+u = xtabs(TE_sample ~ chromHMM+WGBS+DNase+H3K27ac+RNA, data=compare_marks_all) # No longer normalized
 
 mplot(mosaic(u,shade=TRUE,return_grob=TRUE,legend=FALSE),pin=c(7,9))
 ```
@@ -604,19 +620,10 @@ aggregate(data=compare_marks_unique,TE_sample~DNase,function(x) sum(x)/sum(compa
 aggregate(data=compare_marks_unique,TE_sample~H3K27ac,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$H3K27ac)),]$TE_sample))
 aggregate(data=compare_marks_unique,TE_sample~RNA,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$RNA)),]$TE_sample))
 aggregate(data=compare_marks_unique,TE_sample~WGBS,function(x) sum(x)/sum(compare_marks_unique[which(!is.na(compare_marks_unique$WGBS)),]$TE_sample))
-aggregate(data=compare_marks_all,TE_sample_norm~chromHMM,function(x) sum(x)/sum(compare_marks_all$TE_sample_norm))
+aggregate(data=compare_marks_all,TE_sample~chromHMM,function(x) sum(x)/sum(compare_marks_unique$TE_sample))
 
 # Chi-squared for each mark combination
-table_list = list(xtabs(TE_sample~H3K27ac+DNase,data=aggregate(data=compare_marks_unique,TE_sample~H3K27ac+DNase,sum)),  
-                  xtabs(TE_sample~H3K27ac+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~H3K27ac+WGBS,sum)), 
-                  xtabs(TE_sample~DNase+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~DNase+WGBS,sum)), 
-                  xtabs(TE_sample~DNase+RNA,data=aggregate(data=compare_marks_unique,TE_sample~DNase+RNA,sum)), 
-                  xtabs(TE_sample~RNA+WGBS,data=aggregate(data=compare_marks_unique,TE_sample~RNA+WGBS,sum)), 
-                  xtabs(TE_sample~RNA+H3K27ac,data=aggregate(data=compare_marks_unique,TE_sample~RNA+H3K27ac,sum)), 
-                  xtabs(TE_sample_norm~chromHMM+DNase,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+DNase,sum)), 
-                  xtabs(TE_sample_norm~chromHMM+H3K27ac,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+H3K27ac,sum)),
-                  xtabs(TE_sample_norm~chromHMM+RNA,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+RNA,sum)),
-                  xtabs(TE_sample_norm~chromHMM+WGBS,data=aggregate(data=compare_marks_all,TE_sample_norm~chromHMM+WGBS,sum)))
+table_list = list(n,i,h,r,j,t,f,k,p,a)
 chisq_list = lapply(table_list,function(x) chisq.test(x))
 p.adjust(unlist(lapply(chisq_list,function(x) x$p.value)),method="bonf")
 lapply(chisq_list,function(x) x$residuals)
@@ -626,17 +633,23 @@ lapply(table_list,function(x) x/rowSums(x))
 lapply(table_list,function(x) t(x)/rowSums(t(x)))
 
 # Proportion of TEs x sample in each chromHMM state also overlapping DNase peak and H3K27ac peak
-test1 = ddply(compare_marks_all[which(!is.na(compare_marks_all$DNase) & !is.na(compare_marks_all$H3K27ac)),],.(chromHMM,DNase,H3K27ac),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm))
-test2 = merge(ddply(test1,.(chromHMM),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),ddply(test1[which(test1$DNase == "yes" & test1$H3K27ac == "yes"),],.(chromHMM),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),by="chromHMM")
+test1 = ddply(compare_marks_all[which(!is.na(compare_marks_all$DNase) & !is.na(compare_marks_all$H3K27ac)),],.(chromHMM,DNase,H3K27ac),summarise,TE_sample=sum(TE_sample))
+test2 = merge(ddply(test1,.(chromHMM),summarise,TE_sample=sum(TE_sample)),ddply(test1[which(test1$DNase == "yes" & test1$H3K27ac == "yes"),],.(chromHMM),summarise,TE_sample=sum(TE_sample)),by="chromHMM")
 test2$TE_sample_proportion = test2$TE_sample.y/test2$TE_sample.x
-test2$TE_sample_norm_proportion = test2$TE_sample_norm.y/test2$TE_sample_norm.x
 test2
 
 # Proportion of TEs x sample in each WGBS state also overlapping DNase peak and H3K27ac peak
-test1 = ddply(compare_marks_all[which(!is.na(compare_marks_all$DNase) & !is.na(compare_marks_all$H3K27ac) & !is.na(compare_marks_all$WGBS)),],.(WGBS,DNase,H3K27ac),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm))
-test2 = merge(ddply(test1,.(WGBS),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),ddply(test1[which(test1$DNase == "yes" & test1$H3K27ac == "yes"),],.(WGBS),summarise,TE_sample=sum(TE_sample),TE_sample_norm=sum(TE_sample_norm)),by="WGBS")
+test1 = ddply(compare_marks_unique[which(!is.na(compare_marks_unique$DNase) & !is.na(compare_marks_unique$H3K27ac) & !is.na(compare_marks_unique$WGBS)),],.(WGBS,DNase,H3K27ac),summarise,TE_sample=sum(TE_sample))
+test2 = merge(ddply(test1,.(WGBS),summarise,TE_sample=sum(TE_sample)),ddply(test1[which(test1$DNase == "yes" & test1$H3K27ac == "yes"),],.(WGBS),summarise,TE_sample=sum(TE_sample)),by="WGBS")
 test2$TE_sample_proportion = test2$TE_sample.y/test2$TE_sample.x
-test2$TE_sample_norm_proportion = test2$TE_sample_norm.y/test2$TE_sample_norm.x
+test2
+
+# QC
+## Total TE x sample = 562520596 - matches total unique TEs in combine_marks_counts_RNA.txt and compare_marks_unique$TE_sample
+## Total TE x sample correct for each metric
+apply(compare_marks_unique,2,function(x) sum(compare_marks_unique[which(!is.na(x)),]$TE_sample))
+
+## Total TE x sample x chromHMM states = 582516697 - matches total TEs in combine_marks_table_counts_RNA.txt and compare_marks_all$TE_sample
 ```
 
 ### Supplementary Figure 4
@@ -1387,6 +1400,33 @@ mean(rmsk_TE_measure[which(rmsk_TE_measure$X15_Quies > 0 & rmsk_TE_measure$State
 mean(rmsk_TE_measure[which(rmsk_TE_measure$States > 1 | (rmsk_TE_measure$States == 1 & rmsk_TE_measure$X15_Quies == 0)),]$mappability)
 ```
 
+### By chromosome
+
+```{r potential by chromosome}
+# Potential without chrY
+test = chromHMM_TE_state[which(chromHMM_TE_state$chromosome != "chrY"),]
+test.a = sample_distribution(test,c(8:22),sample_counts["All","chromHMM"])
+test.b = cumulative_distribution(test,c(8:22),sample_counts["All","chromHMM"])
+test.b$State = factor(rep(chromHMM_states,each=sample_counts["All","chromHMM"]),levels=chromHMM_states)
+test.c = potential_stats(test.a,15,sample_counts["All","chromHMM"])
+test.c$State = factor(chromHMM_states,levels=chromHMM_states)
+chromHMM_TE_state_dist_stats-test.c
+
+# Average samples in state for chrY TEs
+sort(colMeans(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY"),8:22]))
+
+# % of TEs overlapping DNase/H3K27ac on chrY, expressed RPKM > 1
+ADD
+
+# % of TEs on each chromosome
+sort(table(rmsk_TE$chromosome)/dim(rmsk_TE)[1])
+
+# % of classes on each chromosome
+class_chromosome = table(rmsk_TE$chromosome,rmsk_TE$class_update)
+class_chromosome = apply(class_chromosome,2,function(x) x/sum(x))
+class_chromosome
+```
+
 ## By-sample
 
 ### Figure 4
@@ -1603,6 +1643,7 @@ rm(list=c("DNase_pca","H3K27ac_pca","enhancer_matrix_pca","enhancer_matrix"))
 ## Subfamily enrichment
 
 ### Set thresholds 
+See 2/9/18 discussion.
 
 ```{r set enrichment thresholds}
 THRESHOLD_IJK_BASE = 600
@@ -2338,6 +2379,14 @@ write.table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_or
 ```
 
 # Methods 
+Strand-agnostic RNA-seq files (n=56)
+
+Summary of RNA-seq notes from Misha and the Roadmap data portal: 
+
+* Unnormalized wiggle files with RNA-seq signal coverage (raw read coverage - 1 added for entire read length) (http://egg2.wustl.edu/roadmap/data/byDataType/rna/signal/unnormalized_wig/)
+  + Excluded multimapped reads (BWA quality threshold 5), kept duplicate reads
+* Coverages are NOT normalized, but normalization coefficients are in the file all.EGID.N.readlength. Misha says I should multiply wig coverage then integral over coding part of gene
+  + However, this is a "modified RPKM measure, total number of reads aligned into coding exons, excluded those in mitochondrial geome, ribosomal protein genes, 0.5% expressed exons". Can this be used for something other than coding genes?
 
 ## Blacklist TEs
 
