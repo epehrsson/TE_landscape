@@ -46,6 +46,9 @@ awk -v OFS='\t' '{if($1 !~ /_/) print $0}' refseq_promoters_unique.txt > refseq_
 # Unique Refseq exon coordinates, filtered to standard chromosomes
  awk -v OFS='\t' '{if($1 !~ /_/) print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_exons.txt | sort | uniq > ~/genic_features/RefSeq/refseq_exons_unique.txt
 
+# Sorted
+ sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_exons_unique.txt > RNAseq/refseq_exons_unique.txt.sorted
+
 # Number overlapping each other
  sort -k1,1V -k2,2n -k3,3n ~/genic_features/RefSeq/refseq_exons_unique.txt | bedtools merge -i - > test.txt
 
@@ -60,6 +63,7 @@ bedtools slop -i Gencodev19_up2000.txt -g hg19.genome -l 0 -r 500 -s > Gencodev1
 bedtools slop -i Gencode_v19_genes.txt -g hg19.genome -l 2000 -r 500 -s > Gencode_v19_genes_margin.txt
 
 # Shuffled
+# Gap table columns: https://genome.ucsc.edu/cgi-bin/hgTables
 
 # hg19 gaps, sorted	 
 #TE_landscape/features/shuffled_TEs/gap_sorted.txt	
@@ -68,3 +72,5 @@ tail -n+2 /bar/genomes/hg19/gap/gap.txt | awk -v OFS='\t' '{print $2, $3, $4}' -
 # Shuffled TE positions (no gaps)	 
 #TE_landscape/features/shuffled_TEs/rmsk_TE_shuffle_#.txt [10 files]	
 for i in {1..10}; do bedtools shuffle -i ~/TE_landscape/features/TEs/rmsk_TEother.txt -g ~/TE_landscape/features/hg19_standard.genome -excl gap_sorted.txt > rmsk_TE_shuffle_$i\.txt; done
+
+# All shuffled files have 4430788 TEs, same number of class, same number of subfamily, but not same number on each chromosome (3/4/18)
