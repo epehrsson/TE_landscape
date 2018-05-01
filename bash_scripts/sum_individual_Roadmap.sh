@@ -78,3 +78,13 @@ python ~/bin/TE_landscape/H3K27ac_peaks_promoter.py ~/genic_features/RefSeq/refs
 # Shuffled TEs
 #TE_landscape/H3K27ac/shuffled/rmsk_TE_shuffle_#_H3K27ac_peaks.txt [10 files]
 for i in {1..10}; do cat rmsk_TE_shuffle_$i\_E*-H3K27ac.narrowPeak | cut -f1-7 | sort | uniq > test; python ~/bin/TE_landscape/H3K27ac_peaks.py test ~/TE_landscape/sample_lists/H3K27ac_samples.txt rmsk_TE_shuffle_$i\_ rmsk_TE_shuffle_$i\_H3K27ac_peaks.txt; done
+
+# Mouse
+# chromHMM state for each mm9 TE
+#TE_landscape/Mouse/chromHMM/mouse_mm9_chromHMM_TE.txt
+while read line ; do awk -v OFS='\t' -v sample=$line '{a[$10, $11, $12, $13, $14, $15, $16, $4, sample]+=$17;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i];}}'  mouse_chromHMM_TE/$line\.bed_TE >> mouse_mm9_chromHMM_TE.txt; done < mouse_samples.txt
+
+# DNase
+# Total overlap with Dnase per TE
+#TE_landscape/Mouse/DNase_mm10/mm10_orthologs_DNase_sum.txt
+awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $19]+=$18; b[$1, $2, $3, $4, $5, $6, $7, $19]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i], b[i];}}' mm10_orthologs_DNase.txt > mm10_orthologs_DNase_sum.txt

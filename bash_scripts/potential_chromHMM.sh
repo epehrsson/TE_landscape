@@ -43,8 +43,3 @@ awk -v OFS='\t' '{if($5 != "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep,
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.75.txt
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.txt
  python ../bin/TE_landscape/potential_promoter.py all_chromHMM_promoter.txt promoters.txt chromHMM_states.txt all_chromHMM_promoter_potential_0.txt 0
-
-# Mouse
-# chromHMM state for each mm9 TE	 
-#TE_landscape/Mouse/chromHMM/mouse_mm9_chromHMM_TE.txt	
-while read line ; do awk -v OFS='\t' -v sample=$line '{a[$10, $11, $12, $13, $14, $15, $16, $4, sample]+=$17;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i];}}'  mouse_chromHMM_TE/$line\.bed_TE >> mouse_mm9_chromHMM_TE.txt; done < mouse_samples.txt

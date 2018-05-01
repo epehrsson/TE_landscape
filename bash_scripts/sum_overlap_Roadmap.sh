@@ -175,8 +175,3 @@ for file in mouse_chromHMM_other/*.bed_TEother_merge; do awk '{SUM+=$13}END{prin
 # Table of number of bases in each state in all TEs in each sample	 
 #TE_landscape/Mouse/chromHMM/mouse_chromHMM_TEother_merge.txt	
 bash ../combine_states.sh mouse_chromHMM_states.txt mouse_samples.txt mouse_chromHMM_other/*_state 
-
-# DNase
-# Total overlap with Dnase per TE	 
-#TE_landscape/Mouse/DNase_mm10/mm10_orthologs_DNase_sum.txt	
-awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $19]+=$18; b[$1, $2, $3, $4, $5, $6, $7, $19]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i], b[i];}}' mm10_orthologs_DNase.txt > mm10_orthologs_DNase_sum.txt
