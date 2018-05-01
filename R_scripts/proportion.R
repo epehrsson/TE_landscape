@@ -95,6 +95,7 @@ colnames(DNase_stats) = c("Peaks","Sample","Total_width","Peaks_in_TE")
 test = read.table("DNase/rmsk_TEother_merge_DNase_contribution.txt",sep='\t')
 colnames(test) = c("Sample","Total_width_in_TE")
 DNase_stats = merge(DNase_stats,test,by=c("Sample"))[,c(1:2,4,3,5)]
+DNase_stats$Summit_in_TE = read.table("DNase/rmsk_TEother_DNase_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of DNase peak in Refseq genic features, by sample
@@ -104,7 +105,7 @@ DNase_features$Cohort = gsub("refseq_", "", DNase_features$Cohort)
 DNase_features$Cohort = gsub("_merge_noTE_DNase", "", DNase_features$Cohort)
 DNase_features$Cohort = gsub("_noTE_DNase", "", DNase_features$Cohort)
 DNase_features = DNase_features[which(!(DNase_features$Cohort %in% c("genes","genes_nc","genes_pc"))),]
-DNase_features[which(is.na(DNase_features$Bases)),]$Bases = 0
+#DNase_features[which(is.na(DNase_features$Bases)),]$Bases = 0
 
 # Proportion of RefSeq features overlapping DNase peaks, averaged
 DNase_features$Genome = apply(DNase_features,1,function(x) ifelse(x[1] %in% as.vector(metadata[which(metadata$chrY == "Yes"),]$Sample),
@@ -131,6 +132,7 @@ H3K27ac_stats = read.table("H3K27ac/H3K27ac_stats.txt",sep='\t',header=TRUE)
 test = read.table("H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt",sep='\t')
 colnames(test) = c("Sample","Total_width_in_TE")
 H3K27ac_stats = merge(H3K27ac_stats,test,by=c("Sample"))
+H3K27ac_stats$Summit_in_TE = read.table("H3K27ac/rmsk_TEother_H3K27ac_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of H3K27ac peak in Refseq genic features, by sample
@@ -139,7 +141,7 @@ colnames(H3K27ac_features) = c("Sample","Bases","Cohort")
 H3K27ac_features$Cohort = gsub("refseq_", "", H3K27ac_features$Cohort)
 H3K27ac_features$Cohort = gsub("_merge_noTE_H3K27ac", "", H3K27ac_features$Cohort)
 H3K27ac_features$Cohort = gsub("_noTE_H3K27ac", "", H3K27ac_features$Cohort)
-H3K27ac_features[which(is.na(H3K27ac_features$Bases)),]$Bases = 0
+#H3K27ac_features[which(is.na(H3K27ac_features$Bases)),]$Bases = 0
 
 # Proportion of RefSeq features overlapping H3K27ac peaks, averaged
 H3K27ac_features$Genome = apply(H3K27ac_features,1,function(x) ifelse(x[1] %in% as.vector(metadata[which(metadata$chrY == "Yes"),]$Sample),
