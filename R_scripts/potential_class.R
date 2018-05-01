@@ -12,8 +12,8 @@ chromHMM_TE_state_class_stats$class_update = factor(chromHMM_TE_state_class_stat
 chromHMM_TE_state_class_stats[,2:4] = apply(chromHMM_TE_state_class_stats[,2:4],2,function(x) as.numeric(x))
 
 # Proportion of TEs in each chromHMM state by class by sample
-class_state_sample = read.table("chromHMM/class_state_sample.txt",sep='\t')
-colnames(class_state_sample) = c("Class","State","Sample","Count")
+class_state_sample = read.table("chromHMM/class_state_sample_summit.txt",sep='\t')
+colnames(class_state_sample) = c("Class","Sample","State","Count")
 class_state_sample = merge(class_state_sample,expand.grid(Class = levels(class_state_sample$Class),Sample = levels(class_state_sample$Sample),State = levels(class_state_sample$State)),by=c("Class","State","Sample"),all.y=TRUE)
 class_state_sample[is.na(class_state_sample)] = 0
 class_state_sample$Count = as.numeric(class_state_sample$Count)

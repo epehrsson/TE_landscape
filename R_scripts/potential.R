@@ -18,9 +18,9 @@ chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_n
 chromHMM_TE_state_dist_noCancer_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
 # Number of TEs in each chromHMM state by sample
-state_sample_count = read.table("chromHMM/subfamily/state_sample_counts.txt",sep='\t')
-colnames(state_sample_count) = c("State","Sample","Count")
-state_sample_count[1905,] = c("3_TxFlnk","E002",0)
+state_sample_count = read.table("chromHMM/state_sample_counts_summit.txt",sep='\t')
+colnames(state_sample_count) = c("Sample","State","Count")
+state_sample_count[1905,] = c("E002","3_TxFlnk",0)
 state_sample_count$Count = as.numeric(state_sample_count$Count)
 state_sample_count$Proportion = ifelse(metadata[match(state_sample_count$Sample,metadata$Sample),]$chrY == "Yes",state_sample_count$Count/NUM_TE,state_sample_count$Count/NUM_TE_noY)
 state_sample_count$State = factor(state_sample_count$State,levels=chromHMM_states)
