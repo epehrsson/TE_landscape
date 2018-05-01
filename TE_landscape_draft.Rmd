@@ -41,62 +41,6 @@ packageVersion("RColorBrewer")
 theme_set(theme_bw() %+replace%  theme(panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),panel.grid=element_blank()))
 ```
 
-## Load functions
-
-```{r load functions}
-source("R_scripts/functions.R")
-```
-
-## Create essential matrices
-
-```{r create essential matrices, eval=FALSE}
-source("R_scripts/metadata.R")
-source("R_scripts/TE_matrix.R")
-source("R_scripts/chromHMM_matrix.R")
-source("R_scripts/WGBS_TE_avg_methylation.R")
-source("R_scripts/DNase_peaks.R")
-source("R_scripts/H3K27ac_peaks.R")
-source("R_scripts/RNAseq.R")
-source("R_scripts/promoter_matrices.R")
-source("R_scripts/shuffled_matrix.R")
-source("R_scripts/shuffled_matrix_CpG.R")
-source("R_scripts/shuffled_matrix_mappability.R")
-source("R_scripts/shuffled_matrix_features.R")
-source("R_scripts/shuffled_matrix_chromHMM.R")
-source("R_scripts/shuffled_matrix_WGBS.R")
-source("R_scripts/shuffled_matrix_DNase.R")
-source("R_scripts/shuffled_matrix_H3K27ac.R")
-```
-
-## Load metadata
-
-```{r load metadata}
-load("R_datasets/metadata.RData")
-```
-
-## Load sample statistics
-
-```{r load sample stats}
-# Samples with each metric: all, not excluded, no Y, both
-sample_counts = rbind(apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x)),])[1]),
-                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$Exclude == "Include"),])[1]),
-                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes"),])[1]),
-                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes" & metadata$Exclude == "Include"),])[1]))
-colnames(sample_counts)[1] = "chromHMM"
-rownames(sample_counts) = c("All","Include","chrY","Include.chrY")
-```
-
-## Load essential matrices
-
-```{r load essential matrices}
-load("R_datasets/rmsk_TE.RData")
-load("R_datasets/chromHMM_TE_state.RData")
-load("R_datasets/TE_meth_average.RData")
-load("R_datasets/TE_DNase_peaks.RData")
-load("R_datasets/TE_H3K27ac_peaks.RData")
-load("R_datasets/rna.RData")
-```
-
 ## Define color and label vectors
 
 ```{r define vectors}
@@ -150,6 +94,62 @@ measure_states_extra = c("States.chromHMM","Max_states_intra","States.WGBS","Max
 measure_metrics = c("Length","mappability","JC_distance","CpGs","CpGs_per_length")
 measure_metrics_subfam = c("Count","Total_length","Median_length","Mappability","Age","CpGs","Count_CpGs","CpGs_per_TE","CpGs_per_kbp")
 enrichment_names = c("Length_ijk","Length_ik","Length_jk","Length_k","Enrichment","Length_percent_jk","Members","Percent")
+```
+
+## Load functions
+
+```{r load functions}
+source("R_scripts/functions.R")
+```
+
+## Create essential matrices
+
+```{r create essential matrices, eval=FALSE}
+source("R_scripts/metadata.R")
+source("R_scripts/TE_matrix.R")
+source("R_scripts/chromHMM_matrix.R")
+source("R_scripts/WGBS_TE_avg_methylation.R")
+source("R_scripts/DNase_peaks.R")
+source("R_scripts/H3K27ac_peaks.R")
+source("R_scripts/RNAseq.R")
+source("R_scripts/promoter_matrices.R")
+source("R_scripts/shuffled_matrix.R")
+source("R_scripts/shuffled_matrix_CpG.R")
+source("R_scripts/shuffled_matrix_mappability.R")
+source("R_scripts/shuffled_matrix_features.R")
+source("R_scripts/shuffled_matrix_chromHMM.R")
+source("R_scripts/shuffled_matrix_WGBS.R")
+source("R_scripts/shuffled_matrix_DNase.R")
+source("R_scripts/shuffled_matrix_H3K27ac.R")
+```
+
+## Load metadata
+
+```{r load metadata}
+load("R_datasets/metadata.RData")
+```
+
+## Load essential matrices
+
+```{r load essential matrices}
+load("R_datasets/rmsk_TE.RData")
+load("R_datasets/chromHMM_TE_state.RData")
+load("R_datasets/TE_meth_average.RData")
+load("R_datasets/TE_DNase_peaks.RData")
+load("R_datasets/TE_H3K27ac_peaks.RData")
+load("R_datasets/rna.RData")
+```
+
+## Load sample statistics
+
+```{r load sample stats}
+# Samples with each metric: all, not excluded, no Y, both
+sample_counts = rbind(apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x)),])[1]),
+                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$Exclude == "Include"),])[1]),
+                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes"),])[1]),
+                      apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes" & metadata$Exclude == "Include"),])[1]))
+colnames(sample_counts)[1] = "chromHMM"
+rownames(sample_counts) = c("All","Include","chrY","Include.chrY")
 ```
 
 ## Define facet labels
