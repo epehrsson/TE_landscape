@@ -1,7 +1,7 @@
 # Creates matrices of promoter x number of samples in each state for all 4 measures
 
 # Number of samples each promoter is in each chromHMM state
-chromHMM_promoter_state = read.table("chromHMM/Refseq_promoters/potential_refseq_promoters_unique.txt",sep='\t',header=TRUE)
+chromHMM_promoter_state = read.table("chromHMM/potential/refseq_promoters_chromHMM_summit_potential.txt",sep='\t',header=TRUE)
 
 # Methylation level for all promoters
 promoter_meth_average = read.table("WGBS/Refseq_promoters/refseq_promoter_unique_CpG_Meth_average.txt",sep='\t',header=TRUE)
@@ -13,8 +13,8 @@ promoter_meth_average$Intermediate = apply(promoter_meth_average,1,function(x) s
 promoter_meth_average$Missing = apply(promoter_meth_average,1,function(x) sum(is.na(x[5:41])))
 
 # Number of overlaps between promoters, DNase peaks
-promoter_DNase_peaks = read.table(file="DNase/Refseq_promoters/refseq_promoters_unique_DNase_peaks.txt",sep='\t')
-colnames(promoter_DNase_peaks) = c("chromosome","start","stop","strand","Sample","Peaks","Overlap")
+promoter_DNase_peaks = read.table(file="DNase/refseq_promoter_unique_DNase_summit.txt",sep='\t')
+colnames(promoter_DNase_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
 promoter_DNase_peaks = dcast(promoter_DNase_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
 promoter_DNase_peaks[is.na(promoter_DNase_peaks)] = 0
 
@@ -22,8 +22,8 @@ promoter_DNase_peaks[is.na(promoter_DNase_peaks)] = 0
 promoter_DNase_peaks$Samples = apply(promoter_DNase_peaks,1,function(x) sum(as.numeric(x[5:57]) > 0))
 
 # Number of overlaps between promoters, H3K27ac peaks
-promoter_H3K27ac_peaks = read.table(file="H3K27ac/Refseq_promoters/refseq_promoters_unique_H3K27ac_peaks.txt",sep='\t')
-colnames(promoter_H3K27ac_peaks) = c("chromosome","start","stop","strand","Sample","Peaks","Overlap")
+promoter_H3K27ac_peaks = read.table(file="H3K27ac/refseq_promoter_unique_H3K27ac_summit.txt",sep='\t')
+colnames(promoter_H3K27ac_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
 promoter_H3K27ac_peaks = dcast(promoter_H3K27ac_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
 promoter_H3K27ac_peaks[is.na(promoter_H3K27ac_peaks)] = 0
 

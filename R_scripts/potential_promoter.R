@@ -38,8 +38,10 @@ promoter_H3K27ac_potential_stats$State = "H3K27ac"
 
 # Promoters in state by sample
 # Number of promoters in each chromHMM state by sample
-promoter_state_sample_count = read.table("chromHMM/Refseq_promoters/promoter_state_sample_count.txt",sep='\t')
-colnames(promoter_state_sample_count) = c("State","Sample","Count")
+promoter_state_sample_count = read.table("chromHMM/promoters_state_sample_counts_summit.txt",sep='\t')
+colnames(promoter_state_sample_count) = c("Sample","State","Count")
+promoter_state_sample_count[1905,] = c("E002","3_TxFlnk",0)
+promoter_state_sample_count$Count = as.numeric(promoter_state_sample_count$Count)
 promoter_state_sample_count$Proportion = ifelse(metadata[match(promoter_state_sample_count$Sample,metadata$Sample),]$chrY == "Yes",promoter_state_sample_count$Count/NUM_PROMOTER,promoter_state_sample_count$Count/NUM_PROMOTER_noY)
 promoter_state_sample_count$State = factor(promoter_state_sample_count$State,levels=chromHMM_states)
 
