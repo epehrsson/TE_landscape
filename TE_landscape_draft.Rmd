@@ -93,7 +93,7 @@ cgate_subfams = c('AluJb','AluJo','AluS','AluSc','AluSg','AluSg1','AluSp','AluSq
 measure_states_extra = c("States.chromHMM","Max_states_intra","States.WGBS","Max_expression")
 measure_metrics = c("Length","mappability","JC_distance","CpGs","CpGs_per_length")
 measure_metrics_subfam = c("Count","Total_length","Median_length","Mappability","Age","CpGs","Count_CpGs","CpGs_per_TE","CpGs_per_kbp")
-enrichment_names = c("Length_ijk","Length_ik","Length_jk","Length_k","Enrichment","Length_percent_jk","Members","Percent")
+enrichment_names = c("Length_ijk","Length_ik","Length_jk","Length_k","Enrichment","Length_percent_jk","Members","Count","Percent")
 ```
 
 ## Load functions
@@ -129,17 +129,6 @@ source("R_scripts/shuffled_matrix_H3K27ac.R")
 load("R_datasets/metadata.RData")
 ```
 
-## Load essential matrices
-
-```{r load essential matrices}
-load("R_datasets/rmsk_TE.RData")
-load("R_datasets/chromHMM_TE_state.RData")
-load("R_datasets/TE_meth_average.RData")
-load("R_datasets/TE_DNase_peaks.RData")
-load("R_datasets/TE_H3K27ac_peaks.RData")
-load("R_datasets/rna.RData")
-```
-
 ## Load sample statistics
 
 ```{r load sample stats}
@@ -150,6 +139,17 @@ sample_counts = rbind(apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")
                       apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes" & metadata$Exclude == "Include"),])[1]))
 colnames(sample_counts)[1] = "chromHMM"
 rownames(sample_counts) = c("All","Include","chrY","Include.chrY")
+```
+
+## Load essential matrices
+
+```{r load essential matrices}
+load("R_datasets/rmsk_TE.RData")
+load("R_datasets/chromHMM_TE_state.RData")
+load("R_datasets/TE_meth_average.RData")
+load("R_datasets/TE_DNase_peaks.RData")
+load("R_datasets/TE_H3K27ac_peaks.RData")
+load("R_datasets/rna.RData")
 ```
 
 ## Define facet labels
@@ -385,6 +385,22 @@ max(rmsk_TE$Length)
 
 # Length of states
 ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length))
+
+# Length of states by sample
+all_lengths_blocks = ddply(all_lengths,.(State,Sample),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length),Blocks=length(Length))
+
+# Differences in length of states by sample
+ddply(all_lengths,.(State),summarise,KW_length=unlist(kruskal.test(Length~Sample))["p.value"])
+
+# Differences in number of blocks by sample
+ddply(all_lengths_blocks,.(State),summarise,Range_number=max(Blocks)-min(Blocks),CV_number=sd(Blocks)/mean(Blocks),Range_length=max(Median)-min(Median),CV_length=sd(Median)/mean(Median))
+
+ggplot(all_lengths_blocks,aes(x=State,y=Blocks,fill=State)) + geom_boxplot() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_fill_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + ylab("Number of blocks") 
+
+# Comparing number of blocks to length of states
+ggplot(all_lengths_blocks,aes(x=Blocks,y=Median)) + geom_point() + facet_wrap(~State,scales="free") + xlab("Number of blocks/peaks per sample") + ylab("Median length of blocks/peaks per sample")
+
+ddply(all_lengths_blocks,.(State),summarise,Cor=unlist(cor.test(Blocks,Median,method="spearman"))["estimate.rho"],Pvalue=unlist(cor.test(Blocks,Median,method="spearman"))["p.value"])
 ```
 
 ### CpG state analysis
@@ -1647,10 +1663,11 @@ See 2/9/18 discussion.
 
 ```{r set enrichment thresholds}
 THRESHOLD_IJK_BASE = 600
+THRESHOLD_IJK_MEMBER = 10
 THRESHOLD_IK_BASE = 5000
+THRESHOLD_IK_MEMBER = 30
 THRESHOLD_IJK_CPG = 6
 THRESHOLD_IK_CPG = 50
-THRESHOLD_IJK_MEMBERS = 1
 THRESHOLD_LOR = 1.5
 THRESHOLD_PC = 0.01
 ```
@@ -1658,7 +1675,7 @@ THRESHOLD_PC = 0.01
 ### Figure 5
 
 ```{r Figure 5, fig.width=7, fig.height=9, echo=FALSE}
-source("R_scripts/subfamily_enrichment.R") # Requires proportion.R
+source("R_scripts/subfamily_enrichment.R") #Requires proportion.R
 
 a = ggplot(subfamily_state_sample_counts,aes(x=State,y=V1,color=class_update)) + geom_point(position=position_jitterdodge(jitter.width=0.5)) + coord_flip() + theme(axis.title.y=element_blank()) + ylab("Number of samples enriched LOR > 1.5") + scale_color_manual(values=class_colors,name="Class") + scale_y_continuous(breaks=c(0,seq(10,120,10),sample_counts["All","chromHMM"]),expand = c(0.01,0.01)) + geom_rect(xmin=0.5,xmax=1.5,ymin=sample_counts["All","H3K27ac"]+1,ymax=sample_counts["All","chromHMM"],fill="grey",color=NA) + geom_rect(xmin=1.5,xmax=2.5,ymin=sample_counts["All","DNase"]+1,ymax=sample_counts["All","chromHMM"],fill="grey",color=NA) + geom_rect(xmin=2.5,xmax=6.5,ymin=sample_counts["All","WGBS"]+1,ymax=sample_counts["All","chromHMM"],fill="grey",color=NA) + geom_vline(xintercept=seq(1.5,20.5,1), colour='grey') + scale_x_discrete(limits = rev(levels(subfamily_state_sample_counts$State)),labels=as.vector(rev(apply(subfamily_state_sample_counts_combine,1,function(x) paste(x[1],"\n(n=",x[2],")",sep="")))))
 
@@ -1691,33 +1708,26 @@ ggplot(tf,aes(x=TF,y=value,fill=variable)) + geom_bar(stat="identity",position="
 
 ```{r excluded subfamilies}
 # chromHMM, all chromosomes
-dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Total_length <= THRESHOLD_IK_BASE),])[1]
+dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count <= THRESHOLD_IK_MEMBER),])[1]
 # chromHMM, no Y
-dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Total_length > THRESHOLD_IK_BASE & rmsk_TE_subfamily$Total_length_noY <= THRESHOLD_IK_BASE),])[1]
+dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count > THRESHOLD_IK_MEMBER & rmsk_TE_subfamily$Count_noY <= THRESHOLD_IK_MEMBER),])[1]
+
+rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count_noY <= THRESHOLD_IK_MEMBER),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
+
+# Subfamilies with fewer members than member threshold
+rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count < THRESHOLD_IJK_MEMBER | rmsk_TE_subfamily$Count_noY < THRESHOLD_IJK_MEMBER),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
+
 # CpGs
 dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$CpGs <= THRESHOLD_IK_CPG),])[1]
 
-rmsk_TE_subfamily[which(rmsk_TE_subfamily$Total_length_noY <= THRESHOLD_IK_BASE | rmsk_TE_subfamily$CpGs <= THRESHOLD_IK_CPG),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
-
 # Subfamilies with no CpGs
 rmsk_TE_subfamily[which(rmsk_TE_subfamily$CpGs == 0),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
-
-# Subfamilies with fewer members than member threshold
-rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count < THRESHOLD_IJK_MEMBERS | rmsk_TE_subfamily$Count_noY < THRESHOLD_IJK_MEMBERS),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
 ```
 
 ### Number of enrichments excluded by enrichment thresholds
 
 ```{r excluded enrichments}
-test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Length_ik > THRESHOLD_IK_BASE & subfamily_state_sample_combined$Length_ijk < THRESHOLD_IJK_BASE),]$State)
-sum(test)
-test
-
-test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Length_ik > THRESHOLD_IK_CPG & subfamily_state_sample_combined$Length_ijk < THRESHOLD_IJK_CPG & subfamily_state_sample_combined$State %in% meth_states),]$State)
-sum(test)
-test
-
-test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Members < THRESHOLD_IJK_MEMBERS),]$State)
+test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER & subfamily_state_sample_combined$Members < THRESHOLD_IJK_MEMBER),]$State)
 sum(test)
 test
 ```
@@ -1829,8 +1839,13 @@ grid.arrange(a,b,c,d,e,f,legend,nrow=3,ncol=3,layout_matrix=cbind(c(1,2,3),c(4,5
 ### WGBS subfamily state stats
 
 ```{r analysis Fig S13c, cache=TRUE, cache.lazy=FALSE, dependson=c("setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-source("R_scripts/WGBS_subfamily_enrichment_TE.R")
+#source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 
+# Average, max, and range of proportion of subfamily in methylation state (change to Percent)
+TE_meth_subfamily = lapply(TE_meth_subfamily,function(y) transform(y,Mean = apply(y,1,function(x) mean(as.numeric(x[4:40]),na.rm=TRUE)),
+                             Range = apply(y,1,function(x) max(as.numeric(na.omit(x[4:40])))-min(as.numeric(na.omit(x[4:40])))),
+                             Max = apply(y,1,function(x) max(as.numeric(x[4:40])))))
+                             
 # Subfamilies with all members in a state in a sample
 TE_meth_subfamily = lapply(TE_meth_subfamily,function(y) transform(y,All_members = apply(y[,4:40],1,function(x) sum(na.omit(x) == 1))))
 
