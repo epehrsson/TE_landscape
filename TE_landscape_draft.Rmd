@@ -11,7 +11,8 @@ output:
 ---
 
 ```{r setup, include=TRUE}
-knitr::opts_chunk$set(fig.width=7, fig.height=9, fig.path='TE_landscape_draft_figures/', cache.path="TE_landscape_draft_cache/", error=TRUE)
+knitr::opts_chunk$set(fig.width=7, fig.height=9, fig.path='TE_landscape_draft_figures/', cache.path="TE_landscape_draft_cache/")
+#, error=TRUE
 ```
 
 # Setup
@@ -286,7 +287,7 @@ colnames(contribution) = c("State","Proportion")
 
 b = ggplot(contribution,aes(x=reorder(State,-Proportion,max),y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH) + scale_fill_manual(values=all_state_colors,guide=FALSE) + geom_text(aes(label=round(100*Proportion,1)),position="stack",hjust=1)
 
-legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Group,nrow=4))
+legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Group,nrow=4))
 
 grid.arrange(a,b,legend, nrow = 2,layout_matrix = rbind(c(1,2),c(3,3)),heights=c(0.9,0.1))
 ```
@@ -326,6 +327,46 @@ composite
 ```{r CpG proportion sample}
 mean(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
 sd(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
+```
+
+### DNase/H3K27ac peak analysis
+
+```{r peak analysis}
+# Number of DNase peaks per TE
+d = table(unlist(TE_DNase_peaks[,8:60]))
+d
+
+# % of TE x sample with > 1 peak
+d[2]/sum(d[2:length(d)])
+
+# Number of H3K27ac peaks per TE
+e = table(unlist(TE_H3K27ac_peaks[,8:105]))
+e
+
+# % of TE x sample with > 1 peak
+e[2]/sum(e[2:length(e)])
+
+# % of DNase peaks overlapping TEs, overall
+sum(DNase_stats$Summit_in_TE)/sum(DNase_stats$Peaks)
+
+## By sample
+mean(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
+sd(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
+min(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
+DNase_stats[which.min(DNase_stats$Summit_in_TE/DNase_stats$Peaks),]
+max(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
+DNase_stats[which.max(DNase_stats$Summit_in_TE/DNase_stats$Peaks),]
+
+# % of H3K27ac peaks overlapping TEs, overall
+sum(H3K27ac_stats$Summit_in_TE)/sum(H3K27ac_stats$Peaks)
+
+## By sample
+mean(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
+sd(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
+min(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
+H3K27ac_stats[which.min(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks),]
+max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
+H3K27ac_stats[which.max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks),]
 ```
 
 ### VISTA enhancers
@@ -439,7 +480,7 @@ source("R_scripts/proportion_class.R") #Requires proportion.R
 
 a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels[1:7]) + scale_fill_discrete(labels=coding_labels) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
 
-b = ggplot(combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Group,labeller=labeller(Coding=coding_labels))
+b = ggplot(combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Group,labeller=labeller(Coding=coding_labels))
 
 # Proportion in state by class
 combine_class_proportion = rbind(contribution_class[,c(1:2,4)],class_CpG_meth_total,TE_DNase_class_total,TE_H3K27ac_class_total)
@@ -477,7 +518,7 @@ b = ggplot(combine_stats,aes(x=1,y=Samples_avg_all,fill=State)) + geom_bar(stat=
 
 c = ggplot(chromHMM_TE_state_cum,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x=paste("Proportion of all samples (n=",sample_counts["All","chromHMM"],")",sep=""),y="Cumulative proportion of TEs in state") + scale_color_manual(values=chromHMM_colors,guide=FALSE) + geom_vline(xintercept = chromHMM_TE_state_dist_stats$Samples_avg_ever/100,color=chromHMM_colors)
 
-legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
+legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
 
 grid.arrange(a,b,c,legend, nrow = 3, layout_matrix=rbind(c(1,2),c(1,3),c(4,4)),heights=c(0.4,0.4,0.2))
 ```
@@ -707,21 +748,22 @@ e = ggplot(RNA_exon_sample,aes(x=State,y=Proportion*100,fill=State)) + geom_boxp
 
 f = ggplot(RNA_potential_exon_cum,aes(x=Sample_proportion,y=Proportion,color=State,group=State)) + geom_point(size=0.1) + geom_line(size=1.5) + labs(x=paste("Proportion of samples (n=",sample_counts["All","RNA"],")",sep=""),y="Cumulative proportion of exons RPKM > 1") + scale_color_manual(values="black",guide=FALSE) + geom_vline(xintercept = RNA_potential_exon_stats$Samples_avg_ever/100,color="black")
 
-legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
+legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
 
 grid.arrange(a,b,c,d,e,f,legend, nrow = 5, ncol=2, layout_matrix=cbind(c(1,3,3,4,4),c(2,5,6,6,7)),heights=c(0.5,0.1,0.15,0.1,0.15))
 ```
 
 ### Shuffled number of states
 
-```{r shuffled number of states}
+```{r table shuffled number of states}
 # Shuffled chromHMM
-shuffled_chromHMM_states = ldply(shuffled_chromHMM_potential,function(x) x[,23:24])
+shuffled_chromHMM_states = ldply(shuffled_chromHMM_potential,function(x) x[,23:24]) #Total states, max states intra
 shuffled_chromHMM_states$Iteration = factor(rep(seq(1,10,1),each=NUM_TE))
 
 # Shuffled WGBS
-shuffled_WGBS_states = ldply(shuffled_WGBS_average,function(x) x$States)
-shuffled_WGBS_states$Iteration = factor(unlist(lapply(seq(1,10,1),function(y) rep(y,unlist(lapply(shuffled_WGBS_average,function(x) dim(x)[1]))[y]))))
+shuffled_WGBS_average = lapply(seq(1,10,1),function(y) transform(shuffled_WGBS_average[[y]],Iteration = rep(y,unlist(dim(shuffled_WGBS_average[[y]])[1]))))
+shuffled_WGBS_states = ldply(shuffled_WGBS_average,function(x) x[,50:51])
+shuffled_WGBS_states$Iteration = as.factor(shuffled_WGBS_states$Iteration)
 ```
 
 ### Remove shuffled matrices
@@ -828,7 +870,7 @@ c = ggplot(combine_boxplot_noCancer_IMR90,aes(x=State,y=Proportion*100,fill=Stat
 
 d = ggplot(combine_stats_noCancer_IMR90,aes(x=1,y=Samples_avg_all,fill=State)) + geom_bar(stat="identity",show.legend=FALSE) + scale_fill_manual(values=all_state_colors) + theme(axis.title.x=element_blank(),axis.ticks.x=element_blank(),axis.text.x=element_blank()) + ylab("Average % of samples in state") + facet_wrap(~Group,nrow=1,labeller=labeller(Group = group_labels))
 
-legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
+legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
 
 grid.arrange(a,b,c,d,legend, nrow = 3,layout_matrix=rbind(c(1,2),c(3,4),c(5,5)),heights=c(0.4,0.4,0.2))
 ```
@@ -884,12 +926,12 @@ c = ggplot(TE_meth_average,aes(x=States)) + geom_histogram(binwidth=1,fill="blue
 d = ggplot(TE_meth_average,aes(x=States)) + geom_histogram(binwidth=1,fill="blue",color="grey",alpha=0.5) + scale_x_continuous(limits=c(0,4)) + ylab("Number of TEs") + xlab("Number of methylation states") + facet_wrap(~class_update,scales="free")
 
 # State switching, chromHMM
-e = ggplot(melt(as.matrix(state_switching_intra)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_intra))$Var1))) + scale_fill_gradient2(low="darkblue",mid="white",high="darkred",midpoint=0.5,limits=c(0,1),guide=FALSE)
+e = ggplot(melt(as.matrix(state_switching_intra)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_intra))$Var1))) + scale_fill_gradient(low="white",high="darkred",limits=c(0,1))
 
-f = ggplot(melt(as.matrix(state_switching_inter)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_inter))$Var1))) + scale_fill_gradient2(low="darkblue",mid="white",high="darkred",midpoint=0.5,limits=c(0,1),guide=FALSE)
+f = ggplot(melt(as.matrix(state_switching_inter)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_inter))$Var1))) + scale_fill_gradient(low="white",high="darkred")
 
 # State switching, chromHMM by class 
-g = ggplot(melt(ss_inter_class,id.vars=c("Class","State")),aes(x=variable,y=State,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_fill_gradient2(low="darkblue",mid="white",high="darkred",midpoint=0.5,limits=c(0,1),guide=FALSE) + facet_wrap(~Class)
+g = ggplot(melt(ss_inter_class,id.vars=c("Class","State")),aes(x=variable,y=State,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_fill_gradient(low="white",high="darkred") + facet_wrap(~Class)
 
 # State switching, WGBS
 h = ggplot(melt(as.matrix(ss_inter_meth)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),legend.title = element_blank()) + scale_y_discrete(limits=rev(levels(melt(as.matrix(ss_inter_meth))$Var1))) + scale_fill_gradient2(low="darkblue",mid="white",high="darkred",midpoint=0.5,limits=c(0,1))
@@ -909,25 +951,12 @@ state_switching_inter
 apply(chromHMM_TE_state_dist[,2:16],2,function(x) sum(x[2:128]))
 ```
 
-### Shuffled number of states (not shown)
-
-```{r shuffled number of states}
-mean(shuffled_chromHMM_states$Max_states_intra)
-mean(shuffled_chromHMM_states$States)
-mean(shuffled_WGBS_states$States)
-
-#ggplot(shuffled_chromHMM_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
-#ggplot(shuffled_chromHMM_states,aes(x=Max_states_intra,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
-
-#ggplot(shuffled_WGBS_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of shuffled TEs") + xlab("Number of methylation states")
-```
-
 ### Number of states per TE x sample
 
 ```{r states per TE-sample}
 # chromHMM
-test = merge(read.table("chromHMM/all_chromHMM_other_state_counts.txt",sep='\t'),read.table("chromHMM/all_chromHMM_TE_state_counts.txt",sep='\t'),by="V1")
-test$Total = test$V2.x+test$V2.y
+test = read.table("chromHMM/rmsk_TEother_chromHMM_summit_state_counts.txt",sep='\t')
+colnames(test) = c("States","Total")
 test$Proportion = test$Total/sum(test$Total)
 test
 sum(test$Proportion[2:15])
@@ -945,13 +974,14 @@ sum(test$Proportion[2:4])
 test$Proportion[2]/sum(test$Proportion[2:4])
 ```
 
-### Stats for number of chromHMM and WGBS states per TE, overall and by class
+### Number of states per TE, overall and by class, chromHMM and WGBS
 
 ```{r analysis Fig S6a}
 mean(chromHMM_TE_state$Max_states_intra)
 sd(chromHMM_TE_state$Max_states_intra)
 ddply(chromHMM_TE_state,.(class_update),summarise,Mean=mean(Max_states_intra),SD=sd(Max_states_intra))
 
+table(chromHMM_TE_state$States)
 mean(chromHMM_TE_state$States)
 sd(chromHMM_TE_state$States)
 ddply(chromHMM_TE_state,.(class_update),summarise,Mean=mean(States),SD=sd(States))
@@ -963,6 +993,19 @@ ddply(TE_meth_average,.(class_update),summarise,Mean=mean(States),SD=sd(States))
 # TEs with >1 max states in a sample
 dim(chromHMM_TE_state[which(chromHMM_TE_state$Max_states_intra > 1),])[1]
 dim(chromHMM_TE_state[which(chromHMM_TE_state$Max_states_intra > 1),])[1]/NUM_TE
+```
+
+### Shuffled number of states
+
+```{r shuffled number of states}
+mean(shuffled_chromHMM_states$Max_states_intra)
+mean(shuffled_chromHMM_states$States)
+mean(shuffled_WGBS_states$States)
+
+#ggplot(shuffled_chromHMM_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
+#ggplot(shuffled_chromHMM_states,aes(x=Max_states_intra,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
+
+#ggplot(shuffled_WGBS_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of shuffled TEs") + xlab("Number of methylation states")
 ```
 
 ### Correlation of TE length with number of states ever, max in one sample
@@ -984,6 +1027,7 @@ z
 z/NUM_TE_WGBS
 apply(TE_meth_average[,46:49],2,function(x) table(TE_meth_average[which(x == sample_counts["All","WGBS"]),]$class_update))
 
+## No IMR90
 z = apply(TE_meth_average[,50:53],2,function(x) dim(TE_meth_average[which(x == sample_counts["Include","WGBS"]),])[1])
 z
 z/NUM_TE_WGBS
@@ -1001,27 +1045,36 @@ x
 x/NUM_TE
 
 # chromHMM states
-z = apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x == chromHMM_TE_state$Tissues),])[1])
+z = apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x == sample_counts["All","chromHMM"]),])[1] + dim(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY" & x == sample_counts["chrY","chromHMM"]),])[1])
 z
 sum(z/NUM_TE)
 
-# 5_TxWk
-chromHMM_TE_state[which(chromHMM_TE_state$X5_TxWk == chromHMM_TE_state$Tissues),c(1:7,26)]
+## 1_TssA
+chromHMM_TE_state[which(chromHMM_TE_state$`1_TssA` == sample_counts["All","chromHMM"] | (chromHMM_TE_state$chromosome == "chrY" & chromHMM_TE_state$`1_TssA` == sample_counts["chrY","chromHMM"])),c(1:7,26)]
+
+## 5_TxWk
+always_5TxWk = chromHMM_TE_state[which(chromHMM_TE_state$`5_TxWk` == sample_counts["All","chromHMM"] | (chromHMM_TE_state$chromosome == "chrY" & chromHMM_TE_state$`5_TxWk` == sample_counts["chrY","chromHMM"])),c(1:7,26)]
+always_5TxWk
+
+# Genomic locations
+always_5TxWk = merge(always_5TxWk,rmsk_TE[,c(TE_coordinates,cohorts)],by=TE_coordinates)
+sort(apply(always_5TxWk[,cohorts],2,function(x) sum(!is.na(x))))
+always_5TxWk[which(!is.na(always_5TxWk$intergenic)),]
 
 # Shuffled TE control
 lapply(shuffled_chromHMM_potential,function(x) dim(x[which(x$X5_TxWk >= sample_counts["chrY","chromHMM"] & x$States == 1),]))
 lapply(shuffled_chromHMM_potential,function(x) x[which(x$X5_TxWk >= sample_counts["chrY","chromHMM"] & x$States == 1),])
 rm(shuffled_chromHMM_potential)
 
-# 15_Quies (particular subfamilies or families)
-test = merge(rmsk_TE_subfamily[,c(1:4,11)],aggregate(data=chromHMM_TE_state[which(chromHMM_TE_state$X15_Quies == chromHMM_TE_state$Tissues),c(1:7,26)],start~subfamily,length),by="subfamily",all.x=TRUE)
+## 15_Quies (particular subfamilies or families)
+test = merge(rmsk_TE_subfamily[,c(1:4,11)],aggregate(data=chromHMM_TE_state[which(chromHMM_TE_state$`15_Quies` == chromHMM_TE_state$Tissues),c(1:7,26)],start~subfamily,length),by="subfamily",all.x=TRUE)
 test[is.na(test)] = 0
 test$quiescent = log2((test$start/sum(test$start))/(test$Count/NUM_TE))
 dim(test[which(test$start > 0),][1]) # Number of subfamilies with a member always quiescent
 tail(test[order(test$quiescent),],n=40)
 rm(test)
 
-test = merge(aggregate(data=rmsk_TE_subfamily[,c(2:3,4)],Count~family+class_update,sum),aggregate(data=chromHMM_TE_state[which(chromHMM_TE_state$X15_Quies == chromHMM_TE_state$Tissues),c(1:7,26)],start~family,length),by="family",all.x=TRUE)
+test = merge(aggregate(data=rmsk_TE_subfamily[,c(2:3,4)],Count~family+class_update,sum),aggregate(data=chromHMM_TE_state[which(chromHMM_TE_state$`15_Quies` == chromHMM_TE_state$Tissues),c(1:7,26)],start~family,length),by="family",all.x=TRUE)
 test[is.na(test)] = 0
 test$quiescent = log2((test$start/sum(test$start))/(test$Count/NUM_TE))
 dim(test[which(test$start > 0),][1]) # Number of families with a member always quiescent
@@ -1712,22 +1765,27 @@ dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count <= THRESHOLD_IK_MEMBER),])[1
 # chromHMM, no Y
 dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count > THRESHOLD_IK_MEMBER & rmsk_TE_subfamily$Count_noY <= THRESHOLD_IK_MEMBER),])[1]
 
-rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count_noY <= THRESHOLD_IK_MEMBER),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
+rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count_noY <= THRESHOLD_IK_MEMBER),c("subfamily","class_update","Count","Count_noY","Total_length","Total_length_noY","CpGs","Count_CpGs")]
 
-# Subfamilies with fewer members than member threshold
-rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count < THRESHOLD_IJK_MEMBER | rmsk_TE_subfamily$Count_noY < THRESHOLD_IJK_MEMBER),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
+# WGBS
+dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count_CpGs <= THRESHOLD_IK_MEMBER),])[1]
+
+rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count_CpG <= THRESHOLD_IK_MEMBER),c("subfamily","class_update","Count","Count_noY","Total_length","Total_length_noY","CpGs","Count_CpGs")]
 
 # CpGs
 dim(rmsk_TE_subfamily[which(rmsk_TE_subfamily$CpGs <= THRESHOLD_IK_CPG),])[1]
 
 # Subfamilies with no CpGs
 rmsk_TE_subfamily[which(rmsk_TE_subfamily$CpGs == 0),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
+
+# Subfamilies with fewer members than member threshold
+rmsk_TE_subfamily[which(rmsk_TE_subfamily$Count <= THRESHOLD_IJK_MEMBER | rmsk_TE_subfamily$Count_noY <= THRESHOLD_IJK_MEMBER),c("subfamily","Count","Count_noY","Total_length","Total_length_noY","CpGs")]
 ```
 
 ### Number of enrichments excluded by enrichment thresholds
 
 ```{r excluded enrichments}
-test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER & subfamily_state_sample_combined$Members < THRESHOLD_IJK_MEMBER),]$State)
+test = table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Enrichment > THRESHOLD_LOR & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER & subfamily_state_sample_combined$Members <= THRESHOLD_IJK_MEMBER),]$State)
 sum(test)
 test
 ```
@@ -1789,13 +1847,13 @@ grid.arrange(legend_group,legend_anatomy,legend_age,legend_cancer,legend_germlin
 
 ```{r bp members percent in state}
 # All instances
-ddply(subfamily_state_sample_combined,~State,summarize,Length_ijk_median=median(na.omit(Length_ijk)),Length_ijk_min=min(na.omit(Length_ijk)),Length_ijk_max=max(na.omit(Length_ijk)),Percent_mean=mean(na.omit(Percent)),Members_mean=mean(na.omit(Members)),Percent_median=median(na.omit(Percent)), Members_median=median(na.omit(Members)),Percent_min=min(na.omit(Percent)), Members_min=min(na.omit(Members)), Percent_max=max(na.omit(Percent)), Members_max=max(na.omit(Members)))   
+ddply(subfamily_state_sample_combined,~State,summarize,Percent_mean=mean(na.omit(Percent)),Members_mean=mean(na.omit(Members)),Percent_median=median(na.omit(Percent)), Members_median=median(na.omit(Members)),Percent_min=min(na.omit(Percent)), Members_min=min(na.omit(Members)), Percent_max=max(na.omit(Percent)), Members_max=max(na.omit(Members)))   
 
 # Enriched
-ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],~State,summarise,Length_ijk_median=median(Length_ijk),Length_ijk_min=min(Length_ijk),Length_ijk_max=max(Length_ijk),Percent_mean=mean(Percent), Members_mean=mean(Members), Percent_median=median(Percent), Members_median=median(Members),Percent_min=min(Percent), Members_min=min(Members), Percent_max=max(Percent), Members_max=max(Members))
+ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],~State,summarise,Percent_mean=mean(Percent), Members_mean=mean(Members), Percent_median=median(Percent), Members_median=median(Members),Percent_min=min(Percent), Members_min=min(Members), Percent_max=max(Percent), Members_max=max(Members))
 
 # >1%
-ddply(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],~State,summarise,Length_ijk_median=median(Length_ijk),Length_ijk_min=min(Length_ijk),Length_ijk_max=max(Length_ijk),Percent_mean=mean(Percent), Members_mean=mean(Members), Percent_median=median(Percent),Members_median=median(Members),Percent_min=min(Percent), Members_min=min(Members), Percent_max=max(Percent), Members_max=max(Members))
+ddply(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],~State,summarise,Percent_mean=mean(Percent), Members_mean=mean(Members), Percent_median=median(Percent),Members_median=median(Members),Percent_min=min(Percent), Members_min=min(Members), Percent_max=max(Percent), Members_max=max(Members))
 
 # Max by state
 ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],.(State),function(x) x[which.max(x$Percent),])
@@ -1819,42 +1877,34 @@ ddply(subfamily_state_members,.(variable),summarise,Mean=mean(na.omit(value/Memb
 
 ```{r Figure S13, echo=FALSE}
 
-a = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + ylim(0,7)
-  
-b = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
+a = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
 
-c = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
+b = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
 
-d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Length_ijk),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Length of state in subfamily in sample, log10(bp/CpGs)") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + ylim(0,7)
-  
-e = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
+c = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
 
-f = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
+d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of subfamily members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21])
 
-legend = get_legend(ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors))
+legend = get_legend(ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,labels=all_state_labels))
 
-grid.arrange(a,b,c,d,e,f,legend,nrow=3,ncol=3,layout_matrix=cbind(c(1,2,3),c(4,5,6),c(7,7,7)),widths=c(0.4,0.4,0.2))
+grid.arrange(a,b,c,d,legend,nrow=2,ncol=3,layout_matrix=cbind(c(1,2),c(3,4),c(7,7)),widths=c(0.4,0.4,0.2))
 ```
 
 ### WGBS subfamily state stats
 
-```{r analysis Fig S13c, cache=TRUE, cache.lazy=FALSE, dependson=c("setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
+```{r analysis Fig S13c}
 #source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 
-# Average, max, and range of proportion of subfamily in methylation state (change to Percent)
-TE_meth_subfamily = lapply(TE_meth_subfamily,function(y) transform(y,Mean = apply(y,1,function(x) mean(as.numeric(x[4:40]),na.rm=TRUE)),
-                             Range = apply(y,1,function(x) max(as.numeric(na.omit(x[4:40])))-min(as.numeric(na.omit(x[4:40])))),
-                             Max = apply(y,1,function(x) max(as.numeric(x[4:40])))))
-                             
-# Subfamilies with all members in a state in a sample
-TE_meth_subfamily = lapply(TE_meth_subfamily,function(y) transform(y,All_members = apply(y[,4:40],1,function(x) sum(na.omit(x) == 1))))
+TE_meth_subfamily_percent = subfamily_CpG_meth[,c("subfamily","family","class_update","State","Sample","Percent")]
 
-lapply(TE_meth_subfamily,function(y) dim(y[which(y$All_members > 0),])[1])
+# Average, max, and range of proportion of subfamily in methylation state plus all members in a state in a sample
+TE_meth_subfamily_stats = ddply(TE_meth_subfamily_percent,.(subfamily,State),summarise,Mean=mean(Percent),Range=max(Percent)-min(Percent),Max=max(Percent),All_members=sum(Percent == 1))
 
-lapply(TE_meth_subfamily,function(y) merge(y[which(y$All_members > 0),c("subfamily","family","class_update","All_members")],rmsk_TE_subfamily[,c("subfamily","Count","Count_CpGs","Total_length","Total_length_noY","CpGs")],by="subfamily"))
+merge(TE_meth_subfamily_stats[which(TE_meth_subfamily_stats$All_members > 0),],rmsk_TE_subfamily[,c("subfamily","Count","Count_CpGs","Total_length","Total_length_noY","CpGs")],by="subfamily")
+table(TE_meth_subfamily_stats[which(TE_meth_subfamily_stats$All_members > 0),]$State)
 
 # Average proportion in state, with/without IMR90
-ldply(TE_meth_subfamily,summarise,SD=sd(Mean),Mean=mean(Mean),Range=mean(Range),Max=mean(Max))
+ddply(TE_meth_subfamily_stats,.(State),summarise,SD=sd(Mean),Mean=mean(Mean),Range=mean(Range),Max=mean(Max))
 ```
 
 ### Supplementary Figure 14
@@ -1897,17 +1947,17 @@ ALL_CPGS*THRESHOLD_PC
 rmsk_TE_subfamily[which(rmsk_TE_subfamily$CpGs > ALL_CPGS*THRESHOLD_PC),c("subfamily","Count","Total_length","Total_length_noY","CpGs")]
 
 # Largest subfamilies vs. >1% of state
-test = merge(dcast(subfamily_state_sample_counts_pc,subfamily+family+class_update~State,value.var = "V1"),rmsk_TE_subfamily[,c("subfamily","Count","Total_length","CpGs")],by="subfamily",all=TRUE)
+test = merge(dcast(subfamily_state_sample_counts_pc,subfamily+family+class_update~State,value.var = "V1"),rmsk_TE_subfamily[,c("subfamily","Count","Total_length","CpGs","Count_CpGs")],by="subfamily",all=TRUE)
 
 test = test[order(test$Total_length,decreasing=TRUE),]
 rownames(test) <- NULL
 test$Order = rownames(test)
-lapply(c(chromHMM_states,"DNase","H3K27ac"),function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
+lapply(c(chromHMM_states,"DNase","H3K27ac"),function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs","Count_CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
 
 test = test[order(test$CpGs,decreasing=TRUE),]
 rownames(test) <- NULL
 test$Order = rownames(test)
-lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
+lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs","Count_CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
 ```
 
 ### Subfamily enrichment clustering and stats (for Excel)
