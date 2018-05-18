@@ -151,7 +151,7 @@ subfamily_state_sample_combined = rbind(subfamily_state_sample[,columns],
                                         rename(subfamily_CpG_meth,c("CpG_ijk"="Length_ijk","CpG_ik"="Length_ik","CpG_ijk_jk"="Length_percent_jk"))[,columns])
 
 # Combine filtered matrices
-subfamily_state_sample_filter = subfamily_state_sample_combined[which(subfamily_state_sample_combined$Members >= THRESHOLD_IJK_MEMBER & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER),]
+subfamily_state_sample_filter = subfamily_state_sample_combined[which(subfamily_state_sample_combined$Members > THRESHOLD_IJK_MEMBER & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER),]
 subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=states[1:21])
 
 # Number of enrichments per subfamily x state

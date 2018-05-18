@@ -264,11 +264,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
   
   # Statistics for candidate subfamilies
   test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily %in% candidate_list & subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state),],.(subfamily),summarise,Min = min(Members),Max = max(Members),Median = median(Members))
-  if (state %in% chromHMM_states){
-    test = merge(test,rmsk_TE_subfamily_ever[,c("subfamily",stateX)],by="subfamily")
-  } else {
-    test = merge(test,rmsk_TE_subfamily_ever[,c("subfamily",state)],by="subfamily")
-  }
+  test = merge(test,rmsk_TE_subfamily_ever[,c("subfamily",state)],by="subfamily")
   colnames(test)[5] = "Members_ever"
   test = merge(test,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == state),c(1:3,5)],by="subfamily")
   colnames(test)[8] = "Samples_enriched"
@@ -299,11 +295,10 @@ get_subfamily_in_state = function(subfamily,state,metric){
   # Get subfamily members ever in state
   if (metric=="chromHMM"){
     subfamily_in_state = read.table(paste("chromHMM/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"State","Overlap","Sample")
+    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap","State")
   } else if (metric=="WGBS") {
     subfamily_in_state = read.table(paste("WGBS/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
-    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap")
-    subfamily_in_state$Overlap = subfamily_in_state$Overlap/2
+    colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap","State")
   } else if (metric=="DNase" | metric=="H3K27ac"){
     subfamily_in_state = read.table(paste(metric,"/subfamily/",subfamily,"_",state,".txt",sep=""),sep='\t')
     colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap")
