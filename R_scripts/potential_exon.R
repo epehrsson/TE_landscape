@@ -14,6 +14,6 @@ RNA_potential_exon_stats$State = "Expressed_samples"
 # Proportion of exons with RPKM >1, by sample
 RNA_exon_sample = as.data.frame(apply(RNA_refseq_exon[,5:60],2,function(x) sum(x > 1)))
 colnames(RNA_exon_sample) = "Count"
-RNA_exon_sample$Proportion = RNA_exon_sample$Count/ifelse(metadata[match(RNA_exon_sample$Sample,metadata$Sample),]$chrY == "Yes",NUM_EXON,NUM_EXON_noY)
+RNA_exon_sample$Proportion = RNA_exon_sample$Count/ifelse(metadata[match(rownames(RNA_exon_sample),metadata$Sample),]$chrY == "Yes",NUM_EXON,NUM_EXON_noY)
 RNA_exon_sample$Sample = rownames(RNA_exon_sample)
 RNA_exon_sample$State = rep("Expressed_samples",sample_counts["All","RNA"])
