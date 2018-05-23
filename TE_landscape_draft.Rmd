@@ -1,7 +1,4 @@
 ---
-output: word_document
----
- ---
 title: "TE landscape Draft"
 author: "Erica Pehrsson"
 date: "`r Sys.Date()`"
@@ -1027,6 +1024,9 @@ z
 z/NUM_TE_WGBS
 apply(TE_meth_average[,46:49],2,function(x) table(TE_meth_average[which(x == sample_counts["All","WGBS"]),]$class_update))
 
+write.table(TE_meth_average[which(TE_meth_average$Hypomethylated == sample_counts["All","WGBS"]),c(1:7,45:49,54:55)],file="WGBS/always_Hypomethylated.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(TE_meth_average[which(TE_meth_average$Intermediate == sample_counts["All","WGBS"]),c(1:7,45:49,54:55)],file="WGBS/always_Intermediate.txt",sep='\t',row.names=FALSE,quote=FALSE)
+
 ## No IMR90
 z = apply(TE_meth_average[,50:53],2,function(x) dim(TE_meth_average[which(x == sample_counts["Include","WGBS"]),])[1])
 z
@@ -1038,11 +1038,15 @@ x = dim(TE_DNase_peaks[which(TE_DNase_peaks$Samples == sample_counts["All","DNas
 x
 x/NUM_TE
 
+TE_DNase_peaks[which(TE_DNase_peaks$Samples == sample_counts["All","DNase"] | (TE_DNase_peaks$chromosome == "chrY" & TE_DNase_peaks$Samples == sample_counts["chrY","DNase"])),c(1:7,61:63)]
+
 # H3K27ac
 x = dim(TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$Samples == sample_counts["All","H3K27ac"]),])[1] + 
   dim(TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$chromosome == "chrY" & TE_H3K27ac_peaks$Samples == sample_counts["chrY","H3K27ac"]),])[1]
 x
 x/NUM_TE
+
+TE_H3K27ac_peaks[which(TE_H3K27ac_peaks$Samples == sample_counts["All","H3K27ac"] | (TE_H3K27ac_peaks$chromosome == "chrY" & TE_H3K27ac_peaks$Samples == sample_counts["chrY","H3K27ac"])),c(1:7,106:108)]
 
 # chromHMM states
 z = apply(chromHMM_TE_state[,8:22],2,function(x) dim(chromHMM_TE_state[which(x == sample_counts["All","chromHMM"]),])[1] + dim(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY" & x == sample_counts["chrY","chromHMM"]),])[1])
