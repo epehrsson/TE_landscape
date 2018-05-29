@@ -1,7 +1,7 @@
 # Proportion of feature in each state
 # See 4/18/2016, 4/20/2016, 4/25/2016, 4/26/2016, 4/27/2016, 5/10/2016, 5/25/2016, 6/27/2016, 9/8/2016, 9/25/2016, 9/27/2016, 2/3/2017, 2/10/2017, 3/8/2017, 5/8/2017, 5/24/2017, 5/30/2017, 6/5/2017, 7/4/2017, 7/24/2017, 8/1/2017, 8/3/2017, 8/7/2017
 
-# chromHMM proportion 
+# chromHMM proportion
 
 # Genome
 # Number of bases in each state in each sample overall
@@ -53,7 +53,7 @@ mnemonics_states_all$State = rep(chromHMM_states,2)
 mnemonics_states_all$Cohort = c(rep("Genome",15),rep("TE",15))
 mnemonics_states_all = rbind(mnemonics_states_all,states_features_noTE[,c(1:2,5)])
 
-# WGBS proportion 
+# WGBS proportion
 
 # All CpGs
 all_CpG_meth = read.table("WGBS/all_CpG_Meth_states.txt",sep=" ")
@@ -89,7 +89,7 @@ colnames(CpG_Meth) = c("Cohort","State","Proportion")
 
 # DNase proportion
 
-# Number and width of DNase peaks per sample, overall and in TEs 
+# Number and width of DNase peaks per sample, overall and in TEs
 DNase_stats = read.table("DNase/DNase_stats.txt",sep='\t')
 colnames(DNase_stats) = c("Peaks","Sample","Total_width","Peaks_in_TE")
 test = read.table("DNase/rmsk_TEother_merge_DNase_contribution.txt",sep='\t')
@@ -127,7 +127,7 @@ DNase_proportion$State = rep("DNase",dim(DNase_proportion)[1])
 
 # H3K27ac proportion
 
-# Number and width of H3K27ac peaks per sample, overall and in TEs 
+# Number and width of H3K27ac peaks per sample, overall and in TEs
 H3K27ac_stats = read.table("H3K27ac/H3K27ac_stats.txt",sep='\t',header=TRUE)
 test = read.table("H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt",sep='\t')
 colnames(test) = c("Sample","Total_width_in_TE")
@@ -145,8 +145,8 @@ H3K27ac_features$Cohort = gsub("_noTE_H3K27ac", "", H3K27ac_features$Cohort)
 
 # Proportion of RefSeq features overlapping H3K27ac peaks, averaged
 H3K27ac_features$Genome = apply(H3K27ac_features,1,function(x) ifelse(x[1] %in% as.vector(metadata[which(metadata$chrY == "Yes"),]$Sample),
-                                                                  feature_overlap[which(feature_overlap$Cohort == x[3]),]$Genome,
-                                                                  feature_overlap[which(feature_overlap$Cohort == x[3]),]$Genome_noY))
+                                                                      feature_overlap[which(feature_overlap$Cohort == x[3]),]$Genome,
+                                                                      feature_overlap[which(feature_overlap$Cohort == x[3]),]$Genome_noY))
 colnames(H3K27ac_features)[c(2,4)] = c("Total_width_in_feature","Feature_width")
 H3K27ac_features$Proportion = H3K27ac_features$Total_width_in_feature/H3K27ac_features$Feature_width
 
@@ -166,3 +166,92 @@ combined_proportion = rbind(mnemonics_states_all,CpG_Meth,DNase_proportion[,c(1,
 combined_proportion$State = factor(combined_proportion$State,levels=names(all_state_labels)[1:21])
 combined_proportion$Group = factor(c(rep("chromHMM",315),rep("WGBS",80),rep("DNase",21),rep("H3K27ac",21)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combined_proportion = split_coding(combined_proportion,c("TE","Genome","genome_noTE"))
+
+rm(list=c("mnemonics_states_genome_normalized","mnemonics_states_TE_normalized","mnemonics_states_features_noTE","mnemonics_states_features_noTE_normalized",
+          "mnemonics_expand","mnemonics_states_all","states_features_noTE","CpG_Meth","feature_CpG_meth","DNase_features","H3K27ac_features"))
+
+
+# Contribution
+contribution = c(mnemonics_states_TE$Total/mnemonics_states_genome$Total,
+                 colSums(TE_CpG_meth)/colSums(all_CpG_meth),
+                 sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),
+                 sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)))
+names(contribution)[c(1:16,21:22)] = c("Total",chromHMM_states,"DNase","H3K27ac")
+contribution = melt(as.matrix(contribution[2:22]))[c(1,3)]
+colnames(contribution) = c("State","Proportion")
+
+## Composite
+contribution_composite = cbind(mnemonics_states_TE$Total,mnemonics_states_genome$Total)
+colnames(contribution_composite) = c("TE","Genome")
+contribution_composite = as.data.frame(rbind(colSums(contribution_composite[2:9,]),colSums(contribution_composite[10:16,]),colSums(contribution_composite[c(2:4,7:8),]),colSums(contribution_composite[5:6,]),colSums(contribution_composite[c(10,14:15),]),colSums(contribution_composite[11:13,])))
+contribution_composite = contribution_composite$TE/contribution_composite$Genome
+names(contribution_composite) = c("Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
+
+
+# Investigation
+# Total bases/CpGs in state by sample, genome and TEs
+
+# chromHMM
+chromHMM_state_proportion = rbind(melt(as.matrix(mnemonics_states_genome[2:16,1:127])),melt(as.matrix(mnemonics_states_TE[2:16,1:127])))
+colnames(chromHMM_state_proportion) = c("State","Sample","Bases")
+chromHMM_state_proportion$Cohort = rep(c("Genome","TE"),each=1905)
+
+# WGBS
+WGBS_state_proportion = rbind(melt(as.matrix(all_CpG_meth)),melt(as.matrix(TE_CpG_meth)))
+colnames(WGBS_state_proportion) = c("Sample","State","CpGs")
+WGBS_state_proportion$Cohort = rep(c("Genome","TE"),each=148)
+
+# DNase
+DNase_stats_long = melt(DNase_stats[,c(1,4:5)],id.var=("Sample"))
+colnames(DNase_stats_long)[2:3] = c("Cohort","Bases")
+DNase_stats_long$State = rep("DNase",dim(DNase_stats_long)[1])
+
+# H3K27ac
+H3K27ac_stats_long = melt(H3K27ac_stats[,c(1,4:5)],id.var=("Sample"))
+colnames(H3K27ac_stats_long)[2:3] = c("Cohort","Bases")
+H3K27ac_stats_long$State = rep("H3K27ac",dim(H3K27ac_stats_long)[1])
+
+# Combined
+test = WGBS_state_proportion
+colnames(test)[3] = "Bases"
+all_state_proportion = rbind(chromHMM_state_proportion,test,DNase_stats_long,H3K27ac_stats_long)
+all_state_proportion$Cohort = gsub("Total_width_in_TE","TE",all_state_proportion$Cohort)
+all_state_proportion$Cohort = gsub("Total_width","Genome",all_state_proportion$Cohort)
+all_state_proportion$Mark = factor(c(rep("chromHMM",3810),rep("WGBS",296),rep("DNase",106),rep("H3K27ac",196)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
+
+# Add metadata
+all_state_proportion = merge(all_state_proportion,metadata[,c(1,4:9)],by="Sample")
+
+rm(list=c("test","chromHMM_state_proportion","WGBS_state_proportion","DNase_stats_long","H3K27ac_stats_long"))
+
+
+# By sample
+# Proportion of each state in TEs by sample grouping
+
+# chromHMM
+# Proportion of each chromHMM state in TEs by sample
+mnemonics_states_TE_proportion = melt(as.matrix(mnemonics_states_TE[2:16,1:127]/mnemonics_states_genome[2:16,1:127]))
+colnames(mnemonics_states_TE_proportion) = c("State","Sample","Proportion")
+
+# WGBS
+# Proportion of hypomethylated CpGs in TEs by sample
+WGBS_proportion = melt(as.matrix(TE_CpG_meth/all_CpG_meth))
+colnames(WGBS_proportion) = c("Sample","State","Proportion")
+
+# DNase
+# Proportion of Dnase peaks overlapping TEs by sample classification
+DNase_proportion = as.data.frame(cbind(as.vector(DNase_stats$Sample),DNase_stats$Total_width_in_TE/DNase_stats$Total_width))
+colnames(DNase_proportion) = c("Sample","Proportion")
+DNase_proportion$State = rep("DNase",sample_counts["All","DNase"])
+
+# H3K27ac
+# Proportion of H3K27ac peaks overlapping TEs by sample classification
+H3K27ac_proportion = as.data.frame(cbind(as.vector(H3K27ac_stats$Sample),H3K27ac_stats$Total_width_in_TE/H3K27ac_stats$Total_width))
+colnames(H3K27ac_proportion) = c("Sample","Proportion")
+H3K27ac_proportion$State = rep("H3K27ac",sample_counts["All","H3K27ac"])
+
+by_sample_all = rbind(mnemonics_states_TE_proportion,WGBS_proportion,DNase_proportion,H3K27ac_proportion)
+by_sample_all = merge(by_sample_all,metadata[,c(1,4:9)],by="Sample")
+by_sample_all$Proportion = as.numeric(by_sample_all$Proportion)
+
+rm(list=c("mnemonics_states_TE_proportion","WGBS_proportion","DNase_proportion","H3K27ac_proportion"))
