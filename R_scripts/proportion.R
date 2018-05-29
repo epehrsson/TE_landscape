@@ -166,6 +166,7 @@ combined_proportion = rbind(mnemonics_states_all,CpG_Meth,DNase_proportion[,c(1,
 combined_proportion$State = factor(combined_proportion$State,levels=names(all_state_labels)[1:21])
 combined_proportion$Group = factor(c(rep("chromHMM",315),rep("WGBS",80),rep("DNase",21),rep("H3K27ac",21)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
 combined_proportion = split_coding(combined_proportion,c("TE","Genome","genome_noTE"))
+combined_proportion = na.omit(combined_proportion)
 
 rm(list=c("mnemonics_states_genome_normalized","mnemonics_states_TE_normalized","mnemonics_states_features_noTE","mnemonics_states_features_noTE_normalized",
           "mnemonics_expand","mnemonics_states_all","states_features_noTE","CpG_Meth","feature_CpG_meth","DNase_features","H3K27ac_features"))
@@ -177,7 +178,7 @@ contribution = c(mnemonics_states_TE$Total/mnemonics_states_genome$Total,
                  sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),
                  sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)))
 names(contribution)[c(1:16,21:22)] = c("Total",chromHMM_states,"DNase","H3K27ac")
-contribution = melt(as.matrix(contribution[2:22]))[c(1,3)]
+contribution = melt(as.matrix(contribution))[c(1,3)]
 colnames(contribution) = c("State","Proportion")
 
 ## Composite
