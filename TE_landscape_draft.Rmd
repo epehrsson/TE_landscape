@@ -53,7 +53,7 @@ standard_chromosomes = c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8"
 # chromHMM
 chromHMM_states = c("1_TssA","2_TssAFlnk","3_TxFlnk","4_Tx","5_TxWk","6_EnhG","7_Enh","8_ZNF/Rpts","9_Het","10_TssBiv","11_BivFlnk","12_EnhBiv","13_ReprPC","14_ReprPCWk","15_Quies")
 chromHMM_labels = setNames(c("Active TSS","Flanking active TSS","Transcription at gene 5'/3'","Strong transcription","Weak transcription","Genic enhancer","Enhancer","ZNF genes/repeats","Heterochromatin","Poised TSS","Flanking poised TSS/enhancer","Poised enhancer","Repressed Polycomb","Weak repressed Polycomb","Quiescent"),chromHMM_states)
-chromHMM_colors = setNames(c("#66A61E","#1B9E77","#005A32","#E7298A","#F781BF","#41B6C4","#045A8D","#FFD92F","#99000D","#D95F02","#E6AB02","#A6761D","#6A3D9A","#CAB2D6","#666666"),chromHMM_states)
+chromHMM_colors = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),rgb(50,205,50,maxColorValue=255),rgb(0,128,0,maxColorValue=255),rgb(0,100,0,maxColorValue=255),rgb(194,225,5,maxColorValue=255),rgb(255,255,0,maxColorValue=255),rgb(102,205,170,maxColorValue=255),rgb(138,145,208,maxColorValue=255),rgb(205,92,92,maxColorValue=255),rgb(233,150,122,maxColorValue=255),rgb(189,183,107,maxColorValue=255),rgb(128,128,128,maxColorValue=255),rgb(192,192,192,maxColorValue=255),rgb(255,255,255,maxColorValue=255)),chromHMM_states)
 chromHMM_composite = setNames(c("Active regulatory","Active regulatory","Active regulatory","Transcribed","Transcribed","Active regulatory","Active regulatory","Zinc-finger/repeats","Repressed","Poised regulatory","Poised regulatory","Poised regulatory","Repressed","Repressed","Quiescent"),chromHMM_states)
 
 # WGBS
@@ -271,22 +271,23 @@ length(unique(rmsk_TE$subfamily))
 
 ```{r Figure 1, fig.width=7, fig.height=5, echo=FALSE}
 source("R_scripts/proportion.R")
+source("R_scripts/proportion_class.R") 
 
-a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_wrap(~Group,nrow=2,scales="free",labeller=labeller(Group = mark_labels))
+a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Group,nrow=1,labeller=labeller(Group = mark_labels))
 
-contribution = c(mnemonics_states_TE$Total/mnemonics_states_genome$Total,
-                 colSums(TE_CpG_meth)/colSums(all_CpG_meth),
-                 sum(as.numeric(DNase_stats$Total_width_in_TE))/sum(as.numeric(DNase_stats$Total_width)),
-                 sum(as.numeric(H3K27ac_stats$Total_width_in_TE))/sum(as.numeric(H3K27ac_stats$Total_width)))
-names(contribution)[c(1:16,21:22)] = c("Total",chromHMM_states,"DNase","H3K27ac")
-contribution = melt(as.matrix(contribution[2:22]))[c(1,3)]
-colnames(contribution) = c("State","Proportion")
+b = ggplot(combine_class_proportion,aes(x=class,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of class in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x = element_blank()) + facet_wrap(~Cohort,nrow=1)
 
-b = ggplot(contribution,aes(x=reorder(State,-Proportion,max),y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH) + scale_fill_manual(values=all_state_colors,guide=FALSE) + geom_text(aes(label=round(100*Proportion,1)),position="stack",hjust=1)
+all_state_colors[["Total"]] = "gray28"
+
+c = ggplot(contribution,aes(x=reorder(State,-Proportion,max),y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + scale_fill_manual(values=all_state_colors,guide=FALSE) + geom_text(aes(label=round(100*Proportion,1)),position=position_stack(reverse=TRUE,vjust=0.1))
+
+all_state_colors[["Total"]] = NULL
+
+d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + scale_x_discrete(limits=as.vector(contribution[order(contribution$Proportion,decreasing = TRUE),]$State)) + scale_fill_manual(values=class_colors,guide=FALSE)
 
 legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Group,nrow=4))
 
-grid.arrange(a,b,legend, nrow = 2,layout_matrix = rbind(c(1,2),c(3,3)),heights=c(0.9,0.1))
+grid.arrange(a,b,c,d,legend, nrow = 4,layout_matrix = rbind(c(1,1),c(2,2),c(3,4),c(5,5)),heights=c(0.25,0.25,0.4,0.1))
 ```
 
 ### Proportion/contribution analysis
@@ -311,19 +312,7 @@ CHROMHMM_TE_WIDTH/CHROMHMM_TOTAL_WIDTH
 contribution
 
 # Contribution, composite states
-contribution_composite = cbind(mnemonics_states_TE$Total,mnemonics_states_genome$Total)
-colnames(contribution_composite) = c("TE","Genome")
-composite = as.data.frame(rbind(colSums(contribution_composite[2:9,]),colSums(contribution_composite[10:16,]),colSums(contribution_composite[c(2:4,7:8),]),colSums(contribution_composite[5:6,]),colSums(contribution_composite[c(10,14:15),]),colSums(contribution_composite[11:13,])))
-composite = composite$TE/composite$Genome
-names(composite) = c("Active","Inactive","Active Regulatory","Transcribed","Repressed","Poised Regulatory")
-composite
-```
-
-### Average proportion of TE CpGs hypomethylated per sample
-
-```{r CpG proportion sample}
-mean(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
-sd(apply(TE_CpG_meth,1,function(x) x[1]/sum(x)))
+contribution_composite
 ```
 
 ### DNase/H3K27ac peak analysis
@@ -392,8 +381,6 @@ ggplot(cpg,aes(x=Methylation,fill=Sample)) + geom_density(alpha=0.5,adjust=10) +
 ```
 
 ```{r Figure S1b-d, echo=FALSE}
-source("R_scripts/proportion_investigation.R") # Requires proportion
-
 # Bases/CpGs in state by sample
 b = ggplot(all_state_proportion[which(all_state_proportion$Cohort == "Genome"),],aes(x=Sample,y=Bases,fill=State)) + geom_bar(stat="identity") + ylab("Bases/CpGs in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.ticks.x=element_blank(),axis.title.x=element_blank()) + facet_wrap(~Mark,nrow=2,scales="free",labeller=labeller(Mark = mark_labels))
 
@@ -471,19 +458,11 @@ TE_MAP
 ### Supplementary Figure 2
 
 ```{r Figure S2, echo=FALSE}
-#source("R_scripts/proportion.R")
 source("R_scripts/feature_overlap.R")
-source("R_scripts/proportion_class.R") #Requires proportion.R
 
 a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels[1:7]) + scale_fill_discrete(labels=coding_labels) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
 
 b = ggplot(combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Group,labeller=labeller(Coding=coding_labels))
-
-# Proportion in state by class
-combine_class_proportion = rbind(contribution_class[,c(1:2,4)],class_CpG_meth_total,TE_DNase_class_total,TE_H3K27ac_class_total)
-combine_class_proportion$Cohort = factor(c(rep("chromHMM",90),rep("WGBS",24),rep("DNase",6),rep("H3K27ac",6)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
-
-c = ggplot(combine_class_proportion,aes(x=class,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of class in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x = element_blank()) + facet_wrap(~Cohort,scales="free",nrow=1)
 
 grid.arrange(a,b,c,nrow=3,heights=c(0.2,0.5,0.3))
 ```
@@ -1506,11 +1485,6 @@ class_chromosome
 
 ```{r Figure 4, fig.width=7, fig.height=5, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 1","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/proportion.R")
-source("R_scripts/proportion_by_sample.R") #Requires proportion.R
-
-by_sample_all = rbind(mnemonics_states_TE_proportion,WGBS_proportion,DNase_proportion,H3K27ac_proportion)
-by_sample_all = merge(by_sample_all,metadata[,c(1,4:9)],by="Sample")
-by_sample_all$Proportion = as.numeric(by_sample_all$Proportion)
 
 a = ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_all$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black",width = 0.8)
  
@@ -1620,12 +1594,7 @@ tail(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),])
 #source("R_scripts/WGBS_sample_CpG_average.R")
 source("R_scripts/PCA.R")
 
-# By-sample proportion by TE class
-by_sample_class = rbind(class_chromHMM[,c(1:3,8)],class_CpG_meth[,c(1:2,4,8)],TE_DNase_class[,c(1:2,4,8)],TE_H3K27ac_class[,c(1:2,4,8)])
-by_sample_class = merge(by_sample_class,metadata[,c(1,4:9)],by="Sample")
-by_sample_class$Proportion = as.numeric(by_sample_class$Proportion_state)
-
-a = ggplot(by_sample_class,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=90,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_class$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black") + facet_wrap(~class)
+a = ggplot(by_sample_class,aes(x=State,y=Proportion_state,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=90,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_class$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black") + facet_wrap(~class)
 
 # Feature methylation by sample
 b =  ggplot(CpG_feature_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Feature,shape=Coding)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.title=element_blank(),panel.grid.major.x = element_line(color="black")) + ylab("Average methylation") + scale_color_manual(values=c("black",brewer.pal(8,"Set1"))) + scale_shape_discrete(labels=c("All","Protein-coding","Non-coding")) 
@@ -1644,15 +1613,15 @@ grid.arrange(a,b,c,d,e,f,g,h,nrow=4,layout_matrix=rbind(c(1,1,1),c(2,2,2),c(3,4,
 ### Tests by sample classification and class
 
 ```{r analysis Fig S11a}
-by_sample_stats_class = ddply(by_sample_class,.(State,class),summarise, Range = max(Proportion)-min(Proportion), Median = median(Proportion), Mean = mean(Proportion),CV = sd(Proportion)/mean(Proportion))
+by_sample_stats_class = ddply(by_sample_class,.(State,class),summarise, Range = max(Proportion_state)-min(Proportion_state), Median = median(Proportion_state), Mean = mean(Proportion_state),CV = sd(Proportion_state)/mean(Proportion_state))
 by_sample_stats_class[order(by_sample_stats_class$Range),]
 by_sample_stats_class[order(by_sample_stats_class$CV),]
 
 # MHC corrected?
-by_sample_KW_class = ddply(by_sample_class,.(State,class),summarise,Group = unlist(kruskal.test(Proportion,Group))["p.value"],method="bonf")
+by_sample_KW_class = ddply(by_sample_class,.(State,class),summarise,Group = unlist(kruskal.test(Proportion_state,Group))["p.value"],method="bonf")
 
 # MHC corrected for group (not class, State)
-by_sample_Wilcox_class = merge(ddply(by_sample_class,.(State,class),summarise,Group_pvalue=wilcox_to_all(Proportion,droplevels(Group)),Group=levels(droplevels(Group))),aggregate(data=by_sample_class,Proportion~State+Group+class,mean),by=c("State","Group","class"),all.x=TRUE)
+by_sample_Wilcox_class = merge(ddply(by_sample_class,.(State,class),summarise,Group_pvalue=wilcox_to_all(Proportion_state,droplevels(Group)),Group=levels(droplevels(Group))),aggregate(data=by_sample_class,Proportion_state~State+Group+class,mean),by=c("State","Group","class"),all.x=TRUE)
 
 # For table by Group
 test = merge(by_sample_stats_class,merge(by_sample_KW_class,by_sample_Wilcox_class[which(by_sample_Wilcox_class$Group_pvalue < 0.05),],by=c("State","class"),all=TRUE),by=c("State","class"),all=TRUE)
@@ -1660,10 +1629,10 @@ test
 ```
 
 ### Enrichment of TE class x state x sample
+# Reduce threshold?
 
 ```{r analysis Fig S11b}
-class_enrichment = rbind(class_chromHMM[,c(1:3,10)],class_CpG_meth[,c(1:2,4,10)],TE_DNase_class[,c(1:2,4,10)],TE_H3K27ac_class[,c(1:2,4,10)])
-table(class_enrichment[which(class_enrichment$Enrichment > 1.5),2:3]) # Reduce threshold?
+table(by_sample_class[which(by_sample_class$Enrichment > 1.5),c("State","class")]) 
 ```
 
 ### CpG average methylation per sample
