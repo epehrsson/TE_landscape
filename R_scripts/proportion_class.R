@@ -20,11 +20,12 @@ colnames(class_chromHMM)[4:5] = c("Bases_state_class","Bases_class")
 class_chromHMM$Proportion_class = class_chromHMM$Bases_state_class/class_chromHMM$Bases_class
 
 # Add total bases in state in sample
-class_chromHMM$Bases_state = apply(class_chromHMM,1,function(x) mnemonics_states_genome[x[3],x[1]])
+class_chromHMM = merge(class_chromHMM,mnemonics_states_genome[,c("State","Sample","Bases")],by=c("State","Sample"),all.x=TRUE)
+colnames(class_chromHMM)[7] = "Bases_state"
 class_chromHMM$Proportion_state = class_chromHMM$Bases_state_class/class_chromHMM$Bases_state
 
 # Add total bases in sample
-class_chromHMM$Bases_sample = apply(class_chromHMM,1,function(x) mnemonics_states_genome[1,x[1]])
+class_chromHMM = merge(class_chromHMM,ddply(mnemonics_states_genome,.(Sample),summarise,Bases_sample=sum(Bases)),by="Sample",all.x=TRUE)
 class_chromHMM$Enrichment = log2((class_chromHMM$Bases_state_class/class_chromHMM$Bases_class)/(class_chromHMM$Bases_state/class_chromHMM$Bases_sample))
 
 # Proportion of class in each state across all samples

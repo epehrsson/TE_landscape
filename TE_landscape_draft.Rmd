@@ -63,8 +63,8 @@ meth_colors = setNames(c("#F8766D","#00BFC4","#7CAE00","#C77CFF"),meth_states)
 
 # All states
 states = c(chromHMM_states,meth_states,"DNase","H3K27ac","Expressed_samples")
-all_state_colors = c(chromHMM_colors,meth_colors,"aquamarine","tan1","black")
-names(all_state_colors)[20:22] = c("DNase","H3K27ac","Expressed_samples")
+all_state_colors = c(chromHMM_colors,meth_colors,"aquamarine","tan1","black","gray28") 
+names(all_state_colors)[20:23] = c("DNase","H3K27ac","Expressed_samples","Total")
 all_state_labels = setNames(c(chromHMM_states,meth_labels,"DNase","H3K27ac","RPKM > 1"),states)
 all_pc_states = c(states[1:21],unlist(lapply(states[1:21],function(x) paste(x,"PC",sep="_"))))
 
@@ -261,6 +261,9 @@ length(unique(rmsk_TE$family))
 
 # Number of subfamilies
 length(unique(rmsk_TE$subfamily))
+
+# Length of TEs
+ddply(rmsk_TE,.(),summarise,Min=min(Length),Median=median(Length),Max=max(Length))
 ```
 
 # Results
@@ -273,21 +276,17 @@ length(unique(rmsk_TE$subfamily))
 source("R_scripts/proportion.R")
 source("R_scripts/proportion_class.R") 
 
-a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Group,nrow=1,labeller=labeller(Group = mark_labels))
+a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels))
 
 b = ggplot(combine_class_proportion,aes(x=class,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of class in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x = element_blank()) + facet_wrap(~Cohort,nrow=1)
 
-all_state_colors[["Total"]] = "gray28"
-
 c = ggplot(contribution,aes(x=reorder(State,-Proportion,max),y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse() + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + scale_fill_manual(values=all_state_colors,guide=FALSE) + geom_text(aes(label=round(100*Proportion,1)),position=position_stack(reverse=TRUE,vjust=0.1))
 
-all_state_colors[["Total"]] = NULL
+d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.text.y=element_blank()) + scale_x_discrete(limits=as.vector(contribution[order(contribution$Proportion,decreasing = TRUE),]$State)) + scale_fill_manual(values=class_colors,guide=FALSE)
 
-d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank()) + scale_x_discrete(limits=as.vector(contribution[order(contribution$Proportion,decreasing = TRUE),]$State)) + scale_fill_manual(values=class_colors,guide=FALSE)
+legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Mark,nrow=4))
 
-legend = get_legend(ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(x=Cohort,y=Proportion,fill=State)) + geom_bar(stat="identity") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.title = element_blank(),legend.position="bottom",legend.direction = "horizontal") + facet_wrap(~Group,nrow=4))
-
-grid.arrange(a,b,c,d,legend, nrow = 4,layout_matrix = rbind(c(1,1),c(2,2),c(3,4),c(5,5)),heights=c(0.25,0.25,0.4,0.1))
+grid.arrange(a,b,c,d,legend, nrow = 4,layout_matrix = rbind(c(1,1),c(2,2),c(3,4),c(5,5)),heights=c(0.25,0.25,0.4,0.1),widths=c(0.55,0.45))
 ```
 
 ### Proportion/contribution analysis
@@ -315,6 +314,83 @@ contribution
 contribution_composite
 ```
 
+### VISTA enhancers
+
+```{r vista enhancers}
+# wc -l features/vista_enhancers/vista_enhancers_human.bed
+# cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2, $3}' - | sort | uniq | wc -l
+355
+
+355/934
+```
+
+### Supplementary Figure 1
+
+```{r Figure S1, echo=FALSE, cache=TRUE, dependson=c("setup","load libraries","set plot parameters","define vectors")}
+source("R_scripts/state_lengths.R")
+source("R_scripts/histone_modification.R")
+
+# Number vs. length of blocks/peaks by sample
+all_lengths_blocks = ddply(all_lengths,.(State,Sample),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length),Blocks=length(Length))
+
+a = ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median),color=State)) + geom_point() + xlab("Number of blocks/peaks per sample (log10)") + ylab("Median length of blocks/peaks per sample (log10(bp))") + scale_color_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + facet_wrap(~State,scales="free") 
+
+# Bases/CpGs in state by sample
+b = ggplot(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],aes(x=Sample,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of bases/CpGs in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.ticks.x=element_blank(),axis.title.x=element_blank()) + facet_grid(Cohort~Mark,scales="free",labeller=labeller(Mark = mark_labels))
+
+## Alternative - Average proportion by sample
+ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion)),aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Average proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels))
+
+# Average mappability by chromHMM states
+test = lapply(metadata$Sample[c(1:12,32:40,119:127)],function(x) read.table(file=paste("mappability/by_state/mappability_",x,"_average.txt",sep=""),sep='\t'))
+names(test) = metadata$Sample[c(1:12,32:40,119:127)]
+test = ldply(test)
+
+c = ggplot(test,aes(x=V1,y=V2,fill=V1)) + geom_boxplot() + scale_x_discrete(limits=chromHMM_states) + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + ylab("Average mappability") + scale_fill_manual(values=chromHMM_colors,guide=FALSE)
+
+d = ggplot(histones,aes(x=Bin,y=Level,color=Mark,group=Mark))+geom_point(size=0.5)+geom_line(size=1.5)+theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),panel.grid=element_blank(),legend.position = "bottom",legend.title = element_blank())+ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Genomic position (+/-5kb around TE)")+ylim(0,12) + facet_wrap(~ State,nrow=3)
+
+grid.arrange(a,b,c,d,nrow=3,ncol=2,layout_matrix=rbind(c(1,2),c(3,2),c(4,4)),heights=c(0.2,0.2,0.6),widths=c(0.5,0.5))
+```
+
+### State/peak lengths analysis
+
+```{r analysis Fig S1}
+# Length of states
+ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length))
+
+# Differences in length of states by sample
+ddply(all_lengths,.(State),summarise,KW_length=unlist(kruskal.test(Length~Sample))["p.value"])
+
+# Differences in number of blocks by sample
+ddply(all_lengths_blocks,.(State),summarise,Range_number=max(Blocks)-min(Blocks),CV_number=sd(Blocks)/mean(Blocks),Range_length=max(Median)-min(Median),CV_length=sd(Median)/mean(Median))
+
+# Comparing number of blocks to length of states
+ddply(all_lengths_blocks,.(State),summarise,Cor=unlist(cor.test(Blocks,Median,method="spearman"))["estimate.rho"],Pvalue=unlist(cor.test(Blocks,Median,method="spearman"))["p.value"])
+```
+
+### By-sample analysis
+
+```{r by-sample bases}
+ddply(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],.(State,Cohort),summarise,Median=median(Bases),Mean=mean(Bases),SD=sd(Bases),Min=min(Bases),Max=max(Bases),CV=sd(Bases)/mean(Bases))
+
+dcast(all_state_proportion[which(all_state_proportion$Mark == "WGBS" & all_state_proportion$Cohort == "Genome"),c("Sample","State","Proportion")],Sample~State,value.var="Proportion")
+```
+
+### Mappability of genome/TE bases
+
+```{r}
+# Mappability whole genome, TEs (8/27/17)
+# (awk '{sum+=($4*($3-$2));total+=$3-$2;}END{print sum/total}' wgEncodeCrgMapabilityAlign36mer.bedGraph)
+GENOME_MAP=0.789192
+GENOME_MAP
+
+# (for file in x*; do bedtools intersect -wo -a rmsk_TEother_merge.txt -b $file >> rmsk_TEother_merge_map.txt; done)
+# (awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt)
+TE_MAP=0.624207
+TE_MAP
+```
+
 ### DNase/H3K27ac peak analysis
 
 ```{r peak analysis}
@@ -322,14 +398,14 @@ contribution_composite
 d = table(unlist(TE_DNase_peaks[,8:60]))
 d
 
-# % of TE x sample with > 1 peak
+# % of TE x sample with 1 peak
 d[2]/sum(d[2:length(d)])
 
 # Number of H3K27ac peaks per TE
 e = table(unlist(TE_H3K27ac_peaks[,8:105]))
 e
 
-# % of TE x sample with > 1 peak
+# % of TE x sample with 1 peak
 e[2]/sum(e[2:length(e)])
 
 # % of DNase peaks overlapping TEs, overall
@@ -355,116 +431,16 @@ max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
 H3K27ac_stats[which.max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks),]
 ```
 
-### VISTA enhancers
-
-```{r vista enhancers}
-# wc -l features/vista_enhancers/vista_enhancers_human.bed
-# cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2, $3}' - | sort | uniq | wc -l
-355
-
-355/934
-```
-
-### Supplementary Figure 1
-
-```{r Figure S1a, echo=FALSE, cache=TRUE, dependson=c("setup","load libraries","set plot parameters","define vectors")}
-source("R_scripts/state_lengths.R")
-
-a = ggplot(all_lengths,aes(x=State,y=log10(Length),fill=State)) + geom_boxplot() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_fill_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + ylab("Length (log10(bp))") 
-```
-
-```{r cpg density plot, echo=FALSE, eval=FALSE}
-source("R_scripts/cpg_density.R")
-load("R_datasets/cpg_density.RData")
-
-ggplot(cpg,aes(x=Methylation,fill=Sample)) + geom_density(alpha=0.5,adjust=10) + xlab("Methylation level per CpG") + ylab("Density")
-```
-
-```{r Figure S1b-d, echo=FALSE}
-# Bases/CpGs in state by sample
-b = ggplot(all_state_proportion[which(all_state_proportion$Cohort == "Genome"),],aes(x=Sample,y=Bases,fill=State)) + geom_bar(stat="identity") + ylab("Bases/CpGs in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.ticks.x=element_blank(),axis.title.x=element_blank()) + facet_wrap(~Mark,nrow=2,scales="free",labeller=labeller(Mark = mark_labels))
-
-# Average mappability by chromHMM states
-test = lapply(metadata$Sample[c(1:12,32:40,119:127)],function(x) read.table(file=paste("mappability/by_state/mappability_",x,"_average.txt",sep=""),sep='\t'))
-names(test) = metadata$Sample[c(1:12,32:40,119:127)]
-test = ldply(test)
-
-c = ggplot(test,aes(x=V1,y=V2,fill=V1)) + geom_boxplot() + scale_x_discrete(limits=chromHMM_states) + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + ylab("Average mappability") + scale_fill_manual(values=chromHMM_colors,guide=FALSE)
-
-source("R_scripts/histone_modification.R")
-
-d = ggplot(histones,aes(x=Bin,y=Level,color=Mark,group=Mark))+geom_point(size=0.5)+geom_line(size=1.5)+theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),panel.grid=element_blank(),legend.position = "bottom",legend.title = element_blank())+ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Genomic position (+/-5kb around TE)")+ylim(0,12) + facet_wrap(~ State,nrow=3)
-```
-
-```{r Figure S1 plot, echo=FALSE}
-grid.arrange(a,b,c,d,nrow=3,ncol=2,layout_matrix=rbind(c(1,2),c(3,2),c(4,4)),heights=c(0.2,0.2,0.6),widths=c(0.5,0.5))
-```
-
-### State/peak lengths analysis
-
-```{r analysis Fig S1}
-# Length of TEs
-min(rmsk_TE$Length)
-median(rmsk_TE$Length)
-max(rmsk_TE$Length)
-
-# Length of states
-ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length))
-
-# Length of states by sample
-all_lengths_blocks = ddply(all_lengths,.(State,Sample),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length),Blocks=length(Length))
-
-# Differences in length of states by sample
-ddply(all_lengths,.(State),summarise,KW_length=unlist(kruskal.test(Length~Sample))["p.value"])
-
-# Differences in number of blocks by sample
-ddply(all_lengths_blocks,.(State),summarise,Range_number=max(Blocks)-min(Blocks),CV_number=sd(Blocks)/mean(Blocks),Range_length=max(Median)-min(Median),CV_length=sd(Median)/mean(Median))
-
-ggplot(all_lengths_blocks,aes(x=State,y=Blocks,fill=State)) + geom_boxplot() + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_fill_manual(values=all_state_colors[c(1:15,20:21)],guide=FALSE) + ylab("Number of blocks") 
-
-# Comparing number of blocks to length of states
-ggplot(all_lengths_blocks,aes(x=Blocks,y=Median)) + geom_point() + facet_wrap(~State,scales="free") + xlab("Number of blocks/peaks per sample") + ylab("Median length of blocks/peaks per sample")
-
-ddply(all_lengths_blocks,.(State),summarise,Cor=unlist(cor.test(Blocks,Median,method="spearman"))["estimate.rho"],Pvalue=unlist(cor.test(Blocks,Median,method="spearman"))["p.value"])
-```
-
-### CpG state analysis
-
-```{r}
-apply(all_CpG_meth,1,function(x) x/sum(x))
-median(t(apply(all_CpG_meth,1,function(x) x/sum(x)))[,2])
-```
-
-### By-sample analysis
-
-```{r by-sample bases}
-ddply(all_state_proportion,.(State),summarise,Mean=mean(Bases),SD=sd(Bases),Min=min(Bases),Max=max(Bases),CV=sd(Bases)/mean(Bases))
-```
-
-### Mappability of genome/TE bases
-
-```{r}
-# Mappability whole genome, TEs (8/27/17)
-# (awk '{sum+=($4*($3-$2));total+=$3-$2;}END{print sum/total}' wgEncodeCrgMapabilityAlign36mer.bedGraph)
-GENOME_MAP=0.789192
-GENOME_MAP
-
-# (for file in x*; do bedtools intersect -wo -a rmsk_TEother_merge.txt -b $file >> rmsk_TEother_merge_map.txt; done)
-# (awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt)
-TE_MAP=0.624207
-TE_MAP
-```
-
 ### Supplementary Figure 2
 
 ```{r Figure S2, echo=FALSE}
 source("R_scripts/feature_overlap.R")
 
-a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels[1:7]) + scale_fill_discrete(labels=coding_labels) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
+a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1),legend.title = element_blank())  + scale_x_discrete(labels=genic_labels) + scale_fill_discrete(labels=coding_labels) + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=measure_labels))
 
-b = ggplot(combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Group,labeller=labeller(Coding=coding_labels))
+b = ggplot(combined_proportion,aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1),axis.title.x=element_blank(),legend.position = "bottom") + scale_x_discrete(labels=c("TE","Genome",genic_labels[1:7])) + facet_grid(Coding~Mark,labeller=labeller(Coding=coding_labels))
 
-grid.arrange(a,b,c,nrow=3,heights=c(0.2,0.5,0.3))
+grid.arrange(a,b,nrow=2,heights=c(0.3,0.7))
 ```
 
 ### RefSeq feature analysis
@@ -474,7 +450,7 @@ grid.arrange(a,b,c,nrow=3,heights=c(0.2,0.5,0.3))
 feature_overlap_long
 
 # Proportion of each feature in each state, across all samples
-combined_proportion[which(combined_proportion$Cohort != "genome_noTE"),]
+combined_proportion
 ```
 
 ## Potential
