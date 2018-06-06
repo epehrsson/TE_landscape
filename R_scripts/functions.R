@@ -79,10 +79,11 @@ potential_stats = function(distribution,states,samples){
   else{
     distribution = as.data.frame(distribution[,2])
   }
-  stats = as.data.frame(t(rbind(apply(distribution,2,function(x) sum(x[2:(samples+1)])/(sum(x)/100)),
-                                apply(distribution,2,function(x) sum(x*seq(0,samples))/sum(x))/(samples/100),
-                                apply(as.data.frame(distribution[2:(samples+1),]),2,function(x) sum(x*seq(1,samples))/sum(x))/(samples/100))))
-  colnames(stats) = c("Proportion_ever","Samples_avg_all","Samples_avg_ever")
+  stats = as.data.frame(t(rbind(apply(distribution,2,function(x) sum(x[2:(samples+1)])/sum(x)),
+                                apply(distribution,2,function(x) sum(x*seq(0,samples))/sum(x))/samples,
+                                apply(distribution,2,function(x) sd(rep(seq(0,samples),x))/sqrt(sum(x))/samples),
+                                apply(as.data.frame(distribution[2:(samples+1),]),2,function(x) sum(x*seq(1,samples))/sum(x))/samples)))
+  colnames(stats) = c("Proportion_ever","Samples_avg_all","Samples_SE_all","Samples_avg_ever")
   
   return(stats)
 }

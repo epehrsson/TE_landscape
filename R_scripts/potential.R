@@ -12,8 +12,6 @@ chromHMM_TE_state_dist_stats$State = factor(chromHMM_states,levels=chromHMM_stat
 
 # No cancer cell lines, IMR90
 chromHMM_TE_state_dist_noCancer = sample_distribution(chromHMM_TE_state_noCancer,c(8:22),sample_counts["Include","chromHMM"])
-chromHMM_TE_state_noCancer_cum = cumulative_distribution(chromHMM_TE_state_noCancer,c(8:22),sample_counts["Include","chromHMM"])
-chromHMM_TE_state_noCancer_cum$State = factor(rep(chromHMM_states,each=sample_counts["Include","chromHMM"]),levels=chromHMM_states)
 chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_noCancer,15,sample_counts["Include","chromHMM"])
 chromHMM_TE_state_dist_noCancer_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
@@ -35,21 +33,19 @@ TE_meth_average_category_stats$State = factor(rownames(TE_meth_average_category_
 
 # Cumulative distribution of methylation states and statistics, no IMR90
 TE_meth_average_noIMR90_category = sample_distribution(TE_meth_average,c(50:53),sample_counts["Include","WGBS"])
-TE_meth_average_noIMR90_category_cum = cumulative_distribution(TE_meth_average,c(50:53),sample_counts["Include","WGBS"])
+colnames(TE_meth_average_noIMR90_category) = colnames(TE_meth_average_category) 
 TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_noIMR90_category,4,sample_counts["Include","WGBS"])
-TE_meth_average_noIMR90_category_stats$State = factor(c("Hypomethylated","Hypermethylated","Intermediate","Missing"),levels=meth_states)
+TE_meth_average_noIMR90_category_stats$State = factor(rownames(TE_meth_average_noIMR90_category_stats),levels=meth_states)
 
 # Number of TEs in each WGBS state by sample
-TE_meth_average_state = as.data.frame(cbind(
-  apply(TE_meth_average[,8:44],2,function(x) sum(as.numeric(na.omit(x)) < 0.3)/length(x)),
-  apply(TE_meth_average[,8:44],2,function(x)  sum(as.numeric(na.omit(x)) <= 0.7 & as.numeric(na.omit(x)) >= 0.3)/length(x)),
-  apply(TE_meth_average[,8:44],2,function(x) sum(as.numeric(na.omit(x)) > 0.7)/length(x)),
-  apply(TE_meth_average[,8:44],2,function(x) sum(is.na(x))/length(x))))
-colnames(TE_meth_average_state) = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
-TE_meth_average_state = TE_meth_average_state[order(TE_meth_average_state$Hypermethylated + TE_meth_average_state$Missing),]
-
-TE_meth_average_state_long = melt(as.matrix(TE_meth_average_state))
-colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")
+WGBS_sample_state = melt(TE_meth_average[,8:44])
+colnames(WGBS_sample_state) = c("Sample","Methylation")
+WGBS_sample_state = ddply(WGBS_sample_state,.(Sample),summarise,
+                                Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
+                                Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))
+WGBS_sample_state = melt(WGBS_sample_state,id.vars="Sample")
+colnames(WGBS_sample_state) = c("Sample","State","Count")
+WGBS_sample_state$Proportion = WGBS_sample_state$Count/NUM_TE_WGBS
 
 # DNase potential
 
@@ -66,8 +62,6 @@ TE_DNase_potential_stats$State = "DNase"
 TE_DNase_potential_noCancer = sample_distribution(TE_DNase_peaks,63,sample_counts["Include","DNase"])
 TE_DNase_potential_noCancer[1,2] = TE_DNase_potential_noCancer[1,2] + NUM_TE-dim(TE_DNase_peaks)[1]
 colnames(TE_DNase_potential_noCancer)[2] = "DNase"
-TE_DNase_potential_noCancer_cum = cumulative_distribution(TE_DNase_peaks,63,sample_counts["Include","DNase"])
-TE_DNase_potential_noCancer_cum$State = rep("DNase",sample_counts["Include","DNase"])
 TE_DNase_potential_noCancer_stats = potential_stats(TE_DNase_potential_noCancer,1,sample_counts["Include","DNase"])
 TE_DNase_potential_noCancer_stats$State = "DNase"
 
@@ -95,8 +89,6 @@ TE_H3K27ac_potential_stats$State = "H3K27ac"
 TE_H3K27ac_potential_noCancer = sample_distribution(TE_H3K27ac_peaks,108,sample_counts["Include","H3K27ac"])
 TE_H3K27ac_potential_noCancer[1,2] = TE_H3K27ac_potential_noCancer[1,2] + NUM_TE-dim(TE_H3K27ac_peaks)[1]
 colnames(TE_H3K27ac_potential_noCancer)[2] = "H3K27ac"
-TE_H3K27ac_potential_noCancer_cum = cumulative_distribution(TE_H3K27ac_peaks,108,sample_counts["Include","H3K27ac"])
-TE_H3K27ac_potential_noCancer_cum$State = rep("H3K27ac",sample_counts["Include","H3K27ac"])
 TE_H3K27ac_potential_noCancer_stats = potential_stats(TE_H3K27ac_potential_noCancer,1,sample_counts["Include","H3K27ac"]) #Check
 TE_H3K27ac_potential_noCancer_stats$State = "H3K27ac"
 
@@ -122,8 +114,6 @@ RNA_potential_stats$State = "Expressed_samples"
 # Distribution of TEs with RPKM >1, no cancer cell lines/IMR90
 RNA_potential_noCancer = sample_distribution(RNA_TE,65,sample_counts["Include","RNA"])
 colnames(RNA_potential_noCancer)[2] = "Expressed_samples"
-RNA_potential_noCancer_cum = cumulative_distribution(RNA_TE,65,sample_counts["Include","RNA"])
-RNA_potential_noCancer_cum$State = rep("Expressed_samples",sample_counts["Include","RNA"])
 RNA_potential_noCancer_stats = potential_stats(RNA_potential_noCancer,1,sample_counts["Include","RNA"])
 RNA_potential_noCancer_stats$State = "Expressed_samples"
 
@@ -135,3 +125,42 @@ RNA_RPKM_sample$Proportion = ifelse(metadata[match(rownames(RNA_RPKM_sample),met
                                     RNA_RPKM_sample$Count/NUM_TE_noY)
 RNA_RPKM_sample$Sample = rownames(RNA_RPKM_sample)
 RNA_RPKM_sample$State = rep("Expressed_samples",sample_counts["All","RNA"])
+
+# Combine marks
+## TEs in state per sample
+combine_boxplot = rbind(state_sample_count,WGBS_sample_state,TE_DNase_peaks_sample,TE_H3K27ac_peaks_sample,RNA_RPKM_sample)
+combine_boxplot_noCancer_IMR90 = droplevels(combine_boxplot[which(metadata[match(combine_boxplot$Sample,metadata$Sample),]$Exclude == "Include"),])
+rm(list=c("state_sample_count","WGBS_sample_state","TE_DNase_peaks_sample","TE_H3K27ac_peaks_sample","RNA_RPKM_sample"))
+
+## Combined samples in state
+combine_potential = rbind(melt(chromHMM_TE_state_dist,id.vars="Samples"),melt(TE_meth_average_category,id.vars="Samples"),melt(TE_DNase_potential,id.var="Samples"),
+                          melt(TE_H3K27ac_potential,id.var="Samples"),melt(RNA_potential,id.var="Samples"))
+colnames(combine_potential) = c("Samples","State","Count")
+combine_potential = ddply(combine_potential,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
+
+## Combined samples in state, no cancer/IMR90
+combine_potential_noCancer = rbind(melt(chromHMM_TE_state_dist_noCancer,id.vars="Samples"),melt(TE_meth_average_noIMR90_category,id.vars="Samples"),melt(TE_DNase_potential_noCancer,id.var="Samples"),
+                          melt(TE_H3K27ac_potential_noCancer,id.var="Samples"),melt(RNA_potential_noCancer,id.var="Samples"))
+colnames(combine_potential_noCancer) = c("Samples","State","Count")
+combine_potential_noCancer = ddply(combine_potential_noCancer,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
+
+rm(list=c("chromHMM_TE_state_dist_noCancer","TE_meth_average_noIMR90_category",
+          "TE_DNase_potential","TE_DNase_potential_noCancer","TE_H3K27ac_potential","TE_H3K27ac_potential_noCancer","RNA_potential","RNA_potential_noCancer"))
+
+## Stats
+combine_stats = rbind(chromHMM_TE_state_dist_stats,TE_meth_average_category_stats,TE_DNase_potential_stats,TE_H3K27ac_potential_stats,RNA_potential_stats)
+combine_stats$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac","Expressed_samples"),
+                             levels=c("chromHMM","WGBS","DNase","H3K27ac","Expressed_samples"))
+
+combine_stats_noCancer_IMR90 = rbind(chromHMM_TE_state_dist_noCancer_stats,TE_meth_average_noIMR90_category_stats,
+                                     TE_DNase_potential_noCancer_stats,TE_H3K27ac_potential_noCancer_stats,RNA_potential_noCancer_stats)
+combine_stats_noCancer_IMR90$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac","Expressed_samples"),
+                                            levels=c("chromHMM","WGBS","DNase","H3K27ac","Expressed_samples"))
+
+rm(list=c("chromHMM_TE_state_dist_noCancer_stats","TE_meth_average_category_stats","TE_meth_average_noIMR90_category_stats",
+          "TE_DNase_potential_stats","TE_DNase_potential_noCancer_stats","TE_H3K27ac_potential_stats","TE_H3K27ac_potential_noCancer_stats",
+          "RNA_potential_stats","RNA_potential_noCancer_stats"))
+
+## Cumulative distribution
+combine_cum = rbind(TE_meth_average_category_cum,TE_DNase_potential_cum,TE_H3K27ac_potential_cum,RNA_potential_cum)
+rm(list=c("TE_meth_average_category_cum","TE_DNase_potential_cum","TE_H3K27ac_potential_cum","RNA_potential_cum"))

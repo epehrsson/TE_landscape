@@ -17,3 +17,7 @@ colnames(RNA_exon_sample) = "Count"
 RNA_exon_sample$Proportion = RNA_exon_sample$Count/ifelse(metadata[match(rownames(RNA_exon_sample),metadata$Sample),]$chrY == "Yes",NUM_EXON,NUM_EXON_noY)
 RNA_exon_sample$Sample = rownames(RNA_exon_sample)
 RNA_exon_sample$State = rep("Expressed_samples",sample_counts["All","RNA"])
+
+RNA_potential_exon_long = melt(RNA_potential_exon,id.var="Samples")
+colnames(RNA_potential_exon_long) = c("Samples","State","Count")
+RNA_potential_exon_long$Sample.Proportion = RNA_potential_exon_long$Samples/(length(RNA_potential_exon_long$Samples)-1)

@@ -46,15 +46,14 @@ promoter_state_sample_count$Proportion = ifelse(metadata[match(promoter_state_sa
 promoter_state_sample_count$State = factor(promoter_state_sample_count$State,levels=chromHMM_states)
 
 # Number of promoters in each WGBS state by sample
-promoter_meth_average_state = as.data.frame(cbind(apply(promoter_meth_average[,5:41],2,function(x) sum(as.numeric(na.omit(x)) < 0.3)/length(x)),
-                                                  apply(promoter_meth_average[,5:41],2,function(x)  sum(as.numeric(na.omit(x)) <= 0.7 & as.numeric(na.omit(x)) >= 0.3)/length(x)),
-                                                  apply(promoter_meth_average[,5:41],2,function(x) sum(as.numeric(na.omit(x)) > 0.7)/length(x)),
-                                                  apply(promoter_meth_average[,5:41],2,function(x) sum(is.na(x))/length(x))))
-colnames(promoter_meth_average_state) = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
-promoter_meth_average_state = promoter_meth_average_state[order(promoter_meth_average_state$Hypermethylated + promoter_meth_average_state$Missing),]
-
-promoter_meth_average_state_long = melt(as.matrix(promoter_meth_average_state))
-colnames(promoter_meth_average_state_long) = c("Sample","State","Proportion")
+promoter_meth_average_state = melt(promoter_meth_average[,5:41])
+colnames(promoter_meth_average_state) = c("Sample","Methylation")
+promoter_meth_average_state = ddply(promoter_meth_average_state,.(Sample),summarise,
+                                    Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
+                                    Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))
+promoter_meth_average_state = melt(promoter_meth_average_state,.id.vars="Sample")
+colnames(promoter_meth_average_state) = c("Sample","State","Count")
+promoter_meth_average_state$Proportion = promoter_meth_average_state$Count/NUM_PROMOTER_noY
 
 # Proportion of promoters overlapping Dnase peaks, by sample
 promoter_DNase_peaks_sample = as.data.frame(apply(promoter_DNase_peaks[,5:57],2,function(x) sum(x > 0)))
@@ -69,3 +68,19 @@ colnames(promoter_H3K27ac_peaks_sample) = "Count"
 promoter_H3K27ac_peaks_sample$Proportion = ifelse(metadata[match(rownames(promoter_H3K27ac_peaks_sample),metadata$Sample),]$chrY == "Yes",promoter_H3K27ac_peaks_sample$Count/NUM_PROMOTER,promoter_H3K27ac_peaks_sample$Count/NUM_PROMOTER_noY)
 promoter_H3K27ac_peaks_sample$Sample = rownames(promoter_H3K27ac_peaks_sample)
 promoter_H3K27ac_peaks_sample$State = rep("H3K27ac",sample_counts["All","H3K27ac"])
+
+# Combine
+combine_boxplot_prom = rbind(promoter_state_sample_count,promoter_meth_average_state,promoter_DNase_peaks_sample,promoter_H3K27ac_peaks_sample)
+combine_stats_prom = rbind(chromHMM_promoter_state_dist_stats,promoter_meth_average_category_stats,promoter_DNase_potential_stats,promoter_H3K27ac_potential_stats)
+combine_stats_prom$Group = factor(c(rep("chromHMM",15),rep("WGBS",4),"DNase","H3K27ac"),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
+combine_cum_prom = rbind(chromHMM_promoter_state_cum,promoter_meth_average_category_cum,promoter_DNase_potential_cum,promoter_H3K27ac_potential_cum)
+combine_potential_prom = rbind(melt(chromHMM_promoter_state_dist,id.vars="Samples"),melt(promoter_meth_average_category,id.vars="Samples"),
+                               melt(promoter_DNase_potential,id.var="Samples"),melt(promoter_H3K27ac_potential,id.var="Samples"))
+colnames(combine_potential_prom) = c("Samples","State","Count")
+combine_potential_prom = ddply(combine_potential_prom,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
+
+rm(list=c("chromHMM_promoter_state_dist","promoter_meth_average_category","promoter_DNase_potential","promoter_H3K27ac_potential",
+          "chromHMM_promoter_state","promoter_meth_average","promoter_DNase_peaks","promoter_H3K27ac_peaks",
+          "promoter_state_sample_count","promoter_meth_average_state","promoter_DNase_peaks_sample","promoter_H3K27ac_peaks_sample",
+          "chromHMM_promoter_state_dist_stats","promoter_meth_average_category_stats","promoter_DNase_potential_stats","promoter_H3K27ac_potential_stats",
+          "chromHMM_promoter_state_cum","promoter_meth_average_category_cum","promoter_DNase_potential_cum","promoter_H3K27ac_potential_cum"))
