@@ -2,6 +2,7 @@
 
 # Number of samples each promoter is in each chromHMM state
 chromHMM_promoter_state = read.table("chromHMM/potential/refseq_promoters_chromHMM_summit_potential.txt",sep='\t',header=TRUE)
+colnames(chromHMM_promoter_state)[5:19] = chromHMM_states
 
 # Methylation level for all promoters
 promoter_meth_average = read.table("WGBS/Refseq_promoters/refseq_promoter_unique_CpG_Meth_average.txt",sep='\t',header=TRUE)
