@@ -1,7 +1,7 @@
 # State switching
 # See 7/5/2016, 7/7/2016, 2/6/2017, 2/9/2017
 
-source("R_scripts/potential_class.R")
+#source("R_scripts/potential_class.R")
 
 # chromHMM intra state switching
 # Matrix of states annotated on the same TE in the same sample (intra)
