@@ -979,378 +979,6 @@ apply(sample_counts,2,function(x) (x[3]*NUM_TE) + ((x[1]-x[3])*NUM_TE_noY))
 apply(compare_marks_unique,2,function(x) sum(compare_marks_unique[which(!is.na(x)),]$TE_sample))
 ```
 
-## Factors influencing potential
-
-### Figure 3
-
-```{r Figure 3, fig.width=7, fig.height=7, echo=FALSE, cache=TRUE, dependson=c("Figure 1","Figure 2","Figure S6","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-#source("R_scripts/potential.R")
-source("R_scripts/TE_correlation.R")
-source("R_scripts/feature_overlap_state.R") #Requires potential.R
-source("R_scripts/state_metric_correlation.R")
-
-# Feature table
-b = ggplot(feature_state_mean[which(feature_state_mean$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_gradient2(name="Average % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels)
-
-# By-chromosome (normalized by total number of samples)
-test = rmsk_TE_measure[,c("chromosome",states)]
-test[,2:16] = apply(test[,2:16],2,function(x) ifelse(test$chromosome != "chrY",x/sample_counts["All","chromHMM"],x/sample_counts["chrY","chromHMM"]))
-test[,17:20] = apply(test[,17:20],2,function(x) x/sample_counts["All","WGBS"])
-test$DNase = ifelse(test$chromosome != "chrY",test$DNase/sample_counts["All","DNase"],test$DNase/sample_counts["chrY","DNase"])
-test$H3K27ac = ifelse(test$chromosome != "chrY",test$H3K27ac/sample_counts["All","H3K27ac"],test$H3K27ac/sample_counts["chrY","H3K27ac"])
-test$Expressed_samples = ifelse(test$chromosome != "chrY",test$Expressed_samples/sample_counts["All","RNA"],test$Expressed_samples/sample_counts["chrY","RNA"])
-
-chromosome_potential = aggregate(data=test,.~chromosome,function(x) mean(na.omit(x)),na.action=na.pass)
-colnames(chromosome_potential) = c("chromosome",states)
-chromosome_potential$chromosome = factor(chromosome_potential$chromosome,levels=standard_chromosomes)
-chromosome_potential_long = melt(chromosome_potential,id.var="chromosome")
-colnames(chromosome_potential_long)[2:3] = c("State","Mean_samples")
-
-c = ggplot(chromosome_potential_long,aes(x=State,y=Mean_samples,color=chromosome,label=chromosome)) + geom_point() + geom_text(angle=45,hjust=0,vjust=0,size=3) + scale_color_discrete(guide=FALSE) + scale_x_discrete(limits=rev(states),labels=all_state_labels) + theme(axis.title.y = element_blank(),panel.grid.major.y=element_line(color="grey")) + ylab("Mean % of samples in state") + coord_flip()
-
-# SINE/Alu age vs. TE metrics and number of samples in methylation states
-rmsk_TE_measure$cpgIsland_binary = as.numeric(ifelse(rmsk_TE_measure$cpgIsland == 0,0,1))
-
-rmsk_TE_measure_SINE = na.omit(rmsk_TE_measure[which(rmsk_TE_measure$class_update == "SINE"),c(TE_coordinates,"class_update",measure_metrics,meth_states,"cpgIsland_binary")])
-rmsk_TE_measure_SINE$Length = rmsk_TE_measure_SINE$Length/1000
-
-d = ggplot(rmsk_TE_measure_SINE,aes(x=JC_distance)) + geom_density(fill=class_colors["SINE"]) + theme(axis.title.x = element_blank(),axis.title.y = element_blank())
-
-e = ggplot(melt(rmsk_TE_measure_SINE,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank()) 
-
-f = ggplot(melt(rmsk_TE_measure_SINE,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),guide=FALSE) + xlab("Jukes-Cantor Evolutionary Distance") + geom_smooth(data=rmsk_TE_measure_SINE,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")) + theme(axis.title.y = element_blank())
-
-rmsk_TE_measure_Alu = na.omit(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),c(TE_coordinates,"class_update",measure_metrics,meth_states,"cpgIsland_binary")])
-rmsk_TE_measure_Alu$Length = rmsk_TE_measure_Alu$Length/1000
-
-g = ggplot(rmsk_TE_measure_Alu,aes(x=JC_distance)) + geom_density(fill="lightblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank())
-
-h = ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank()) 
-
-i = ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),guide=FALSE) + xlab("Jukes-Cantor Evolutionary Distance") + geom_smooth(data=rmsk_TE_measure_Alu,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")) + theme(axis.title.y = element_blank())
-
-legend2 = get_legend(ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),labels=c("CpGs/TE",meth_states[c(1,3,2,4)])) + theme(legend.title = element_blank(),legend.direction = "horizontal"))
-  
-legend3 = get_legend(ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),labels=c("Length (kbp)","Mappability","CpGs/bp")) + ylab("Property") + theme(legend.title = element_blank(),legend.direction = "horizontal") + geom_smooth(data=rmsk_TE_measure_Alu,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")))
-
-grid.arrange(a,b,c,d,e,f,g,h,i,legend2,legend3,nrow=6,layout_matrix=rbind(c(1,1,2,2),c(3,3,4,7),c(3,3,5,8),c(3,3,6,9),c(3,3,10,10),c(3,3,11,11)),heights=c(0.5,0.1,0.2,0.2,0.05,0.05),widths=c(0.2,0.2,0.3,0.3))
-```
-
-### Figure 3 analysis
-
-```{r analysis Fig 3}
-# Fig 3B
-dcast(feature_state_mean[which(feature_state_mean$Coding == "All"),],Feature~State,value.var = "Enrichment")
-
-# Fig 3C
-lapply(colnames(chromosome_potential[,2:22]),function(x) {test = chromosome_potential[,c("chromosome",x)]; test$Zscore = (test[[x]]-mean(test[[x]]))/sd(test[[x]]); test = test[which(abs(test$Zscore) > 2),]; test[order(test$Zscore),]})
-
-# Number of TEs on each chromosome
-table(rmsk_TE$chromosome)
-sort(table(rmsk_TE$chromosome)/NUM_TE)
-
-# Proportion of each class on each chromosome
-z = apply(table(rmsk_TE$chromosome,rmsk_TE$class_update),1,function(x) x/table(rmsk_TE$class_update))
-z
-sort(apply(z,2,function(x) sd(x)/mean(x)))
-
-# Proportion of TEs in each state on each chromosome
-apply(rmsk_TE_measure[,states],2,function(x) table(rmsk_TE_measure[which(x > 0),]$chromosome)/dim(rmsk_TE_measure[which(x > 0),])[1])
-
-# Epigenetic state by chromosome
-chrom_state = read.table("chromHMM/chromosome_states.txt",sep='\t')
-colnames(chrom_state) = c("Sample","chromosome","State","Bases")
-chrom_state$chromosome = factor(chrom_state$chromosome,levels=standard_chromosomes)
-chrom_state$State = factor(chrom_state$State,levels=chromHMM_states)
-chrom_state_total = ddply(chrom_state,.(chromosome,State),summarise,Bases=sum(as.numeric(Bases)))
-ggplot(chrom_state_total,aes(x=chromosome,y=Bases,fill=State)) + geom_bar(stat="identity",position="fill") + scale_fill_manual(values = chromHMM_colors) + theme(axis.title.x = element_blank()) + ylab("% of total bp")
-
-# Fig 3D
-
-# Significant correlations between number of samples in state and metric (not MHC corrected)
-correlate_TE_state[which(correlate_TE_state$p.value < 0.001 & abs(correlate_TE_state$estimate.rho) > 0.3 & correlate_TE_state$State != "Max_states_intra"),]
-
-# Overlap with CpG islands by age (logistic regression) (all, SINE, Alu)
-test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure,family="binomial")
-summary(test)
-test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure_SINE,family="binomial")
-summary(test)
-test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure_Alu,family="binomial")
-summary(test)
-```
-
-### Number of samples in state by genic feature, p-values (Too long!)
-
-```{r anaylsis Fig3b, eval=FALSE}
-# Not MHC corrected
-TE_pvalue_all_state = apply(rmsk_TE_measure[,cohorts],2,function(x) apply(rmsk_TE_measure[,c(states,measure_states_extra)],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
-TE_pvalue_class_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,cohorts],2,function(x) apply(z[,c(states,measure_states_extra)],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
-```
-
-### Supplementary Figure 8
-
-```{r Figure S8, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-#source("R_scripts/feature_overlap_state.R")
-source("R_scripts/shuffled_feature_overlap.R")
-
-rmsk_TE_class_feature = melt(rmsk_TE_class[,c("class_update",cohorts[1:19])],id.vars="class_update")
-colnames(rmsk_TE_class_feature) = c("Class","Cohort","Proportion")
-rmsk_TE_class_feature = split_coding(rmsk_TE_class_feature,2)
-
-a = ggplot(rmsk_TE_class_feature,aes(x=Class,y=Proportion,fill=Feature)) + geom_bar(stat="identity") + theme(axis.title.x = element_blank(),legend.title=element_blank()) +  ylab("Proportion of TEs overlapping feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),labels=genic_labels[c(8,1:7)]) + facet_wrap(~Coding,nrow=1,labeller=labeller(Coding=coding_labels))
-
-feature_proportion = apply(rmsk_TE[,cohorts[1:19]],2,function(x) length(na.omit(x)))
-feature_proportion_long = melt(as.matrix(feature_proportion/NUM_TE))
-colnames(feature_proportion_long) = c("Feature","X","Proportion")
-
-#b = ggplot(feature_proportion_shuffled_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=feature_proportion_long,aes(x=Feature,y=Proportion),size=3,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)])
-
-rmsk_TE_class_feature_long = melt(rmsk_TE_class[,c("class_update",cohorts[1:19])],id.var="class_update")
-colnames(rmsk_TE_class_feature_long)[2:3] = c("Feature","Proportion")
-
-c = ggplot(feature_proportion_shuffled_class_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=rmsk_TE_class_feature_long,aes(x=Feature,y=Proportion),size=2,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=cohorts[c(1:8,10:19)]) + facet_wrap(~class_update)
-
-d = ggplot(feature_state_mean,aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Coding,labeller=labeller(Coding=coding_labels))
-
-e = ggplot(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,175)) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
-feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]
-
-grid.arrange(a,c,d,e,nrow=4,heights=c(0.15,0.30,0.25,0.30))
-```
-
-### TE feature stats
-
-```{r analysis Fig S8}
-# Any TEs not in a feature? Number of features each TE overlaps
-table(apply(rmsk_TE[,cohorts[2:19]],1,function(x) sum(!is.na(x))))
-table(apply(rmsk_TE[,c(features[2:3],"coding_exon",features[5:8])],1,function(x) sum(!is.na(x))))
-
-# Number/proportion of TEs in each feature, overall and by class
-feature_proportion/NUM_TE
-rmsk_TE_class[,c("class_update",cohorts[1:20])]
-
-# Proportion of TEs ever in state overlapping each feature
-apply(rmsk_TE_measure[,states],2,function(x) apply(rmsk_TE_measure[,cohorts],2,function(y) dim(rmsk_TE_measure[which(x > 0 & y > 0),])[1]/dim(rmsk_TE_measure[which(x > 0),])[1]))
-```
-
-### TE feature overlap control
-
-```{r shuffled feature distribution}
-# Number/proportion of shuffled TEs in each feature
-feature_proportion_shuffled/NUM_TE
-
-# Class
-test = merge(ddply(feature_proportion_shuffled_class_long,.(Feature,class_update),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_class_feature_long,by=c("class_update","Feature"))
-test$Zscore = (test$Proportion-test$Mean)/test$SD
-test[order(test$Zscore),]
-
-# Subfamily
-rmsk_TE_subfamily_feature_long = melt(rmsk_TE_subfamily[,c("subfamily",cohorts[1:19])],id.var="subfamily")
-colnames(rmsk_TE_subfamily_feature_long)[2:3] = c("Feature","Proportion")
-
-test = merge(ddply(feature_proportion_shuffled_subfamily_long,.(Feature,subfamily),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_subfamily_feature_long,by=c("subfamily","Feature"))
-test$Zscore = (test$Proportion-test$Mean)/test$SD
-sort(table(test[which(test$Zscore > 2),]$Feature))
-test[which(test$Zscore > 2 & test$Feature %in% c("exons_pc","5UTR_pc","3UTR_pc")),]
-test[which(test$Zscore > 2 & test$Feature %in% c("exons_nc","5UTR_nc","3UTR_nc")),]
-test[which(test$Zscore > 2 & test$Feature =="cpgIsland"),]
-test[which(test$Zscore > 2 & test$Feature %in% c("promoter","promoter_pc","promoter_nc")),]
-```
-
-### Max expression by feature
-
-```{r max expression by feature}
-# Median max expression by feature
-sort(apply(rmsk_TE_measure[,cohorts],2,function(y) median(rmsk_TE_measure[which(y > 0),]$Max_expression,na.rm=TRUE)))
-
-# Max expression by feature
-sort(apply(rmsk_TE_measure[,cohorts],2,function(y) max(rmsk_TE_measure[which(y > 0),]$Max_expression,na.rm=TRUE)))
-```
-
-### Supplementary Figure 9
-
-```{r Figure S9, echo=FALSE, cache=TRUE, dependson=c("Figure 3","Figure S8","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-#source("R_scripts/TE_class_stats.R")
-#source("R_scripts/TE_correlation.R")
-
-par(mfrow=c(1,3)) 
-
-pie(rmsk_TE_class$Count,labels=paste(rmsk_TE_class$Count,"(",round(rmsk_TE_class$Count/sum(rmsk_TE_class$Count)*100,0),"%) ",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="TEs",cex=1,cex.main=2,line=-20,radius=0.5)
-
-pie(rmsk_TE_class$Subfamilies,labels=paste(rmsk_TE_class$Subfamilies,"(",round(rmsk_TE_class$Subfamilies/sum(rmsk_TE_class$Subfamilies)*100,0),"%) ",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Subfamilies",cex=1,cex.main=2,line=-20,radius=0.5)
- 
-pie(c(GENOME_WIDTH-MERGED_TE_WIDTH,rmsk_TE_class$Total_length),labels=paste(round(c(GENOME_WIDTH-MERGED_TE_WIDTH,rmsk_TE_class$Total_length)/GENOME_WIDTH*100,0),"%",sep=""),col=c("lightblue",class_colors[as.vector(rmsk_TE_class$class_update)]),clockwise=TRUE,cex=1,cex.main=2,main="Length (bp)",line=-20,radius=0.5)
-
-rmsk_TE_measure_metric = melt(rmsk_TE_measure[,c("class_update",measure_metrics)],id.vars="class_update")
-rmsk_TE_measure_metric$variable = factor(rmsk_TE_measure_metric$variable,levels(rmsk_TE_measure_metric$variable)[c(3,2,1,4,5)])
-
-b = ggplot(rmsk_TE_measure,aes(x=JC_distance,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Jukes-Cantor evolutionary distance") + ylab("Density") + scale_x_continuous(limits=c(0,1)) + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
-
-c = ggplot(rmsk_TE_measure,aes(x=mappability,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Mappability (36bp)") + ylab("Density") + scale_x_continuous(limits=c(0,1)) + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
-
-d = ggplot(rmsk_TE_measure,aes(x=Length,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Length (bp)") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
-
-e = ggplot(rmsk_TE_measure,aes(x=CpGs,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("CpGs") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
-
-f = ggplot(rmsk_TE_measure,aes(x=CpGs_per_length,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("CpGs/bp") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
-
-# Shuffled mappability
-rmsk_TE_shuffled_map = melt(t(ldply(rmsk_TE_shuffled,function(x) x$mappability)))[,2:3]
-test = as.data.frame(cbind(rep("Real",NUM_TE),rmsk_TE$mappability))
-colnames(test) = c("Var2","value")
-rmsk_TE_shuffled_map = rbind(rmsk_TE_shuffled_map,test)
-rmsk_TE_shuffled_map$Iteration = factor(rmsk_TE_shuffled_map$Var2,levels=c(seq(1,10,1),"Real"))
-rmsk_TE_shuffled_map$mappability = as.numeric(rmsk_TE_shuffled_map$value)
-
-g = ggplot(rmsk_TE_shuffled_map,aes(x=mappability,fill=Iteration)) + geom_histogram(binwidth=0.05,position="dodge") + xlab("Mappability") + ylab("TEs") + scale_fill_manual(values=c(rep("grey",10),"red"))
-
-grid.arrange(b,c,d,e,f,g,nrow=6,heights=c(rep(0.14,5),0.3))
-```
-
-### Mappability for shuffled TEs
-
-```{r}
-ddply(rmsk_TE_shuffled_map,.(Iteration),summarise,Mean=mean(mappability),SD=sd(mappability))
-```
-
-### Remove shuffled matrices
-
-```{r}
-rm(rmsk_TE_shuffled_map)
-rm(rmsk_TE_shuffled)
-```
-
-### CpGs per class
-
-```{r analysis Fig S9a}
-rmsk_TE_class[,c("class_update","Count","cpgIsland","CpGs","Percent_TE_CpGs","Percent_all_CpGs","TEs_wCpG","TEs_wCpG_per","Mean_CpG","Mean_CpG_wCpG")]
-```
-
-### TE stats
-
-```{r analysis Fig S9b}
-# Number of samples in state by class, p-values
-p.adjust(apply(rmsk_TE_measure[,c(states,measure_states_extra)],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"]),method="bonf")
-
-# TE metrics by overall and by class, median and mean, with p-values
-apply(rmsk_TE_measure[,measure_metrics],2,median)
-aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) median(na.omit(x)),na.action=na.pass)
-
-colMeans(rmsk_TE_measure[,measure_metrics])
-aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) mean(na.omit(x)),na.action=na.pass)
-sort(apply(aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) mean(na.omit(x)),na.action=na.pass)[,2:6],2,function(x) sd(x)/mean(x)))
-
-p.adjust(apply(rmsk_TE_measure[,measure_metrics],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"]),method="bonf")
-
-# Max TE length by class
-aggregate(data=rmsk_TE_measure,Length~class_update,max)
-
-# % of SINE that is Alu
-dim(rmsk_TE[which(rmsk_TE$family == "Alu"),])[1]/dim(rmsk_TE[which(rmsk_TE$class_update == "SINE"),])[1]
-
-# Average age for older SINE, Alu, SVA
-mean(rmsk_TE[which(rmsk_TE$class == "SINE" & rmsk_TE$family != "Alu"),]$JC_distance)
-sd(rmsk_TE[which(rmsk_TE$class == "SINE" & rmsk_TE$family != "Alu"),]$JC_distance)
-mean(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
-sd(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
-mean(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
-sd(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
-
-# Mappability vs. length
-correlate_TE_feature[which(correlate_TE_feature$Metric == "Length" & correlate_TE_feature$State == "mappability"),]
-
-# Age vs. overlap with CpG islands
-wilcox.test(rmsk_TE_measure[which(rmsk_TE_measure$cpgIsland > 0),]$JC_distance,rmsk_TE_measure[which(rmsk_TE_measure$cpgIsland == 0),]$JC_distance)
-aggregate(data=rmsk_TE_measure,JC_distance~cpgIsland_binary,mean)
-
-# SVA/Alu overlapping CpG islands
-dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$family == "Alu"),])[1]
-dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$family == "Alu"),])[1]/dim(rmsk_TE[which(rmsk_TE$family == "Alu"),])[1]
-dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$class_update == "SVA"),])[1]
-dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$class_update == "SVA"),])[1]/dim(rmsk_TE[which(rmsk_TE$class_update == "SVA"),])[1]
-
-# Proportion of all TEs overlapping CpG islands by family/subfamily
-dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
-sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$family)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
-sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$subfamily)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
-```
-
-### Supplementary Figure 10
-
-```{r Figure S10, echo=FALSE}
-#source("R_scripts/state_metric_correlation.R")
-source("R_scripts/feature_overlap_metric.R") #Requires TE_correlation.R
-
-a = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update == "All" & correlate_TE_state$State %in% c("Hypomethylated","Intermediate","Hypermethylated","Missing")),]),aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(limits=c("Missing","Hypermethylated","Intermediate","Hypomethylated")) + scale_x_discrete(limits=c("Length","CpGs","CpGs_per_length","JC_distance","mappability"),labels=c("Length","CpGs","CpGs/bp","Age","Mappability"))
-
-b = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update != "All" & correlate_TE_state$State %in% c("Hypomethylated","Intermediate","Hypermethylated","Missing")),]),aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(limits=c("Missing","Hypermethylated","Intermediate","Hypomethylated")) + scale_x_discrete(limits=c("Length","CpGs","CpGs_per_length","JC_distance","mappability"),labels=c("Length","CpGs","CpGs/bp","Age","Mappability")) + facet_wrap(~class_update) 
-
-c = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs"))
-
-d = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + facet_wrap(~class_update)
-
-e = ggplot(feature_metric_mean[which(feature_metric_mean$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15)) + scale_y_discrete(limits=rev(levels(feature_metric_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp"))
-
-f = ggplot(feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15),scale=FALSE) + scale_y_discrete(limits=rev(levels(feature_metric_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp")) + facet_wrap(~Class)
-
-grid.arrange(a,b,c,d,e,f,nrow=3)
-```
-
-### TE metrics by genic features, p-values (Too long!)
-
-```{r analysis Fig S10a, eval=FALSE}
-# Not MHC corrected
-TE_pvalue_all_feature = apply(rmsk_TE_measure[,cohorts],2,function(x) apply(rmsk_TE_measure[,measure_metrics],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
-TE_pvalue_class_feature = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,cohorts],2,function(x) apply(z[,measure_metrics],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
-```
-
-### TE stats
-
-```{r analysis Fig S10b}
-# From Figure S10
-feature_metric_mean[which(feature_metric_mean$Coding == "All"),]
-feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),]
-
-# Correlations between mappability, CpGs, CpGs per length, number of samples Missing (WGBS)
-# Missing: All TEs, all classes except SVA; SVA - Length, mappability, CpGs_per_length
-correlate_TE_state[which(correlate_TE_state$State == "Missing" & correlate_TE_state$Metric %in% c("mappability","CpGs","CpGs_per_length")),]
-
-# Correlation between mappability, number of samples Quiescent
-correlate_TE_state[which(correlate_TE_state$Metric == "mappability" & correlate_TE_state$State == "X15_Quies"),]
-
-# Mappability of TEs always Quiescent vs not
-wilcox.test(rmsk_TE_measure[which(rmsk_TE_measure$States > 1 | (rmsk_TE_measure$States == 1 & rmsk_TE_measure$X15_Quies == 0)),]$mappability,rmsk_TE_measure[which(rmsk_TE_measure$X15_Quies > 0 & rmsk_TE_measure$States == 1),]$mappability)
-mean(rmsk_TE_measure[which(rmsk_TE_measure$X15_Quies > 0 & rmsk_TE_measure$States == 1),]$mappability)
-mean(rmsk_TE_measure[which(rmsk_TE_measure$States > 1 | (rmsk_TE_measure$States == 1 & rmsk_TE_measure$X15_Quies == 0)),]$mappability)
-```
-
-### By chromosome
-
-```{r potential by chromosome}
-# Potential without chrY
-test = chromHMM_TE_state[which(chromHMM_TE_state$chromosome != "chrY"),]
-test.a = sample_distribution(test,c(8:22),sample_counts["All","chromHMM"])
-test.b = cumulative_distribution(test,c(8:22),sample_counts["All","chromHMM"])
-test.b$State = factor(rep(chromHMM_states,each=sample_counts["All","chromHMM"]),levels=chromHMM_states)
-test.c = potential_stats(test.a,15,sample_counts["All","chromHMM"])
-test.c$State = factor(chromHMM_states,levels=chromHMM_states)
-chromHMM_TE_state_dist_stats-test.c
-
-# Average samples in state for chrY TEs
-sort(colMeans(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY"),8:22]))
-
-# % of TEs overlapping DNase/H3K27ac on chrY, expressed RPKM > 1
-ADD
-
-# % of TEs on each chromosome
-sort(table(rmsk_TE$chromosome)/dim(rmsk_TE)[1])
-
-# % of classes on each chromosome
-class_chromosome = table(rmsk_TE$chromosome,rmsk_TE$class_update)
-class_chromosome = apply(class_chromosome,2,function(x) x/sum(x))
-class_chromosome
-```
-
 ## By-sample
 
 ### Figure 4
@@ -1905,6 +1533,390 @@ ggplot(subfamily_state_individual_V1,aes(x=Pc_of_enriched)) + geom_histogram(bin
 write.table(ddply(subfamily_state_individual_V1,.(subfamily,State),summarise,Quarter1=length(Pc_of_enriched[which(Pc_of_enriched > 0.25)]),Half=length(Pc_of_enriched[which(Pc_of_enriched > 0.5)]),Quarter2=length(Pc_of_enriched[which(Pc_of_enriched > 0.75)])),file="enrichment/subfamily_state_individual_V1_core.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
 
+### MER57E3
+
+```{r mer57e3}
+subfamily_state_sample_counts[which(subfamily_state_sample_counts$subfamily == "MER57E3"),]
+MER57E3 = rmsk_TE[which(rmsk_TE$subfamily == "MER57E3"),]
+dim(MER57E3)[1]
+table(MER57E3$chromosome)
+apply(MER57E3[,cohorts],2,function(x) dim(MER57E3[which(!is.na(x)),])[1])
+```
+
+## Factors influencing potential
+
+### Figure 3
+
+```{r Figure 3, fig.width=7, fig.height=7, echo=FALSE, cache=TRUE, dependson=c("Figure 1","Figure 2","Figure S6","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
+#source("R_scripts/potential.R")
+source("R_scripts/TE_correlation.R")
+source("R_scripts/feature_overlap_state.R") #Requires potential.R
+source("R_scripts/state_metric_correlation.R")
+
+# Feature table
+b = ggplot(feature_state_mean[which(feature_state_mean$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_gradient2(name="Average % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels)
+
+# By-chromosome (normalized by total number of samples)
+test = rmsk_TE_measure[,c("chromosome",states)]
+test[,2:16] = apply(test[,2:16],2,function(x) ifelse(test$chromosome != "chrY",x/sample_counts["All","chromHMM"],x/sample_counts["chrY","chromHMM"]))
+test[,17:20] = apply(test[,17:20],2,function(x) x/sample_counts["All","WGBS"])
+test$DNase = ifelse(test$chromosome != "chrY",test$DNase/sample_counts["All","DNase"],test$DNase/sample_counts["chrY","DNase"])
+test$H3K27ac = ifelse(test$chromosome != "chrY",test$H3K27ac/sample_counts["All","H3K27ac"],test$H3K27ac/sample_counts["chrY","H3K27ac"])
+test$Expressed_samples = ifelse(test$chromosome != "chrY",test$Expressed_samples/sample_counts["All","RNA"],test$Expressed_samples/sample_counts["chrY","RNA"])
+
+chromosome_potential = aggregate(data=test,.~chromosome,function(x) mean(na.omit(x)),na.action=na.pass)
+colnames(chromosome_potential) = c("chromosome",states)
+chromosome_potential$chromosome = factor(chromosome_potential$chromosome,levels=standard_chromosomes)
+chromosome_potential_long = melt(chromosome_potential,id.var="chromosome")
+colnames(chromosome_potential_long)[2:3] = c("State","Mean_samples")
+
+c = ggplot(chromosome_potential_long,aes(x=State,y=Mean_samples,color=chromosome,label=chromosome)) + geom_point() + geom_text(angle=45,hjust=0,vjust=0,size=3) + scale_color_discrete(guide=FALSE) + scale_x_discrete(limits=rev(states),labels=all_state_labels) + theme(axis.title.y = element_blank(),panel.grid.major.y=element_line(color="grey")) + ylab("Mean % of samples in state") + coord_flip()
+
+# SINE/Alu age vs. TE metrics and number of samples in methylation states
+rmsk_TE_measure$cpgIsland_binary = as.numeric(ifelse(rmsk_TE_measure$cpgIsland == 0,0,1))
+
+rmsk_TE_measure_SINE = na.omit(rmsk_TE_measure[which(rmsk_TE_measure$class_update == "SINE"),c(TE_coordinates,"class_update",measure_metrics,meth_states,"cpgIsland_binary")])
+rmsk_TE_measure_SINE$Length = rmsk_TE_measure_SINE$Length/1000
+
+d = ggplot(rmsk_TE_measure_SINE,aes(x=JC_distance)) + geom_density(fill=class_colors["SINE"]) + theme(axis.title.x = element_blank(),axis.title.y = element_blank())
+
+e = ggplot(melt(rmsk_TE_measure_SINE,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank()) 
+
+f = ggplot(melt(rmsk_TE_measure_SINE,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),guide=FALSE) + xlab("Jukes-Cantor Evolutionary Distance") + geom_smooth(data=rmsk_TE_measure_SINE,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")) + theme(axis.title.y = element_blank())
+
+rmsk_TE_measure_Alu = na.omit(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),c(TE_coordinates,"class_update",measure_metrics,meth_states,"cpgIsland_binary")])
+rmsk_TE_measure_Alu$Length = rmsk_TE_measure_Alu$Length/1000
+
+g = ggplot(rmsk_TE_measure_Alu,aes(x=JC_distance)) + geom_density(fill="lightblue") + theme(axis.title.x = element_blank(),axis.title.y = element_blank())
+
+h = ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank()) 
+
+i = ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),guide=FALSE) + xlab("Jukes-Cantor Evolutionary Distance") + geom_smooth(data=rmsk_TE_measure_Alu,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")) + theme(axis.title.y = element_blank())
+
+legend2 = get_legend(ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs_per_length","cpgIsland_binary")),aes(x=JC_distance,y=value,color=variable)) + geom_smooth() + scale_color_manual(values=setNames(c("#000000",meth_colors),c("CpGs",names(meth_colors))),labels=c("CpGs/TE",meth_states[c(1,3,2,4)])) + theme(legend.title = element_blank(),legend.direction = "horizontal"))
+  
+legend3 = get_legend(ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"class_update","JC_distance","CpGs",meth_states,"cpgIsland_binary"))) + geom_smooth(aes(x=JC_distance,y=value,linetype=variable),color="black") + scale_linetype_manual(values=c(2,3,6),labels=c("Length (kbp)","Mappability","CpGs/bp")) + ylab("Property") + theme(legend.title = element_blank(),legend.direction = "horizontal") + geom_smooth(data=rmsk_TE_measure_Alu,aes(x=JC_distance,y=cpgIsland_binary),color="pink",method="glm",method.args = list(family = "binomial")))
+
+grid.arrange(a,b,c,d,e,f,g,h,i,legend2,legend3,nrow=6,layout_matrix=rbind(c(1,1,2,2),c(3,3,4,7),c(3,3,5,8),c(3,3,6,9),c(3,3,10,10),c(3,3,11,11)),heights=c(0.5,0.1,0.2,0.2,0.05,0.05),widths=c(0.2,0.2,0.3,0.3))
+```
+
+### Figure 3 analysis
+
+```{r analysis Fig 3}
+# Fig 3B
+dcast(feature_state_mean[which(feature_state_mean$Coding == "All"),],Feature~State,value.var = "Enrichment")
+
+# Fig 3C
+lapply(colnames(chromosome_potential[,2:22]),function(x) {test = chromosome_potential[,c("chromosome",x)]; test$Zscore = (test[[x]]-mean(test[[x]]))/sd(test[[x]]); test = test[which(abs(test$Zscore) > 2),]; test[order(test$Zscore),]})
+
+# Number of TEs on each chromosome
+table(rmsk_TE$chromosome)
+sort(table(rmsk_TE$chromosome)/NUM_TE)
+
+# Proportion of each class on each chromosome
+z = apply(table(rmsk_TE$chromosome,rmsk_TE$class_update),1,function(x) x/table(rmsk_TE$class_update))
+z
+sort(apply(z,2,function(x) sd(x)/mean(x)))
+
+# Proportion of TEs in each state on each chromosome
+apply(rmsk_TE_measure[,states],2,function(x) table(rmsk_TE_measure[which(x > 0),]$chromosome)/dim(rmsk_TE_measure[which(x > 0),])[1])
+
+# Epigenetic state by chromosome
+chrom_state = read.table("chromHMM/chromosome_states.txt",sep='\t')
+colnames(chrom_state) = c("Sample","chromosome","State","Bases")
+chrom_state$chromosome = factor(chrom_state$chromosome,levels=standard_chromosomes)
+chrom_state$State = factor(chrom_state$State,levels=chromHMM_states)
+chrom_state_total = ddply(chrom_state,.(chromosome,State),summarise,Bases=sum(as.numeric(Bases)))
+ggplot(chrom_state_total,aes(x=chromosome,y=Bases,fill=State)) + geom_bar(stat="identity",position="fill") + scale_fill_manual(values = chromHMM_colors) + theme(axis.title.x = element_blank()) + ylab("% of total bp")
+
+# Fig 3D
+
+# Significant correlations between number of samples in state and metric (not MHC corrected)
+correlate_TE_state[which(correlate_TE_state$p.value < 0.001 & abs(correlate_TE_state$estimate.rho) > 0.3 & correlate_TE_state$State != "Max_states_intra"),]
+
+# Overlap with CpG islands by age (logistic regression) (all, SINE, Alu)
+test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure,family="binomial")
+summary(test)
+test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure_SINE,family="binomial")
+summary(test)
+test = glm(as.factor(cpgIsland_binary)~JC_distance,data=rmsk_TE_measure_Alu,family="binomial")
+summary(test)
+```
+
+### Number of samples in state by genic feature, p-values (Too long!)
+
+```{r anaylsis Fig3b, eval=FALSE}
+# Not MHC corrected
+TE_pvalue_all_state = apply(rmsk_TE_measure[,cohorts],2,function(x) apply(rmsk_TE_measure[,c(states,measure_states_extra)],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+TE_pvalue_class_state = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,cohorts],2,function(x) apply(z[,c(states,measure_states_extra)],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+```
+
+### Supplementary Figure 8
+
+```{r Figure S8, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
+#source("R_scripts/feature_overlap_state.R")
+source("R_scripts/shuffled_feature_overlap.R")
+
+rmsk_TE_class_feature = melt(rmsk_TE_class[,c("class_update",cohorts[1:19])],id.vars="class_update")
+colnames(rmsk_TE_class_feature) = c("Class","Cohort","Proportion")
+rmsk_TE_class_feature = split_coding(rmsk_TE_class_feature,2)
+
+a = ggplot(rmsk_TE_class_feature,aes(x=Class,y=Proportion,fill=Feature)) + geom_bar(stat="identity") + theme(axis.title.x = element_blank(),legend.title=element_blank()) +  ylab("Proportion of TEs overlapping feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),labels=genic_labels[c(8,1:7)]) + facet_wrap(~Coding,nrow=1,labeller=labeller(Coding=coding_labels))
+
+feature_proportion = apply(rmsk_TE[,cohorts[1:19]],2,function(x) length(na.omit(x)))
+feature_proportion_long = melt(as.matrix(feature_proportion/NUM_TE))
+colnames(feature_proportion_long) = c("Feature","X","Proportion")
+
+#b = ggplot(feature_proportion_shuffled_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=feature_proportion_long,aes(x=Feature,y=Proportion),size=3,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=levels(feature_proportion_shuffled_long$Feature)[c(17,19,18,5,7,6,8,2,4,3,10,12,11,14,16,15,13,1)])
+
+rmsk_TE_class_feature_long = melt(rmsk_TE_class[,c("class_update",cohorts[1:19])],id.var="class_update")
+colnames(rmsk_TE_class_feature_long)[2:3] = c("Feature","Proportion")
+
+c = ggplot(feature_proportion_shuffled_class_long,aes(x=Feature,y=Proportion)) + geom_boxplot() + geom_point(data=rmsk_TE_class_feature_long,aes(x=Feature,y=Proportion),size=2,color="red") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(limits=cohorts[c(1:8,10:19)]) + facet_wrap(~class_update)
+
+d = ggplot(feature_state_mean,aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,50)) + scale_y_discrete(limits=rev(levels(feature_state_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Coding,labeller=labeller(Coding=coding_labels))
+
+e = ggplot(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),],aes(x=State,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,175)) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
+feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]
+
+grid.arrange(a,c,d,e,nrow=4,heights=c(0.15,0.30,0.25,0.30))
+```
+
+### TE feature stats
+
+```{r analysis Fig S8}
+# Any TEs not in a feature? Number of features each TE overlaps
+table(apply(rmsk_TE[,cohorts[2:19]],1,function(x) sum(!is.na(x))))
+table(apply(rmsk_TE[,c(features[2:3],"coding_exon",features[5:8])],1,function(x) sum(!is.na(x))))
+
+# Number/proportion of TEs in each feature, overall and by class
+feature_proportion/NUM_TE
+rmsk_TE_class[,c("class_update",cohorts[1:20])]
+
+# Proportion of TEs ever in state overlapping each feature
+apply(rmsk_TE_measure[,states],2,function(x) apply(rmsk_TE_measure[,cohorts],2,function(y) dim(rmsk_TE_measure[which(x > 0 & y > 0),])[1]/dim(rmsk_TE_measure[which(x > 0),])[1]))
+```
+
+### TE feature overlap control
+
+```{r shuffled feature distribution}
+# Number/proportion of shuffled TEs in each feature
+feature_proportion_shuffled/NUM_TE
+
+# Class
+test = merge(ddply(feature_proportion_shuffled_class_long,.(Feature,class_update),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_class_feature_long,by=c("class_update","Feature"))
+test$Zscore = (test$Proportion-test$Mean)/test$SD
+test[order(test$Zscore),]
+
+# Subfamily
+rmsk_TE_subfamily_feature_long = melt(rmsk_TE_subfamily[,c("subfamily",cohorts[1:19])],id.var="subfamily")
+colnames(rmsk_TE_subfamily_feature_long)[2:3] = c("Feature","Proportion")
+
+test = merge(ddply(feature_proportion_shuffled_subfamily_long,.(Feature,subfamily),summarise,Mean=mean(Proportion),SD=sd(Proportion)),rmsk_TE_subfamily_feature_long,by=c("subfamily","Feature"))
+test$Zscore = (test$Proportion-test$Mean)/test$SD
+sort(table(test[which(test$Zscore > 2),]$Feature))
+test[which(test$Zscore > 2 & test$Feature %in% c("exons_pc","5UTR_pc","3UTR_pc")),]
+test[which(test$Zscore > 2 & test$Feature %in% c("exons_nc","5UTR_nc","3UTR_nc")),]
+test[which(test$Zscore > 2 & test$Feature =="cpgIsland"),]
+test[which(test$Zscore > 2 & test$Feature %in% c("promoter","promoter_pc","promoter_nc")),]
+```
+
+### Max expression by feature
+
+```{r max expression by feature}
+# Median max expression by feature
+sort(apply(rmsk_TE_measure[,cohorts],2,function(y) median(rmsk_TE_measure[which(y > 0),]$Max_expression,na.rm=TRUE)))
+
+# Max expression by feature
+sort(apply(rmsk_TE_measure[,cohorts],2,function(y) max(rmsk_TE_measure[which(y > 0),]$Max_expression,na.rm=TRUE)))
+```
+
+### Supplementary Figure 9
+
+```{r Figure S9, echo=FALSE, cache=TRUE, dependson=c("Figure 3","Figure S8","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
+#source("R_scripts/TE_class_stats.R")
+#source("R_scripts/TE_correlation.R")
+
+par(mfrow=c(1,3)) 
+
+pie(rmsk_TE_class$Count,labels=paste(rmsk_TE_class$Count,"(",round(rmsk_TE_class$Count/sum(rmsk_TE_class$Count)*100,0),"%) ",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="TEs",cex=1,cex.main=2,line=-20,radius=0.5)
+
+pie(rmsk_TE_class$Subfamilies,labels=paste(rmsk_TE_class$Subfamilies,"(",round(rmsk_TE_class$Subfamilies/sum(rmsk_TE_class$Subfamilies)*100,0),"%) ",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Subfamilies",cex=1,cex.main=2,line=-20,radius=0.5)
+ 
+pie(c(GENOME_WIDTH-MERGED_TE_WIDTH,rmsk_TE_class$Total_length),labels=paste(round(c(GENOME_WIDTH-MERGED_TE_WIDTH,rmsk_TE_class$Total_length)/GENOME_WIDTH*100,0),"%",sep=""),col=c("lightblue",class_colors[as.vector(rmsk_TE_class$class_update)]),clockwise=TRUE,cex=1,cex.main=2,main="Length (bp)",line=-20,radius=0.5)
+
+rmsk_TE_measure_metric = melt(rmsk_TE_measure[,c("class_update",measure_metrics)],id.vars="class_update")
+rmsk_TE_measure_metric$variable = factor(rmsk_TE_measure_metric$variable,levels(rmsk_TE_measure_metric$variable)[c(3,2,1,4,5)])
+
+b = ggplot(rmsk_TE_measure,aes(x=JC_distance,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Jukes-Cantor evolutionary distance") + ylab("Density") + scale_x_continuous(limits=c(0,1)) + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
+
+c = ggplot(rmsk_TE_measure,aes(x=mappability,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Mappability (36bp)") + ylab("Density") + scale_x_continuous(limits=c(0,1)) + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
+
+d = ggplot(rmsk_TE_measure,aes(x=Length,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Length (bp)") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
+
+e = ggplot(rmsk_TE_measure,aes(x=CpGs,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("CpGs") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
+
+f = ggplot(rmsk_TE_measure,aes(x=CpGs_per_length,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("CpGs/bp") + ylab("Density") + theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) + facet_wrap(~class_update,scales="free_y",nrow=1)
+
+# Shuffled mappability
+rmsk_TE_shuffled_map = melt(t(ldply(rmsk_TE_shuffled,function(x) x$mappability)))[,2:3]
+test = as.data.frame(cbind(rep("Real",NUM_TE),rmsk_TE$mappability))
+colnames(test) = c("Var2","value")
+rmsk_TE_shuffled_map = rbind(rmsk_TE_shuffled_map,test)
+rmsk_TE_shuffled_map$Iteration = factor(rmsk_TE_shuffled_map$Var2,levels=c(seq(1,10,1),"Real"))
+rmsk_TE_shuffled_map$mappability = as.numeric(rmsk_TE_shuffled_map$value)
+
+g = ggplot(rmsk_TE_shuffled_map,aes(x=mappability,fill=Iteration)) + geom_histogram(binwidth=0.05,position="dodge") + xlab("Mappability") + ylab("TEs") + scale_fill_manual(values=c(rep("grey",10),"red"))
+
+grid.arrange(b,c,d,e,f,g,nrow=6,heights=c(rep(0.14,5),0.3))
+```
+
+### Mappability for shuffled TEs
+
+```{r}
+ddply(rmsk_TE_shuffled_map,.(Iteration),summarise,Mean=mean(mappability),SD=sd(mappability))
+```
+
+### Remove shuffled matrices
+
+```{r}
+rm(rmsk_TE_shuffled_map)
+rm(rmsk_TE_shuffled)
+```
+
+### CpGs per class
+
+```{r analysis Fig S9a}
+rmsk_TE_class[,c("class_update","Count","cpgIsland","CpGs","Percent_TE_CpGs","Percent_all_CpGs","TEs_wCpG","TEs_wCpG_per","Mean_CpG","Mean_CpG_wCpG")]
+```
+
+### TE stats
+
+```{r analysis Fig S9b}
+# Number of samples in state by class, p-values
+p.adjust(apply(rmsk_TE_measure[,c(states,measure_states_extra)],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"]),method="bonf")
+
+# TE metrics by overall and by class, median and mean, with p-values
+apply(rmsk_TE_measure[,measure_metrics],2,median)
+aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) median(na.omit(x)),na.action=na.pass)
+
+colMeans(rmsk_TE_measure[,measure_metrics])
+aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) mean(na.omit(x)),na.action=na.pass)
+sort(apply(aggregate(data=rmsk_TE_measure[,c("class_update",measure_metrics)],.~class_update,function(x) mean(na.omit(x)),na.action=na.pass)[,2:6],2,function(x) sd(x)/mean(x)))
+
+p.adjust(apply(rmsk_TE_measure[,measure_metrics],2,function(x) unlist(kruskal.test(x~rmsk_TE_measure$class_update))["p.value"]),method="bonf")
+
+# Max TE length by class
+aggregate(data=rmsk_TE_measure,Length~class_update,max)
+
+# % of SINE that is Alu
+dim(rmsk_TE[which(rmsk_TE$family == "Alu"),])[1]/dim(rmsk_TE[which(rmsk_TE$class_update == "SINE"),])[1]
+
+# Average age for older SINE, Alu, SVA
+mean(rmsk_TE[which(rmsk_TE$class == "SINE" & rmsk_TE$family != "Alu"),]$JC_distance)
+sd(rmsk_TE[which(rmsk_TE$class == "SINE" & rmsk_TE$family != "Alu"),]$JC_distance)
+mean(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
+sd(rmsk_TE[which(rmsk_TE$family == "Alu"),]$JC_distance)
+mean(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
+sd(rmsk_TE[which(rmsk_TE$class_update == "SVA"),]$JC_distance)
+
+# Mappability vs. length
+correlate_TE_feature[which(correlate_TE_feature$Metric == "Length" & correlate_TE_feature$State == "mappability"),]
+
+# Age vs. overlap with CpG islands
+wilcox.test(rmsk_TE_measure[which(rmsk_TE_measure$cpgIsland > 0),]$JC_distance,rmsk_TE_measure[which(rmsk_TE_measure$cpgIsland == 0),]$JC_distance)
+aggregate(data=rmsk_TE_measure,JC_distance~cpgIsland_binary,mean)
+
+# SVA/Alu overlapping CpG islands
+dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$family == "Alu"),])[1]
+dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$family == "Alu"),])[1]/dim(rmsk_TE[which(rmsk_TE$family == "Alu"),])[1]
+dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$class_update == "SVA"),])[1]
+dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland) & rmsk_TE$class_update == "SVA"),])[1]/dim(rmsk_TE[which(rmsk_TE$class_update == "SVA"),])[1]
+
+# Proportion of all TEs overlapping CpG islands by family/subfamily
+dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
+sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$family)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
+sort(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),]$subfamily)))/dim(rmsk_TE[which(!is.na(rmsk_TE$cpgIsland)),])[1]
+```
+
+### Supplementary Figure 10
+
+```{r Figure S10, echo=FALSE}
+#source("R_scripts/state_metric_correlation.R")
+source("R_scripts/feature_overlap_metric.R") #Requires TE_correlation.R
+
+a = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update == "All" & correlate_TE_state$State %in% c("Hypomethylated","Intermediate","Hypermethylated","Missing")),]),aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(limits=c("Missing","Hypermethylated","Intermediate","Hypomethylated")) + scale_x_discrete(limits=c("Length","CpGs","CpGs_per_length","JC_distance","mappability"),labels=c("Length","CpGs","CpGs/bp","Age","Mappability"))
+
+b = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update != "All" & correlate_TE_state$State %in% c("Hypomethylated","Intermediate","Hypermethylated","Missing")),]),aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(limits=c("Missing","Hypermethylated","Intermediate","Hypomethylated")) + scale_x_discrete(limits=c("Length","CpGs","CpGs_per_length","JC_distance","mappability"),labels=c("Length","CpGs","CpGs/bp","Age","Mappability")) + facet_wrap(~class_update) 
+
+c = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs"))
+
+d = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Spearman's rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1),panel.background=element_rect(fill="lightgrey")) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + facet_wrap(~class_update)
+
+e = ggplot(feature_metric_mean[which(feature_metric_mean$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15)) + scale_y_discrete(limits=rev(levels(feature_metric_mean$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp"))
+
+f = ggplot(feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),],aes(x=Metric,y=Feature,fill=Enrichment)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="Total % increase",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-1,15),scale=FALSE) + scale_y_discrete(limits=rev(levels(feature_metric_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=c("Length (bp)","Mappability","Age","CpGs","CpGs/bp")) + facet_wrap(~Class)
+
+grid.arrange(a,b,c,d,e,f,nrow=3)
+```
+
+### TE metrics by genic features, p-values (Too long!)
+
+```{r analysis Fig S10a, eval=FALSE}
+# Not MHC corrected
+TE_pvalue_all_feature = apply(rmsk_TE_measure[,cohorts],2,function(x) apply(rmsk_TE_measure[,measure_metrics],2,function(y) unlist(wilcox.test(y~x))["p.value"]))
+TE_pvalue_class_feature = ddply(rmsk_TE_measure,~class_update,function(z) apply(z[,cohorts],2,function(x) apply(z[,measure_metrics],2,function(y) unlist(wilcox.test(y~x))["p.value"])))
+```
+
+### TE stats
+
+```{r analysis Fig S10b}
+# From Figure S10
+feature_metric_mean[which(feature_metric_mean$Coding == "All"),]
+feature_metric_mean_class[which(feature_metric_mean_class$Coding == "All"),]
+
+# Correlations between mappability, CpGs, CpGs per length, number of samples Missing (WGBS)
+# Missing: All TEs, all classes except SVA; SVA - Length, mappability, CpGs_per_length
+correlate_TE_state[which(correlate_TE_state$State == "Missing" & correlate_TE_state$Metric %in% c("mappability","CpGs","CpGs_per_length")),]
+
+# Correlation between mappability, number of samples Quiescent
+correlate_TE_state[which(correlate_TE_state$Metric == "mappability" & correlate_TE_state$State == "X15_Quies"),]
+
+# Mappability of TEs always Quiescent vs not
+wilcox.test(rmsk_TE_measure[which(rmsk_TE_measure$States > 1 | (rmsk_TE_measure$States == 1 & rmsk_TE_measure$X15_Quies == 0)),]$mappability,rmsk_TE_measure[which(rmsk_TE_measure$X15_Quies > 0 & rmsk_TE_measure$States == 1),]$mappability)
+mean(rmsk_TE_measure[which(rmsk_TE_measure$X15_Quies > 0 & rmsk_TE_measure$States == 1),]$mappability)
+mean(rmsk_TE_measure[which(rmsk_TE_measure$States > 1 | (rmsk_TE_measure$States == 1 & rmsk_TE_measure$X15_Quies == 0)),]$mappability)
+```
+
+### By chromosome
+
+```{r potential by chromosome}
+# Potential without chrY
+test = chromHMM_TE_state[which(chromHMM_TE_state$chromosome != "chrY"),]
+test.a = sample_distribution(test,c(8:22),sample_counts["All","chromHMM"])
+test.b = cumulative_distribution(test,c(8:22),sample_counts["All","chromHMM"])
+test.b$State = factor(rep(chromHMM_states,each=sample_counts["All","chromHMM"]),levels=chromHMM_states)
+test.c = potential_stats(test.a,15,sample_counts["All","chromHMM"])
+test.c$State = factor(chromHMM_states,levels=chromHMM_states)
+chromHMM_TE_state_dist_stats-test.c
+
+# Average samples in state for chrY TEs
+sort(colMeans(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY"),8:22]))
+
+# % of TEs overlapping DNase/H3K27ac on chrY, expressed RPKM > 1
+ADD
+
+# % of TEs on each chromosome
+sort(table(rmsk_TE$chromosome)/dim(rmsk_TE)[1])
+
+# % of classes on each chromosome
+class_chromosome = table(rmsk_TE$chromosome,rmsk_TE$class_update)
+class_chromosome = apply(class_chromosome,2,function(x) x/sum(x))
+class_chromosome
+```
+
+# Subfamily factors
+
 ### Supplementary Figure 16
 
 ```{r Figure S16, echo=FALSE}
@@ -2052,16 +2064,6 @@ length(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$Vista_enhancers)),c(TE_coor
 table(table(droplevels(rmsk_TE[which(!is.na(rmsk_TE$Vista_enhancers)),c(TE_coordinates,"Vista_enhancers")]$subfamily)))
 
 correlate_subfamily[which(correlate_subfamily$Metric == "Vista_enhancers" & correlate_subfamily$State %in% states[1:21] & abs(correlate_subfamily$estimate.rho) > 0.3 & correlate_subfamily$p.value < 0.01),] # Not MHC corrected
-```
-
-### MER57E3
-
-```{r mer57e3}
-subfamily_state_sample_counts[which(subfamily_state_sample_counts$subfamily == "MER57E3"),]
-MER57E3 = rmsk_TE[which(rmsk_TE$subfamily == "MER57E3"),]
-dim(MER57E3)[1]
-table(MER57E3$chromosome)
-apply(MER57E3[,cohorts],2,function(x) dim(MER57E3[which(!is.na(x)),])[1])
 ```
 
 ### Young subfamilies
