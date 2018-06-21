@@ -114,10 +114,6 @@ source("R_scripts/shuffled_matrix.R")
 source("R_scripts/shuffled_matrix_CpG.R")
 source("R_scripts/shuffled_matrix_mappability.R")
 source("R_scripts/shuffled_matrix_features.R")
-source("R_scripts/shuffled_matrix_chromHMM.R")
-source("R_scripts/shuffled_matrix_WGBS.R")
-source("R_scripts/shuffled_matrix_DNase.R")
-source("R_scripts/shuffled_matrix_H3K27ac.R")
 ```
 
 ## Load metadata
@@ -677,73 +673,6 @@ ddply(combine_boxplot[which(combine_boxplot$Sample != "E017"),],.(State),summari
 
 # Proportion of TEs in each state, IMR90
 combine_boxplot[which(combine_boxplot$Sample == "E017"),]
-```
-
-### Supplementary Figure 5
-
-```{r Figure S5, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 2","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-source("R_scripts/potential_shuffled.R")
-
-# Shuffled TEs
-combine_boxplot$Iteration = rep("True",dim(combine_boxplot)[1])
-combine_shuffled_boxplot = rbind(state_sample_count_shuffled[,c(1:2,4:5)],shuffled_WGBS_average_count,shuffled_DNase_potential_count[,2:5],shuffled_H3K27ac_potential_count[,2:5],combine_boxplot[which(combine_boxplot$State != "Expressed_samples"),])
-combine_shuffled_boxplot$Iteration = factor(combine_shuffled_boxplot$Iteration,levels=c(seq(1,10,1),"True"))
-
-combine_shuffled_stats = rbind(shuffled_chromHMM_potential_stats,shuffled_WGBS_average_stats,shuffled_DNase_potential_stats,shuffled_H3K27ac_potential_stats)
-combine_shuffled_stats$Group = factor(c(rep("chromHMM",150),rep("WGBS",40),rep("DNase",10),rep("H3K27ac",10)),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
-combine_shuffled_stats = melt(combine_shuffled_stats,id.vars=c("State","Group","Iteration"))
-colnames(combine_shuffled_stats)[4:5] = c("Metric","Value")
-
-combine_stats_long = melt(combine_stats,id.vars=c("State","Group"))
-colnames(combine_stats_long)[3:4] = c("Metric","Value")
-
-a = ggplot(combine_shuffled_boxplot,aes(x=State,y=Proportion*100,fill=Iteration,color=Iteration)) + geom_boxplot(position="dodge",outlier.size=0.1) + scale_x_discrete(limits=all_state_labels[1:21]) + labs(y="% of TEs in state") + theme(axis.title.x=element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_manual(values=c(rep("white",10),"white"),guide=FALSE) + scale_color_manual(values=c(rep("grey",10),"red"),guide=FALSE)
-
-b = ggplot(combine_shuffled_stats,aes(x=State,y=Value)) + geom_boxplot() + theme(axis.title.y = element_blank(),axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(limits=states[1:21]) + geom_point(data=combine_stats_long[which(combine_stats_long$State != "Expressed_samples"),],aes(x=State,y=Value),color="red",size=1) + facet_wrap(~Metric,nrow=3,labeller=labeller(Metric=metric_labels))
-
-legend = get_legend(ggplot(combine_boxplot,aes(x=State,y=Proportion*100,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(legend.direction = "horizontal",legend.title = element_blank(),legend.position="bottom"))
-
-grid.arrange(a,b,legend, nrow = 3, ncol=2, layout_matrix=cbind(c(1,3,3,4,4),c(2,5,6,6,7)),heights=c(0.5,0.1,0.15,0.1,0.15))
-```
-
-### Shuffled TE statistics
-
-```{r shuffled number of states}
-ddply(combine_shuffled_boxplot,.(State,Iteration),summarise,Mean=mean(Proportion),SD=sd(Proportion))
-ddply(combine_shuffled_stats,.(State,Metric),summarise,Mean=mean(Value),SD=sd(Value))
-
-# Shuffled TE CpG stats
-load("R_datasets/shuffled_TEs_CpG.RData")
-
-ldply(rmsk_TE_shuffled,summarise,TE_wCpG=length(CpGs[which(CpGs > 0)]),TE_wCpG_per=length(CpGs[which(CpGs > 0)])/length(CpGs),Median_all=median(CpGs),Mean_all=mean(CpGs),Median_wCpG=median(CpGs[which(CpGs > 0)]),Mean_wCpG=mean(CpGs[which(CpGs > 0)]))
-
-# Number of states
-# Shuffled chromHMM
-shuffled_chromHMM_states = ldply(shuffled_chromHMM_potential,function(x) x[,23:24]) #Total states, max states intra
-shuffled_chromHMM_states$Iteration = factor(rep(seq(1,10,1),each=NUM_TE))
-
-# Shuffled WGBS
-shuffled_WGBS_average = lapply(seq(1,10,1),function(y) transform(shuffled_WGBS_average[[y]],Iteration = rep(y,unlist(dim(shuffled_WGBS_average[[y]])[1]))))
-shuffled_WGBS_states = ldply(shuffled_WGBS_average,function(x) x[,50:51])
-shuffled_WGBS_states$Iteration = as.factor(shuffled_WGBS_states$Iteration)
-
-mean(shuffled_chromHMM_states$Max_states_intra)
-mean(shuffled_chromHMM_states$States)
-mean(shuffled_WGBS_states$States)
-
-#ggplot(shuffled_chromHMM_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
-#ggplot(shuffled_chromHMM_states,aes(x=Max_states_intra,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of TEs") + xlab("Number of chromHMM states")
-#ggplot(shuffled_WGBS_states,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,alpha=0.5,position="dodge") + ylab("Number of shuffled TEs") + xlab("Number of methylation states")
-
-# 5_TxWk control
-lapply(shuffled_chromHMM_potential,function(x) dim(x[which(x$X5_TxWk >= sample_counts["chrY","chromHMM"] & x$States == 1),]))
-lapply(shuffled_chromHMM_potential,function(x) x[which(x$X5_TxWk >= sample_counts["chrY","chromHMM"] & x$States == 1),])
-```
-
-### Remove shuffled matrices
-
-```{r remove shuffled}
-rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average","shuffled_DNase_potential","shuffled_H3K27ac_potential", "rmsk_TE_shuffled"))
 ```
 
 ### New Figure 3
