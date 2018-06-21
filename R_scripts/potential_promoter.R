@@ -51,7 +51,7 @@ colnames(promoter_meth_average_state) = c("Sample","Methylation")
 promoter_meth_average_state = ddply(promoter_meth_average_state,.(Sample),summarise,
                                     Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
                                     Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))
-promoter_meth_average_state = melt(promoter_meth_average_state,.id.vars="Sample")
+promoter_meth_average_state = melt(promoter_meth_average_state,id.vars="Sample")
 colnames(promoter_meth_average_state) = c("Sample","State","Count")
 promoter_meth_average_state$Proportion = promoter_meth_average_state$Count/NUM_PROMOTER_noY
 
