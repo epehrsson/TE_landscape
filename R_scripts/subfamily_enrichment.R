@@ -9,8 +9,8 @@
 ## Number of unique chromHMM blocks/peaks per sample per subfamily
 
 # chromHMM
-subfamily_chromHMM_sample = read.table("chromHMM/subfamily/subfamily_chromHMM_sample_summit.txt",sep='\t')
-colnames(subfamily_chromHMM_sample) = c("State","Sample","subfamily","Length_ijk")
+subfamily_chromHMM_sample = read.table("chromHMM/subfamily/subfamily_state_sample.txt",sep='\t')
+colnames(subfamily_chromHMM_sample) = c("subfamily","State","Sample","Length_ijk")
 
 subfamily_chromHMM_sample_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = metadata$Sample,State = chromHMM_states)
 subfamily_chromHMM_sample = merge(subfamily_chromHMM_sample,subfamily_chromHMM_sample_expand,by=c("subfamily","Sample","State"),all.y=TRUE)
@@ -33,9 +33,9 @@ rm(list=c("subfamily_chromHMM_sample","subfamily_DNase_sample","subfamily_H3K27a
 
 ## Number of unique chromHMM blocks/peaks per sample
 
-# chromHMM
-chromHMM_blocks_sample = read.table("chromHMM/chromHMM_peaks.txt",sep='\t')
-colnames(chromHMM_blocks_sample) = c("Sample","State","Length_jk")
+# chromHMM (total length)
+chromHMM_state_sample = mnemonics_states_genome[,1:3]
+colnames(chromHMM_state_sample)[3] = "Length_jk"
 
 # DNase
 DNase_peaks_sample = DNase_stats[,c("Sample","Peaks")]
