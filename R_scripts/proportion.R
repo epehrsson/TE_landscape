@@ -170,3 +170,5 @@ contribution_composite$Proportion = contribution_composite$TE/contribution_compo
 by_sample_all = dcast(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),1:4],Sample+State~Cohort,value.var="Bases")
 by_sample_all$Proportion = by_sample_all$TE/by_sample_all$Genome
 by_sample_all = merge(by_sample_all,metadata[,c(1,4:9)],by="Sample")
+by_sample_all = merge(by_sample_all,contribution[,c("State","Proportion")],all.x=TRUE,by="State")
+colnames(by_sample_all)[c(5,12)] = c("Proportion","Contribution")

@@ -132,6 +132,17 @@ colnames(class_CpG_meth) = gsub("CpGs","Bases",colnames(class_CpG_meth))
 by_sample_class = rbind(class_chromHMM,class_CpG_meth,TE_DNase_class,TE_H3K27ac_class)
 by_sample_class = merge(by_sample_class,metadata[,c("Sample",sample_categories)],by="Sample")
 by_sample_class$Proportion_state = as.numeric(by_sample_class$Proportion_state)
+
+by_sample_class = merge(by_sample_class,by_sample_all[,c("Sample","State","TE")],all.x=TRUE,by=c("Sample","State"))
+by_sample_class$Proportion_TE = by_sample_class$Bases_state_class/by_sample_class$TE
+by_sample_class = ddply(by_sample_class,.(Sample,State),transform,TE_width=sum(Bases_class))
+by_sample_class$Enrichment_TE = log2(by_sample_class$Proportion_TE/(by_sample_class$Bases_class/by_sample_class$TE_width))
+
+# Real contribution
+by_sample_class = merge(by_sample_class,contribution[,c("State","Genome")],by="State",all.x=TRUE)
+by_sample_class = ddply(by_sample_class,.(State,class),transform,class_sum=sum(Bases_state_class))
+by_sample_class$Contribution = by_sample_class$class_sum/by_sample_class$Genome
+by_sample_class$class = factor(by_sample_class$class,levels=c("LINE","SINE","LTR","DNA","SVA","Other"))
 rm(list=c("class_chromHMM","class_CpG_meth","TE_DNase_class","TE_H3K27ac_class"))
 
 # By-sample contribution (includes duplicate bases)
