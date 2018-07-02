@@ -20,9 +20,9 @@ CpG_feature_meth_average = melt(as.matrix(CpG_feature_meth_average))
 colnames(CpG_feature_meth_average) = c("Cohort","Sample","Methylation")
 
 # Compare all/TE CpGs to other features
-CpG_feature_meth_average = rbind(droplevels(CpG_meth_average[which(CpG_meth_average$Cohort != "noTE"),]),CpG_feature_meth_average)
+CpG_feature_meth_average = rbind(CpG_meth_average,CpG_feature_meth_average)
 CpG_feature_meth_average = CpG_feature_meth_average[order(CpG_feature_meth_average$Cohort,CpG_feature_meth_average$Methylation),]
 
 # Convert to coding/non-coding
-CpG_feature_meth_average = split_coding(CpG_feature_meth_average,new_features=c("All","TE"))
+CpG_feature_meth_average = split_coding(CpG_feature_meth_average,new_features=c("All","TE","noTE"))
 CpG_feature_meth_average = CpG_feature_meth_average[which(CpG_feature_meth_average$Cohort != "coding_exon_pc"),]
