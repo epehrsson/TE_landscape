@@ -75,6 +75,10 @@ sample_categories = c("Group","Anatomy","Type","Age","Cancer","Germline")
 
 group_colors = setNames(c("#924965","#4178AE","#E41A1C","#69608A","#B65C73","#FF9D0C","#678C69","#55A354","#E67326","#FFD924","#AF5B39","#D56F80","#999999","#C5912B","#C58DAA","#F182BC","#C2655D","#DAB92E","#000000"),c("ESC","ES-deriv","IMR90","iPSC","Mesench","Epithelial","HSC & B-cell","Blood & T-cell","Myosat","Neurosph","Adipose","Heart","Other","Brain","Digestive","Sm. Muscle","Muscle","Thymus","ENCODE2012"))
 anatomy_colors = setNames(c("#B2DF8A","#33A02C","#FB9A99","#FFED6F","#80B1D3","#666666","#924965","#4178AE","#FDBF6F","#CAB2D6","#6A3D9A","#BEBADA","#FCCDE5","#BC80BD","#E7298A","#FF7F00","#69608A","#B3DE69","#CCEBC5","#000000","#FB8072","#FDB462","#8DD3C7","#D9D9D9","#E31A1C","#A6CEE3","#D95F02","#E6AB02","#66A61E","#B15928","#E31A1C","#8DD3C7","#E7298A","#A6761D","#666666"),c("ADRENAL","BLOOD","BONE","BRAIN","BREAST","CERVIX","ESC","ESC_DERIVED","FAT","GI_COLON","GI_DUODENUM","GI_ESOPHAGUS","GI_INTESTINE","GI_RECTUM","GI_STOMACH","HEART","IPSC","KIDNEY","LIVER","LUNG","MUSCLE","MUSCLE_LEG","OVARY","PANCREAS","PLACENTA","SKIN","SPLEEN","STROMAL_CONNECTIVE","THYMUS","VASCULAR",NA,NA,NA,NA,NA))
+type_colors = setNames(brewer.pal(5,"Greens"),c("PrimaryCulture","PrimaryCell","PrimaryTissue","CellLine","ESCDerived"))
+age_colors = setNames(brewer.pal(4,"YlOrRd"),c("Cell_line","Unknown","Non_fetal","Fetal"))
+cancer_colors = setNames(c("lightgrey","red"),c("No","Yes"))
+germline_colors = setNames(brewer.pal(6,"Dark2"),c("Pluripotent","Mesoderm","Ectoderm","Endoderm","Mixed","Other"))
 
 # Genic features
 features = c("cpgIsland","promoters","5UTR","CDS","3UTR","exons","introns","intergenic")
@@ -908,100 +912,120 @@ apply(sample_counts,2,function(x) (x[3]*NUM_TE) + ((x[1]-x[3])*NUM_TE_noY))
 apply(compare_marks_unique,2,function(x) sum(compare_marks_unique[which(!is.na(x)),]$TE_sample))
 ```
 
-## By-sample
+## By sample
 
 ### Figure 4
 
+Black bar is now contribution across samples, not median. Dashed line is bp contribution; dot-dashed line is CpG contribution.
+
 ```{r Figure 4, fig.width=7, fig.height=5, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 1","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
 #source("R_scripts/proportion.R")
-
-a = ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_all$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black",width = 0.8)
- 
-source("~/TE_landscape/R_scripts/WGBS_sample_CpG_average.R")
-
-b = ggplot(CpG_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Cohort)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.position = c(0.8, 0.2),legend.title=element_blank(),panel.grid.major.x = element_line(color="black"),legend.key = element_rect(fill = "transparent", colour = "transparent")) + ylab("Average methylation") + scale_color_manual(values=c("black","blue","red"),labels=c("All CpGs","Not in TEs","In TEs")) 
-
+#source("R_scripts/proportion_class.R")
 source("R_scripts/enhancer_PCA.R")
 
+a = ggplot(by_sample_all,aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank()) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + coord_flip() + scale_y_reverse(limits=c(1,0))
+
+#Alternative (suggested by Vasavi)
+ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(color="white") + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=90,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_all$State)) + stat_summary(aes(color=Group),fun.y = mean, fun.ymin = min, fun.ymax = max,position=position_dodge(width=0.8),size=0.25) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black",width = 0.8)
+
+b = ggplot(by_sample_class,aes(x=State,y=Proportion_state,color=Group)) + geom_point(position = position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank()) + ylab("Proportion of state in class") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=rev(as.character(unique(by_sample_all[order(by_sample_all$Contribution),]$State)))) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + facet_wrap(~class,nrow=1) + coord_flip() + geom_hline(data=by_sample_class[which(by_sample_class$State == "1_TssA" & by_sample_class$Sample == "E001"),],aes(yintercept=Bases_class/GENOME_WIDTH),linetype="dashed") + geom_hline(data=by_sample_class[which(by_sample_class$State == "Hypomethylated" & by_sample_class$Sample == "E003"),],aes(yintercept=Bases_class/ALL_CPGS),linetype="dotdash")
+
+# PCA on TEs in enhancer states, DNase, H3K27ac
 c = plot_pca(enhancer_matrix_pca,c(1,2),metadata,"Group","Roadmap Group",group_colors,FALSE)
 
-legend = get_legend(ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors) + scale_x_discrete(limits=levels(by_sample_all$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black",width = 0.4) + guides(color = guide_legend(override.aes = list(size=6.5))))
+legend = get_legend(ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3),size=3) + scale_color_manual(values=group_colors) + theme(legend.position = "bottom",legend.title = element_blank())) 
 
-grid.arrange(a,b,c,legend,nrow=2,layout_matrix=rbind(c(1,1,4),c(2,3,4)),widths=c(0.4,0.4,0.2))
+grid.arrange(a,b,c,legend,nrow=2,layout_matrix=rbind(c(1,2),c(3,4)),heights=c(0.6,0.4),widths=c(0.4,0.6))
 ```
 
 ### By-sample analysis
 
-```{r analysis Fig 4a}
-ddply(by_sample_all,~State,function(x) x[which.min(x$Proportion),])
-ddply(by_sample_all,~State,function(x) x[which.max(x$Proportion),])
+Expectation is % of genomic bases in TEs. But Figure 1C tells us that this differs by epigenetic state, with TEs enriched in some states and depleted in other across all samples. However, here we see that there is also variation by sample. The largest variation is in Misisng and 8_ZNF/Rpts state, the lowest in 15_Quies state. Some states (8, for instance) also have TEs either enriched or depleted by sample (cross the expectation line). This is not random, but depends in part on sample classification. KW tests - significantly different across groups. Permutation tests up or down (within that sample, that group is more enriched than overall). Then, call out means for interesting examples. Mention means for groups of interest, focusing on active states.  
 
+Higher % CpGs in each methylation state in TEs in ESC/iPSC?
+
+```{r analysis Fig 4a}
 # Stats
 by_sample_stats = ddply(by_sample_all,~State,summarise, Range = max(Proportion)-min(Proportion), Median = median(Proportion), Mean = mean(Proportion), CV = sd(Proportion)/mean(Proportion))
 by_sample_stats[order(by_sample_stats$Range),]
 
+ddply(by_sample_all,~State,function(x) x[which.min(x$Proportion),])
+ddply(by_sample_all,~State,function(x) x[which.max(x$Proportion),])
+
 # Kruskal-Wallis test by sample classification
-# MHC adjusted for every state (not category)
+# MHC adjusted for every state (category when printed)
 by_sample_KW = ddply(by_sample_all,~State,summarise,Group = p.adjust(unlist(kruskal.test(Proportion,Group))["p.value"],method="bonf"),
       Anatomy = p.adjust(unlist(kruskal.test(Proportion,Anatomy))["p.value"],method="bonf"),
       Type = p.adjust(unlist(kruskal.test(Proportion,Type))["p.value"],method="bonf"),
       Age = p.adjust(unlist(kruskal.test(Proportion,Age))["p.value"],method="bonf"),
       Germline = p.adjust(unlist(kruskal.test(Proportion,Germline))["p.value"],method="bonf"))
 by_sample_KW = merge(by_sample_KW,ddply(droplevels(by_sample_all[which(!(by_sample_all$State %in% meth_states)),]),~State,summarise,Cancer = p.adjust(unlist(kruskal.test(Proportion,Cancer))["p.value"],method="bonf")),by="State",all.x=TRUE)
+by_sample_KW = melt(by_sample_KW,id.var="State")
+colnames(by_sample_KW)[2:3] = c("Category","Pvalue")
+by_sample_KW[which(by_sample_KW$Pvalue < 0.05/6),]
 
-# Wilcox tests by sample classification
-# MHC adjusted for every group (not state or category)
-by_sample_Wilcox = list(
-  merge(ddply(by_sample_all,~State,summarise,Group_pvalue=wilcox_to_all(Proportion,droplevels(Group)),Group=levels(droplevels(Group))),
-  aggregate(data=by_sample_all,Proportion~State+Group,mean),by=c("State","Group"),all.x=TRUE),
-  merge(ddply(by_sample_all,~State,summarise,Anatomy_pvalue=wilcox_to_all(Proportion,droplevels(Anatomy)),Anatomy=levels(droplevels(Anatomy))),
-  aggregate(data=by_sample_all,Proportion~State+Anatomy,mean),by=c("State","Anatomy"),all.x=TRUE),
-  merge(ddply(by_sample_all,~State,summarise,Type_pvalue=wilcox_to_all(Proportion,droplevels(Type)),Type=levels(droplevels(Type))),
-  aggregate(data=by_sample_all,Proportion~State+Type,mean),by=c("State","Type"),all.x=TRUE),
-  merge(ddply(by_sample_all,~State,summarise,Age_pvalue=wilcox_to_all(Proportion,droplevels(Age)),Age=levels(droplevels(Age))),
-  aggregate(data=by_sample_all,Proportion~State+Age,mean),by=c("State","Age"),all.x=TRUE),
-  merge(ddply(by_sample_all,~State,summarise,Germline_pvalue=wilcox_to_all(Proportion,droplevels(Germline)),Germline=levels(droplevels(Germline))),
-  aggregate(data=by_sample_all,Proportion~State+Germline,mean),by=c("State","Germline"),all.x=TRUE))
-names(by_sample_Wilcox) = c("Group","Anatomy","Type","Age","Germline")
+# Permutation tests by sample classification
+# MHC adjusted for category and state, not direction
+permute_up = setNames(list(ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Group","Proportion","+",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Anatomy","Proportion","+",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Type","Proportion","+",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Age","Proportion","+",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Cancer","Proportion","+",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Germline","Proportion","+",unique(y$Contribution)))),
+                      sample_categories)
+permute_up = ldply(permute_up)
+permute_up$Padjust = p.adjust(permute_up$V1,method="fdr")
+permute_up[which(permute_up$Padjust < 0.05 & permute_up$Count > 1),]
 
-by_sample_Wilcox$Cancer = 
-  merge(ddply(by_sample_all[which(!(by_sample_all$State %in% meth_states)),],~State,summarise,Cancer_pvalue=p.adjust(unlist(wilcox.test(Proportion~Cancer))["p.value"],method="bonf")),
-        aggregate(data=by_sample_all,Proportion~State+Cancer,mean),by="State",all.y=TRUE)
+permute_down = setNames(list(ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Group","Proportion","-",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Anatomy","Proportion","-",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Type","Proportion","-",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Age","Proportion","-",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Cancer","Proportion","-",unique(y$Contribution))),
+                         ddply(by_sample_all,.(State),function(y) permute_by_sample(y,"Germline","Proportion","-",unique(y$Contribution)))),
+                        sample_categories)
+permute_down = ldply(permute_down)
+permute_down$Padjust = p.adjust(permute_down$V1,method="fdr")
+permute_down[which(permute_down$Padjust < 0.05 & permute_down$Count > 1),]
 
-# For table by Group
-merge(by_sample_stats,merge(by_sample_KW[,1:2],by_sample_Wilcox$Group[which(by_sample_Wilcox$Group$Group_pvalue < 0.05),],by="State",all=TRUE),by="State",all=TRUE)
-
-# Higher % CpGs in each methylation state in TEs in ESC/iPSC? 
+# Mean Group proportion by state 
 test = aggregate(data=by_sample_all,Proportion~State+Group,mean)
 test[order(test$State,test$Proportion),]
 ```
 
-### By-sample CpG methylation
+### By sample and class analysis
 
-```{r}
-# Difference in TE/non-TE methylation across samples
-test = dcast(CpG_meth_average,Sample~Cohort,value.var="Methylation")
-test$Difference = test$noTE-test$TE
-test[order(test$Difference),]
+From Figure 1D, we also know the distribution of each epigenetic state within TEs by class does not exactly follow their genomic representation, but that some are enriched in particular states relative to expectation. In Figure 4B, we see that this also varies by sample. Small black lines, contribution of the class to the state across all samples, vs. dashed line, total representation of the class in the genome (expectation) - can see that many are enriched. Point out those consistently enriched/small bar over dashed bar. Some have large ranges (states with the largest Range/CV by class (CV is more important here)), and some also cross the expectation line (enriched based on sample). KW - most are significantly different across groups. There are some groups that are higher than expected (permutation, FDR corrected). 
 
-metadata[which(metadata$Sample %in% as.vector(tail(test[order(test$Difference),],n=10)$Sample)),]
+We would expect this graph to mirror 4A, but with each class centered around its own expectation line. But we know already that some have different proportions of each state, small lines above or below expectation line, across all samples. And, now we see this varies by sample. 
 
-cor.test(test$All,test$Difference)
-```
+```{r analysis Fig S11a}
+by_sample_stats_class = ddply(na.omit(by_sample_class),.(State,class),summarise, Range = max(Proportion_state)-min(Proportion_state), Median = median(Proportion_state), Mean = mean(Proportion_state),CV = sd(Proportion_state)/mean(Proportion_state))
+by_sample_stats_class[order(by_sample_stats_class$Range),]
+by_sample_stats_class[order(by_sample_stats_class$CV),]
 
-# Compare TE proportion of state to genome, non-TE, and TE bases
+# Kruskal-Wallis
+# MHC adjusted for state and class
+by_sample_KW_class = ddply(by_sample_class,.(State,class),summarise,Group = p.adjust(unlist(kruskal.test(Proportion_state,Group))["p.value"],method="bonf"))
+by_sample_KW_class[which(by_sample_KW_class$Group < 0.05),]
 
-```{r proportion investigation}
-# Not MHC corrected
-all_state_proportion_matrix = dcast(all_state_proportion,State+Sample+Group~Cohort,value.var="Bases")
-ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test((TE/Genome),Genome))["estimate.cor"],Genome_pvalue = unlist(cor.test((TE/Genome),Genome))["p.value"],
-      TE_corr = unlist(cor.test((TE/Genome),TE))["estimate.cor"],TE_pvalue = unlist(cor.test((TE/Genome),TE))["p.value"],
-      NonTE_corr = unlist(cor.test((TE/Genome),(Genome-TE)))["estimate.cor"],NonTE_pvalue = unlist(cor.test((TE/Genome),(Genome-TE)))["p.value"])
+# Number of enriched samples by Group
+# MHC adjusted for state and class
+permute_up = ddply(by_sample_class,.(State,class),function(y) permute_by_sample(y,"Group","Proportion_state","+",unique(y$Contribution)))
+permute_up$Padjust = p.adjust(permute_up$V1,method="fdr")
+permute_up[which(permute_up$Padjust < 0.05 & permute_up$Count > 1),]
 
-# Plot bases in genome/TEs in each state by sample, increasing order
-lapply(states[1:21],function(x) ggplot(all_state_proportion[which(all_state_proportion$State == x),],aes(x=reorder(Sample,Bases,max),y=log10(Bases),color=Group,group=Cohort,shape=Cohort)) + geom_point(size=2) + geom_line() + theme(axis.text.x = element_text(angle=90),axis.title.x = element_blank()) + scale_color_manual(values=group_colors))
+permute_down = ddply(by_sample_class,.(State,class),function(y) permute_by_sample(y,"Group","Proportion_state","-",unique(y$Contribution)))
+permute_down$Padjust = p.adjust(permute_down$V1,method="fdr")
+permute_down[which(permute_down$Padjust < 0.05 & permute_down$Count > 1),]
 
-#lapply(states[1:21],function(x) ggplot(all_state_proportion_matrix[which(all_state_proportion_matrix$State == x),],aes(x=reorder(Sample,TE/Genome,max),y=(TE/(Genome-TE)),color=Group)) + geom_point(shape=16) + scale_color_manual(values=group_colors) + theme(axis.text.x = element_text(angle=90),axis.title.x = element_blank()))
+test = ddply(by_sample_class,.(State,class,Group),summarise,Proportion_state=mean(Proportion_state),Contribution=unique(Contribution))
+test[order(test$State,test$class,test$Proportion),]
+
+# Enrichments over expectation
+table(by_sample_class[which(by_sample_class$Enrichment > 0),c("State","class")])
+
+by_sample_class[which(by_sample_class$class %in% c("DNA","LINE","SINE","LTR") & by_sample_class$State %in% states[c(1:3,6:7,16,20:21)] & by_sample_class$Enrichment > 0),c("Sample","class","State","Enrichment",sample_categories)]
 ```
 
 ### DNase/H3K27ac peak analysis (vs. bp)
@@ -1011,130 +1035,121 @@ lapply(states[1:21],function(x) ggplot(all_state_proportion[which(all_state_prop
 sum(DNase_stats$Summit_in_TE)/sum(DNase_stats$Peaks)
 
 ## By sample
-mean(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
-sd(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
-min(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
+ddply(DNase_stats,.(),summarise,Median=median(Summit_in_TE/Peaks),Mean=mean(Summit_in_TE/Peaks),SD=sd(Summit_in_TE/Peaks),Min=min(Summit_in_TE/Peaks),Max=max(Summit_in_TE/Peaks))
 DNase_stats[which.min(DNase_stats$Summit_in_TE/DNase_stats$Peaks),]
-max(DNase_stats$Summit_in_TE/DNase_stats$Peaks)
 DNase_stats[which.max(DNase_stats$Summit_in_TE/DNase_stats$Peaks),]
 
 # % of H3K27ac peaks overlapping TEs, overall
 sum(H3K27ac_stats$Summit_in_TE)/sum(H3K27ac_stats$Peaks)
 
 ## By sample
-mean(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
-sd(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
-min(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
+ddply(H3K27ac_stats,.(),summarise,Median=median(Summit_in_TE/Peaks),Mean=mean(Summit_in_TE/Peaks),SD=sd(Summit_in_TE/Peaks),Min=min(Summit_in_TE/Peaks),Max=max(Summit_in_TE/Peaks))
 H3K27ac_stats[which.min(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks),]
-max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks)
 H3K27ac_stats[which.max(H3K27ac_stats$Summit_in_TE/H3K27ac_stats$Peaks),]
 ```
 
-### Enhancer PCA analysis
+### PCA analysis
 
 ```{r analysis Fig 4b}
-# Proportion and cumulative proportion of variance explained by each PC
+# TEs ever in state
 dim(enhancer_matrix)[1]
+
+# Proportion and cumulative proportion of variance explained by each PC
 summary(enhancer_matrix_pca) 
 
 # Contribution of TEs to PCs
-head(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),])
-tail(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),])
+rownames(head(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),],n=10))
+rownames(tail(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,1]),],n=10))
+
+rownames(head(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,2]),],n=10))
+rownames(tail(enhancer_matrix_pca$rotation[order(enhancer_matrix_pca$rotation[,2]),],n=10))
+
+rm(list=c("enhancer_matrix_pca","enhancer_matrix"))
 ```
 
 ### Supplementary Figure 11
 
-```{r Figure S11, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 3","Figure 4","setup","load libraries","set plot parameters","load functions","create essential matrices","load metadata","load essential matrices","define vectors","define facet labels","load feature sizes","calculate TE stats")}
-#source("R_scripts/proportion_class.R")
-#source("R_scripts/WGBS_sample_CpG_average.R")
-source("R_scripts/PCA.R")
+Colors as in Figure 4.
 
-a = ggplot(by_sample_class,aes(x=State,y=Proportion_state,color=Group)) + geom_point(position = position_jitter(width = 0.3)) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x=element_text(angle=90,hjust=1)) + ylim(0,1) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=levels(by_sample_class$State)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black") + facet_wrap(~class)
+```{r Figure S11, echo=FALSE}
+source("R_scripts/WGBS_sample_CpG_average.R")
+
+# Plot bases in genome/TEs in each state by sample, increasing order
+all_state_proportion_matrix = dcast(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],State+Sample+Group~Cohort,value.var="Bases")
+
+a = ggplot(all_state_proportion_matrix,aes(x=Genome-TE,y=TE,color=Group)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90),axis.title.x = element_blank()) + facet_wrap(~State,scale="free")
 
 # Feature methylation by sample
-b =  ggplot(CpG_feature_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Feature,shape=Coding)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.title=element_blank(),panel.grid.major.x = element_line(color="black")) + ylab("Average methylation") + scale_color_manual(values=c("black",brewer.pal(8,"Set1"))) + scale_shape_discrete(labels=c("All","Protein-coding","Non-coding")) 
+b =  ggplot(CpG_feature_meth_average,aes(x=Sample,y=Methylation,group=Cohort,color=Feature,shape=Coding)) + geom_point(size=3) + geom_line() + theme(axis.text.x=element_text(angle=90),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.title.x=element_blank(),legend.title=element_blank(),panel.grid.major.x = element_line(color="black")) + ylab("Average methylation") + scale_color_manual(values=c("black",brewer.pal(9,"Set1"))) + scale_shape_discrete(labels=c("All","Protein-coding","Non-coding")) 
 
-# PCA on TEs in DNase, H3K27ac
-c = plot_pca(DNase_pca,c(1,2),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_colors,guide=F)
-d = plot_pca(DNase_pca,c(3,2),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_colors,guide=F)
-e = plot_pca(DNase_pca,c(3,4),metadata[which(!is.na(metadata$DNase)),],"Group","Roadmap Group",group_colors,guide=F)
-f = plot_pca(H3K27ac_pca,c(1,2),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_colors,guide=F)
-g = plot_pca(H3K27ac_pca,c(3,2),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_colors,guide=F)
-h = plot_pca(H3K27ac_pca,c(3,4),metadata[which(!is.na(metadata$H3K27ac)),],"Group","Roadmap Group",group_colors,guide=F)
-
-grid.arrange(a,b,c,d,e,f,g,h,nrow=4,layout_matrix=rbind(c(1,1,1),c(2,2,2),c(3,4,5),c(6,7,8)),heights=c(0.3,0.3,0.2,0.2))
+grid.arrange(a,b,nrow=2,heights=c(0.7,0.3))
 ```
 
-### Tests by sample classification and class
+# Supplementary Figure 12
 
-```{r analysis Fig S11a}
-by_sample_stats_class = ddply(by_sample_class,.(State,class),summarise, Range = max(Proportion_state)-min(Proportion_state), Median = median(Proportion_state), Mean = mean(Proportion_state),CV = sd(Proportion_state)/mean(Proportion_state))
-by_sample_stats_class[order(by_sample_stats_class$Range),]
-by_sample_stats_class[order(by_sample_stats_class$CV),]
+```{r Figure S12, echo=FALSE}
+# Other sample classifications
+by_sample_all_long = melt(by_sample_all[,c("State","Sample","Proportion","Contribution",sample_categories[2:6])],id.vars=c("State","Sample","Proportion","Contribution"))
+colnames(by_sample_all_long)[5:6] = c("Category","Group")
 
-# MHC corrected?
-by_sample_KW_class = ddply(by_sample_class,.(State,class),summarise,Group = unlist(kruskal.test(Proportion_state,Group))["p.value"],method="bonf")
+a = ggplot(by_sample_all_long,aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank()) + ylab("Proportion of state in TEs") + scale_color_manual(values=c(anatomy_colors,type_colors,age_colors,cancer_colors,germline_colors),guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + coord_flip() + scale_y_reverse(limits=c(1,0)) + facet_wrap(~Category,nrow=1)
 
-# MHC corrected for group (not class, State)
-by_sample_Wilcox_class = merge(ddply(by_sample_class,.(State,class),summarise,Group_pvalue=wilcox_to_all(Proportion_state,droplevels(Group)),Group=levels(droplevels(Group))),aggregate(data=by_sample_class,Proportion_state~State+Group+class,mean),by=c("State","Group","class"),all.x=TRUE)
+legend1 = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Anatomy"),],aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom") + scale_color_manual(values=c(anatomy_colors),name="Anatomy")) 
 
-# For table by Group
-test = merge(by_sample_stats_class,merge(by_sample_KW_class,by_sample_Wilcox_class[which(by_sample_Wilcox_class$Group_pvalue < 0.05),],by=c("State","class"),all=TRUE),by=c("State","class"),all=TRUE)
-test
+legend2 = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Type"),],aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom") + scale_color_manual(values=c(type_colors),name="Type"))
+
+legend3 = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Age"),],aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom") + scale_color_manual(values=c(age_colors),name="Age"))
+
+legend4 = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Cancer"),],aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom") + scale_color_manual(values=c(cancer_colors),name="Cancer"))
+
+legend5 = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Germline"),],aes(x=reorder(State,-Contribution,max),y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom") + scale_color_manual(values=c(germline_colors),name="Germline"))
+
+grid.arrange(a,legend1,legend2,legend3,legend4,legend5,nrow=6,heights=c(0.5,0.1,0.1,0.1,0.1,0.1))
 ```
 
-### Enrichment of TE class x state x sample
-# Reduce threshold?
+# Compare TE bases to non-TE bases
 
-```{r analysis Fig S11b}
-table(by_sample_class[which(by_sample_class$Enrichment > 1.5),c("State","class")]) 
+The total amount of a state annotated in a sample is variable (x-axis plus y-axis; as seen in Figure S1C - could probably replace it with this). Some group-specific patterns - for instance, blood has low 1_TssA, Brain has high H3K27ac. For TE bases vs. non-TE bases, all states are strongly correlated, suggesting that increase in bases in state is spread evenly across non-TE genome and TE (not particularly added to them); but the graphs show there are some outliers, particularly blood in enhancer states, as seen in TE proportion. For some states, the proportion of the state in TEs correlate with the total number of bases, suggesting ...?
+
+```{r proportion investigation}
+test = ddply(all_state_proportion_matrix,.(State,Group),summarise,Genome_mean=median(Genome))
+test[order(test$State,test$Genome_mean),]
+
+# Not MHC corrected (0.05/21 ~ 0.0024)
+ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome-TE,TE))["estimate.cor"],Genome_pvalue = unlist(cor.test(Genome-TE,TE)["p.value"]))
+ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome,TE/Genome))["estimate.cor"],Genome_pvalue = unlist(cor.test(Genome,TE/Genome)["p.value"]))
 ```
 
 ### CpG average methylation per sample
 
+Is the TE proportion because TEs are losing methylation, or because the rest of the genome is gaining? There is also a correlation between TE and non-TE methylation, but samples with higher non-TE methylation also have a smaller difference between TEs/non-TEs. Those tend to be ESCs and iPSCs, ES-deriv (everything is pretty methylated). Some of these are weird outliers for other features as well. Although all features are slightly significantly different in methylation between groups, no one group stands out. 
+
 ```{r analysis Fig S11c}
-# Stats (TEs and all)
-CpG_feature_meth_average
+# Stats (TEs)
 ddply(CpG_meth_average,~Cohort,summarise,Mean=mean(Methylation),SD=sd(Methylation),Outlier=mean(Methylation)-2*sd(Methylation))
 ddply(CpG_meth_average[which(CpG_meth_average$Sample != "E017"),],~Cohort,summarise,Mean=mean(Methylation),SD=sd(Methylation)) #Without IMR90
+
+# Difference in TE/non-TE methylation across samples
+test = dcast(CpG_meth_average,Sample~Cohort,value.var="Methylation")
+test$Difference = test$noTE-test$TE
+test[order(test$Difference),]
+
+cor.test(test$noTE,test$TE)
+cor.test(test$noTE,test$Difference)
+
+metadata[which(metadata$Sample %in% as.vector(tail(test[order(test$Difference),],n=10)$Sample)),]
+
+# Stats (TEs and all)
 ddply(CpG_feature_meth_average,"Cohort",summarise,Mean=mean(Methylation),SD=sd(Methylation),Outlier=mean(Methylation)-2*sd(Methylation))
 
 # Identifying differences by sample Group
-ddply(CpG_feature_meth_average,~Cohort+metadata[match(Sample,metadata$Sample),]$Group,summarise,Mean=mean(Methylation))
+test = ddply(CpG_feature_meth_average,~Cohort+metadata[match(Sample,metadata$Sample),]$Group,summarise,Mean=mean(Methylation))
+test[order(test$Cohort,test$Mean),]
+ddply(CpG_feature_meth_average,~Cohort,summarise,Group=p.adjust(unlist(kruskal.test(Methylation,metadata[match(Sample,metadata$Sample),]$Group))["p.value"],method="bonf"))
 
-# MHC corrected?
-ddply(CpG_feature_meth_average,~Cohort,summarise,Group=p.adjust(unlist(kruskal.test(Methylation,metadata[match(Sample,metadata$Sample),]$Group))["p.value"]))
-
-# MHC corrected for group, not cohort
-ddply(CpG_feature_meth_average,~Cohort,summarise,Pvalue=wilcox_to_all(Methylation,droplevels(metadata[match(Sample,metadata$Sample),]$Group)),Group=levels(droplevels(metadata[match(Sample,metadata$Sample),]$Group)))
-```
-
-### DNase/H3K27ac PCA analysis
-
-```{r analysis Fig S11d}
-# TEs ever in state
-dim(TE_DNase_peaks)[1]
-dim(TE_DNase_binary)[1]
-dim(TE_H3K27ac_peaks)[1]
-dim(TE_H3K27ac_binary)[1]
-
-summary(DNase_pca)
-summary(H3K27ac_pca) 
-
-# Contribution of TEs to PCs
-head(DNase_pca$rotation[order(DNase_pca$rotation[,1]),])
-tail(DNase_pca$rotation[order(DNase_pca$rotation[,1]),])
-
-# Contribution of TEs to PCs
-head(H3K27ac_pca$rotation[order(H3K27ac_pca$rotation[,1]),])
-tail(H3K27ac_pca$rotation[order(H3K27ac_pca$rotation[,1]),])
-
-# DNase outliers
-DNase_pca$x[order(DNase_pca$x[,1]),1:2]
-sort(colSums(TE_DNase_peaks[,8:60]))
-DNase_stats[order(DNase_stats$Peaks),]
-
-rm(list=c("DNase_pca","H3K27ac_pca","enhancer_matrix_pca","enhancer_matrix"))
+test = ddply(CpG_feature_meth_average,~Cohort,function(x) wilcox_to_all(x$Methylation,droplevels(metadata[match(x$Sample,metadata$Sample),]$Group)))
+test$Padjust = p.adjust(test$V1,method="fdr")
+test[which(test$Padjust < 0.05),]
 ```
 
 ## Subfamily enrichment
