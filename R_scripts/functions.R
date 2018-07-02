@@ -17,6 +17,7 @@ wilcox_to_all = function(all,metadata){ #all and metadata are vectors, e.g., col
   groups = levels(metadata)
   tests = p.adjust(as.numeric(unlist(lapply(groups,function(x) unlist(wilcox.test(all[which(metadata == x)],all[which(metadata != x)]))["p.value"]))),method="bonferroni")
   names(tests) = groups
+  tests = ldply(tests)
   return(tests)
 }
 
@@ -160,10 +161,10 @@ plot_pca = function(pca,axes,map,colorby,legend_title,level_colors,guide=TRUE){
   #print(colors)
   
   if(guide == TRUE){
-    ggplot(eigenvectors,aes(x=eigenvectors[,axes[1]],y=eigenvectors[,axes[2]]),environment = environment()) + geom_point(aes(color = factor(point_color)),size=4) + labs(x=paste("PC",axes[1]," (",round(eigenvalues[axes[1]],1),"%)",sep=""),y=paste("PC",axes[2]," (",round(eigenvalues[axes[2]],1),"%)",sep="")) + theme_classic() + theme(text=element_text(face="bold"),panel.background = element_rect(fill=NA,color="black"),aspect.ratio = 1) + scale_colour_manual(name=legend_title,breaks=levels(point_color),labels=names(colors),values=colors) + guides(colour = guide_legend(title.hjust=0.12))
+    ggplot(eigenvectors,aes(x=eigenvectors[,axes[1]],y=eigenvectors[,axes[2]]),environment = environment()) + geom_point(aes(color = factor(point_color))) + labs(x=paste("PC",axes[1]," (",round(eigenvalues[axes[1]],1),"%)",sep=""),y=paste("PC",axes[2]," (",round(eigenvalues[axes[2]],1),"%)",sep="")) + theme_classic() + theme(text=element_text(face="bold"),panel.background = element_rect(fill=NA,color="black"),aspect.ratio = 1) + scale_colour_manual(name=legend_title,breaks=levels(point_color),labels=names(colors),values=colors) + guides(colour = guide_legend(title.hjust=0.12))
   }
   else{
-    ggplot(eigenvectors,aes(x=eigenvectors[,axes[1]],y=eigenvectors[,axes[2]]),environment = environment()) + geom_point(aes(color = factor(point_color)),size=4) + labs(x=paste("PC",axes[1]," (",round(eigenvalues[axes[1]],1),"%)",sep=""),y=paste("PC",axes[2]," (",round(eigenvalues[axes[2]],1),"%)",sep="")) + theme_classic() + theme(text=element_text(face="bold"),panel.background = element_rect(fill=NA,color="black"),aspect.ratio = 1) + scale_colour_manual(breaks=levels(point_color),labels=names(colors),values=colors,guide=FALSE) 
+    ggplot(eigenvectors,aes(x=eigenvectors[,axes[1]],y=eigenvectors[,axes[2]]),environment = environment()) + geom_point(aes(color = factor(point_color))) + labs(x=paste("PC",axes[1]," (",round(eigenvalues[axes[1]],1),"%)",sep=""),y=paste("PC",axes[2]," (",round(eigenvalues[axes[2]],1),"%)",sep="")) + theme_classic() + theme(text=element_text(face="bold"),panel.background = element_rect(fill=NA,color="black"),aspect.ratio = 1) + scale_colour_manual(breaks=levels(point_color),labels=names(colors),values=colors,guide=FALSE) 
   }
 }
 
@@ -399,4 +400,13 @@ enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score
   print("Finding categories over threshold")
   
   return(category_matrix[which(category_matrix$TEs >= TE_threshold),])
+}
+
+permute_by_sample = function(matrix,category,metric,direction,threshold=0){ # Should be by_sample_all, split by State
+  real = tapply(matrix[[metric]],matrix[[category]],function(x) length(x[which(x > threshold)]));
+  permuted = replicate(1000,tapply(matrix[[metric]],sample(matrix[[category]]),function(x) length(x[which(x > threshold)])));
+  over = ldply(names(real),function(x) ifelse(direction=="+",sum(permuted[x,] >= real[x])/1000,sum(permuted[x,] <= real[x])/1000))
+  over$Category = names(real)
+  over$Count = tapply(matrix[[metric]],matrix[[category]],length)
+  return(over)
 }
