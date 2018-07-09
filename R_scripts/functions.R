@@ -231,7 +231,7 @@ plot_binary_heatmap_indv = function(individual,metric="chromHMM",highlight_sampl
   
   #Column metadata
   column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
-  column_colors = list(Age=brewer.pal(4,"YlOrRd"),Cancer=c("white","red"),Germline=brewer.pal(6,"Dark2"),Type=brewer.pal(5,"Greens"),Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
+  column_colors = list(Age=age_colors,Cancer=cancer_colors,Germline=germline_colors,Type=type_colors,Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
   if (!is.null(highlight_samples)){
     column_metadata$Enriched = factor(rep("No",dim(metadata_matrix)[1]),levels=c("No","Yes"))
     column_metadata[which(metadata_matrix$Sample %in% highlight_samples),]$Enriched = "Yes"
@@ -296,7 +296,7 @@ write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
 get_subfamily_in_state = function(subfamily,state,metric){
   # Get subfamily members ever in state
   if (metric=="chromHMM"){
-    subfamily_in_state = read.table(paste("chromHMM/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
+    subfamily_in_state = read.table(paste("chromHMM/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')[,1:10]
     colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap","State")
   } else if (metric=="WGBS") {
     subfamily_in_state = read.table(paste("WGBS/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
@@ -308,24 +308,43 @@ get_subfamily_in_state = function(subfamily,state,metric){
   print("Loaded matrix")
   
   #Calculate overlap
-  if (metric == "WGBS") {
-    subfamily_in_state = merge(subfamily_in_state,TE_meth_average[,c(TE_coordinates[c(1:4,6,5,7)],"CpGs")],by=c(TE_coordinates[c(1:4,6,5,7)]))
-    subfamily_in_state$Coverage = subfamily_in_state$Overlap/subfamily_in_state$CpGs
-  } else {
+  if (metric == "chromHMM") {
     subfamily_in_state$Coverage = subfamily_in_state$Overlap/(subfamily_in_state$stop-subfamily_in_state$start)
+  } else {
+    subfamily_in_state$Coverage = subfamily_in_state$Overlap
   }
   print("Calculated overlap")
   
   return(subfamily_in_state)
 }
 
-
-
 get_enriched_samples = function(subfamily,state,enrichment=THRESHOLD_LOR){
   samples = as.vector(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily == subfamily 
                                                                  & subfamily_state_sample_filter$State == state
                                                                  & subfamily_state_sample_filter$Enrichment > enrichment),]$Sample))
   return(samples)
+}
+
+get_subfamily_enriched = function(subfamily,State){
+  metric = ifelse(State %in% chromHMM_states,"chromHMM",ifelse(State %in% meth_states,"WGBS",State))
+  
+  subfamily_in_state = get_subfamily_in_state(subfamily,State,metric)
+  samples = get_enriched_samples(subfamily,State,THRESHOLD_LOR)
+  subfamily_enriched = subfamily_in_state[which(subfamily_in_state$Sample %in% samples),]
+  
+  subfamily_ubiq = aggregate(data=subfamily_in_state,Sample~chromosome+start+stop+subfamily+strand,length)
+  colnames(subfamily_ubiq)[6] = "Total_samples"
+  subfamily_bedfile = aggregate(data=subfamily_enriched,Sample~chromosome+start+stop+subfamily+strand,length)
+  subfamily_bedfile = merge(subfamily_bedfile,subfamily_ubiq,by=c("chromosome","start","stop","subfamily","strand"))
+  subfamily_bedfile$Score = (subfamily_bedfile$Sample/length(samples))-
+    ((subfamily_bedfile$Total_samples-subfamily_bedfile$Sample)/(sample_counts["All",metric]-length(samples)))
+  subfamily_bedfile = subfamily_bedfile[order(subfamily_bedfile$Score,subfamily_bedfile$chromosome,subfamily_bedfile$start),]
+  
+  write.table(subfamily_bedfile[,c(1:4,6,5)],
+              file=paste("enrichment/bedfiles/",subfamily,"_",State,"_enriched.bed",sep=""),
+              quote=FALSE,row.names = FALSE,col.names=FALSE,sep='\t')
+  
+  return(subfamily_bedfile)
 }
 
 investigate_candidate_indv = function(subfamily,state,metric,enrichment=THRESHOLD_LOR,print_fig=FALSE){
@@ -402,11 +421,51 @@ enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score
   return(category_matrix[which(category_matrix$TEs >= TE_threshold),])
 }
 
-permute_by_sample = function(matrix,category,metric,direction,threshold=0){ # Should be by_sample_all, split by State
-  real = tapply(matrix[[metric]],matrix[[category]],function(x) length(x[which(x > threshold)]));
-  permuted = replicate(1000,tapply(matrix[[metric]],sample(matrix[[category]]),function(x) length(x[which(x > threshold)])));
-  over = ldply(names(real),function(x) ifelse(direction=="+",sum(permuted[x,] >= real[x])/1000,sum(permuted[x,] <= real[x])/1000))
-  over$Category = names(real)
-  over$Count = tapply(matrix[[metric]],matrix[[category]],length)
+permute_by_sample = function(matrix,metric,direction,threshold=0,filtering,threshold2=0){ # Should be by_sample_all, split by State
+  print(head(matrix,n=1))
+  
+  metadata_matrix = filter_metadata(metadata,ifelse(unique(matrix$State) == "H3K27ac","H3K27ac",ifelse(unique(matrix$State) == "DNase","DNase",ifelse(unique(matrix$State) %in% meth_states,"WGBS","chromHMM"))))
+  metadata_table = ldply(apply(metadata_matrix[,sample_categories],2,as.data.frame(table)))
+  colnames(metadata_table) = c("Category","Grouping","Samples")
+  print("Computing background")
+  
+  # Filter matrix to those samples above thresholds
+  threshold_matrix = function(matrix,metric,threshold,filtering,threshold2){
+    filter_matrix = merge(matrix,metadata_matrix[,c("Sample",sample_categories)],by="Sample")
+    filter_matrix = filter_matrix[which(filter_matrix[[metric]] > threshold & filter_matrix[[filtering]] > threshold2),]
+    table_matrix = ldply(apply(filter_matrix[,sample_categories],2,as.data.frame(table)))
+    colnames(table_matrix) = c("Category","Grouping","Samples")
+    table_matrix = merge(table_matrix,metadata_table[,1:2],all.y=TRUE,by=c("Category","Grouping"))
+    table_matrix[is.na(table_matrix)] = 0
+    return(table_matrix)
+  }
+  
+  real = threshold_matrix(matrix,metric,threshold,filtering,threshold2)
+  print("Computing real")
+  
+  permuted = rdply(1000,function(x) {permute_matrix = matrix; permute_matrix$Sample = sample(permute_matrix$Sample);threshold_matrix(permute_matrix,metric,threshold,filtering,threshold2)})  
+  colnames(permuted) = c("Replicate","Category","Grouping","Replicate_samples")
+  print("Computing permuted")
+  
+  permuted = merge(permuted,real,by=c("Category","Grouping"),all.x=TRUE)
+  print("Merging")
+  
+  if(direction == "+"){
+    over = ddply(permuted,.(Category,Grouping),summarise,Pvalue=sum(Replicate_samples >= Samples)/1000)
+  } else if (direction == "-") {
+    over = ddply(permuted,.(Category,Grouping),summarise,Pvalue=sum(Replicate_samples <= Samples)/1000)
+  }
+  
+  print("Computing p-values")
+  
+  over = merge(over,real,by=c("Category","Grouping"),all.x=TRUE)
+  over = merge(over,metadata_table,by=c("Category","Grouping"),all.x=TRUE)
   return(over)
+}
+
+run_tsne = function(matrix, perplex=30, the = 0){
+  tsne = Rtsne(matrix,perplexity = perplex,theta= the,max_iter = 5000,pca_scale=TRUE)
+  tsne_plot = as.data.frame(tsne$Y)
+  tsne_plot$object = rownames(matrix)
+  return(tsne_plot)
 }
