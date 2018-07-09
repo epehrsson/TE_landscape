@@ -48,8 +48,8 @@ H3K27ac_peaks_sample$State = rep("H3K27ac",dim(H3K27ac_peaks_sample)[1])
 colnames(H3K27ac_peaks_sample)[2] = "Length_jk"
 
 # Combine 
-peaks_sample = rbind(chromHMM_blocks_sample,DNase_peaks_sample,H3K27ac_peaks_sample)
-rm(list=c("chromHMM_blocks_sample","DNase_peaks_sample","H3K27ac_peaks_sample"))
+peaks_sample = rbind(chromHMM_state_sample,DNase_peaks_sample,H3K27ac_peaks_sample)
+rm(list=c("chromHMM_state_sample","DNase_peaks_sample","H3K27ac_peaks_sample"))
 
 ## Join
 subfamily_state_sample = merge(subfamily_state_sample,peaks_sample,by=c("Sample","State"),all.x=TRUE)
