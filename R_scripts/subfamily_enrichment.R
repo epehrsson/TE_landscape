@@ -154,6 +154,8 @@ subfamily_state_sample_combined = rbind(subfamily_state_sample[,columns],
 subfamily_state_sample_filter = subfamily_state_sample_combined[which(subfamily_state_sample_combined$Members > THRESHOLD_IJK_MEMBER & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER),]
 subfamily_state_sample_filter$State = factor(subfamily_state_sample_filter$State,levels=states[1:21])
 
+rm(subfamily_state_sample)
+
 # Number of enrichments per subfamily x state
 subfamily_state_sample_counts = ddply(subfamily_state_sample_filter,.(class_update,family,subfamily,State),function(x) sum(x$Enrichment > THRESHOLD_LOR))
 subfamily_state_expand = expand.grid(subfamily = levels(subfamily_state_sample$subfamily),State = levels(subfamily_state_sample_combined$State))
