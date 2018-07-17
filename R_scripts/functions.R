@@ -469,3 +469,37 @@ run_tsne = function(matrix, perplex=30, the = 0){
   tsne_plot$object = rownames(matrix)
   return(tsne_plot)
 }
+
+plot_biplot = function(pca,axes=c(1,2),metric,category,colors,variables=NULL,guide=TRUE){
+  # Filter metadata
+  metadata_matrix = filter_metadata(metadata,metric)
+
+  # Get loadings 
+  loadings = as.data.frame(pca$rotation %*% diag(pca$sdev))
+  loadings$variable = rownames(loadings)
+  
+  # Get scores scaled to unit variance
+  scores = as.data.frame(pca$x %*% diag(1/pca$sdev))
+  scores$observations = rownames(scores)
+  
+  # Get variance
+  variance = 100*pca$sdev^2/sum(pca$sdev^2)
+  
+  # Calculate scaling factor (from biplot)
+  unsigned.range = function(x) c(-abs(min(x)),abs(max(x)))
+  scale = 1/(max(unsigned.range(loadings[,axes[1]])/unsigned.range(scores[,axes[1]]),
+              unsigned.range(loadings[,axes[2]])/unsigned.range(scores[,axes[2]])))
+  print(scale)
+  
+  # Filter loadings to variables of interest
+  loadings_filter = loadings[which(loadings$variable %in% variables),]
+  
+  # Plot biplot 
+  ggplot(scores,aes(x=scores[,axes[1]],y=scores[,axes[2]],color = metadata_matrix[,category]),environment = environment()) +
+    geom_point() + theme(text=element_text(face="bold"),aspect.ratio = 1) +
+    labs(x=paste("PC",axes[1]," (",round(variance[axes[1]],1),"%)",sep=""),
+         y=paste("PC",axes[2]," (",round(variance[axes[2]],1),"%)",sep="")) +
+    scale_colour_manual(name=category,values=colors) + 
+    geom_segment(data=loadings_filter,aes(x=0,y=0,xend=loadings_filter[,axes[1]]*scale*0.95,yend=loadings_filter[,axes[2]]*scale*0.95),color="red",arrow = arrow(length = unit(0.01, "npc"))) + 
+    geom_text(data=loadings_filter,aes(x=loadings_filter[,axes[1]]*scale,y=loadings_filter[,axes[2]]*scale,label=variable),color="red",size=3)
+}
