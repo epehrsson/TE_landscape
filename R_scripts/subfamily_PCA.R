@@ -3,43 +3,50 @@
 set.seed(42)
 
 # chromHMM 3D clustering - by sample
-sample_chromHMM_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% chromHMM_states),c("subfamily","State","Sample","Length_percent_jk")],
-                                      subfamily+State~Sample,value.var = "Length_percent_jk")
+sample_chromHMM_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% chromHMM_states),c("subfamily","State","Sample","Enrichment")],
+                                      subfamily+State~Sample,value.var = "Enrichment")
 rownames(sample_chromHMM_3D) = paste(sample_chromHMM_3D$subfamily,sample_chromHMM_3D$State,sep="_")
 sample_chromHMM_3D = sample_chromHMM_3D[,3:129]
 sample_chromHMM_3D = sample_chromHMM_3D[which(apply(sample_chromHMM_3D,1,var) != 0),]
 
 # chromHMM 3D clustering - by subfamily
-subfamily_chromHMM_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% chromHMM_states),c("subfamily","State","Sample","Length_percent_jk")],
-                           Sample+State~subfamily,value.var = "Length_percent_jk")
+subfamily_chromHMM_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% chromHMM_states),c("subfamily","State","Sample","Enrichment")],
+                           Sample+State~subfamily,value.var = "Enrichment")
 rownames(subfamily_chromHMM_3D) = paste(subfamily_chromHMM_3D$Sample,subfamily_chromHMM_3D$State,sep="_")
 subfamily_chromHMM_3D = subfamily_chromHMM_3D[,3:970]
 subfamily_chromHMM_3D = subfamily_chromHMM_3D[which(apply(subfamily_chromHMM_3D,1,var) != 0),]
 
+## 7_Enh 3D clustering
+subfamily_7_Enh_enrichment = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == "7_Enh"),c("subfamily","Sample","Enrichment")],
+                                   subfamily~Sample,value.var = "Enrichment")
+rownames(subfamily_7_Enh_enrichment) = subfamily_7_Enh_enrichment$subfamily
+subfamily_7_Enh_enrichment = subfamily_7_Enh_enrichment[,2:128]
+subfamily_7_Enh_enrichment = subfamily_7_Enh_enrichment[which(apply(subfamily_7_Enh_enrichment,1,var) != 0),]
+
 # WGBS 3D clustering - by sample
-sample_WGBS_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% meth_states),c("subfamily","State","Sample","Length_percent_jk")],
-                           subfamily+State~Sample,value.var = "Length_percent_jk")
+sample_WGBS_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% meth_states),c("subfamily","State","Sample","Enrichment")],
+                           subfamily+State~Sample,value.var = "Enrichment")
 rownames(sample_WGBS_3D) = paste(sample_WGBS_3D$subfamily,sample_WGBS_3D$State,sep="_")
 sample_WGBS_3D = sample_WGBS_3D[,3:39]
 sample_WGBS_3D = sample_WGBS_3D[which(apply(sample_WGBS_3D,1,var) != 0),]
 
 # WGBS 3D clustering - by subfamily
-subfamily_WGBS_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% meth_states),c("subfamily","State","Sample","Length_percent_jk")],
-                              Sample+State~subfamily,value.var = "Length_percent_jk")
+subfamily_WGBS_3D = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State %in% meth_states),c("subfamily","State","Sample","Enrichment")],
+                              Sample+State~subfamily,value.var = "Enrichment")
 rownames(subfamily_WGBS_3D) = paste(subfamily_WGBS_3D$Sample,subfamily_WGBS_3D$State,sep="_")
 subfamily_WGBS_3D = subfamily_WGBS_3D[,3:967]
 subfamily_WGBS_3D = subfamily_WGBS_3D[which(apply(subfamily_WGBS_3D,1,var) != 0),]
 
 ## DNase
-subfamily_DNase_enrichment = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == "DNase"),c("subfamily","Sample","Length_percent_jk")],
-                                   subfamily~Sample,value.var = "Length_percent_jk")
+subfamily_DNase_enrichment = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == "DNase"),c("subfamily","Sample","Enrichment")],
+                                   subfamily~Sample,value.var = "Enrichment")
 rownames(subfamily_DNase_enrichment) = subfamily_DNase_enrichment$subfamily
 subfamily_DNase_enrichment = subfamily_DNase_enrichment[,2:54]
 subfamily_DNase_enrichment = subfamily_DNase_enrichment[which(apply(subfamily_DNase_enrichment,1,var) != 0),]
 
 ## H3K27ac
-subfamily_H3K27ac_enrichment = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == "H3K27ac"),c("subfamily","Sample","Length_percent_jk")],
-                                     subfamily~Sample,value.var = "Length_percent_jk")
+subfamily_H3K27ac_enrichment = dcast(subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == "H3K27ac"),c("subfamily","Sample","Enrichment")],
+                                     subfamily~Sample,value.var = "Enrichment")
 rownames(subfamily_H3K27ac_enrichment) = subfamily_H3K27ac_enrichment$subfamily
 subfamily_H3K27ac_enrichment = subfamily_H3K27ac_enrichment[,2:99]
 subfamily_H3K27ac_enrichment = subfamily_H3K27ac_enrichment[which(apply(subfamily_H3K27ac_enrichment,1,var) != 0),]
@@ -49,6 +56,8 @@ sample_chromHMM_pca = prcomp(t(sample_chromHMM_3D),scale=TRUE,center=TRUE)
 sample_WGBS_pca = prcomp(t(sample_WGBS_3D),scale=TRUE,center=TRUE)
 subfamily_DNase_pca = prcomp(t(subfamily_DNase_enrichment),scale=TRUE,center=TRUE)
 subfamily_H3K27ac_pca = prcomp(t(subfamily_H3K27ac_enrichment),scale=TRUE,center=TRUE)
+
+sample_7_Enh_pca = prcomp(t(subfamily_7_Enh_enrichment),scale=TRUE,center=TRUE)
 
 # tSNE
 ## Samples
