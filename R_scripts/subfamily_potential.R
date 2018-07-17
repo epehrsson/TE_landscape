@@ -8,3 +8,4 @@ subfam_states = merge(ddply(subfamily_state_potential,.(subfamily),summarise,Sta
                             .(subfamily),function(x) x[which.max(x$Intra),c("subfamily","Intra")]),
                       by="subfamily",all=TRUE)
 subfam_states = melt(subfam_states,id.var="subfamily")
+subfam_states = merge(subfam_states,rmsk_TE_subfamily[,c("subfamily","family","class_update","Total_length","Count","CpGs")],by="subfamily")
