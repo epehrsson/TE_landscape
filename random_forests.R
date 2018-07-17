@@ -14,26 +14,15 @@ colnames(enrich_H3K27ac) = make.names(colnames(enrich_H3K27ac))
 enrich_H3K27ac[,2:ncol(enrich_H3K27ac)] = 2^enrich_H3K27ac[,2:ncol(enrich_H3K27ac)]
 
 ## Include metadata classifications
-enrich_H3K27ac = merge(enrich_H3K27ac,metadata[,c("Sample",sample_categories)])
-
-## Select training and validation sets (70% and 30%)
-train <- sample(nrow(enrich_H3K27ac), 0.7*nrow(enrich_H3K27ac), replace = FALSE)
-TrainSet <- droplevels(enrich_H3K27ac[train,])
-ValidSet <- droplevels(enrich_H3K27ac[-train,])
+enrich_H3K27ac = droplevels(merge(enrich_H3K27ac,metadata[,c("Sample",sample_categories)]))
 
 # Number of variables to use
-result <- rfcv(enrich_H3K27ac[,c(2:936)],enrich_H3K27ac$Germline,cv.fold=5)
+result <- rfcv(trainx=enrich_H3K27ac[,c(2:936)],trainy=enrich_H3K27ac$Type,cv.fold=5)
+result$error.cv
 
 # Create a Random Forest model with default parameters
-model_H3K27ac_Group <- randomForest(Group ~ ., data = TrainSet[,c(2:937)], importance = TRUE, mtry = 120)
+model_H3K27ac_Group <- randomForest(Group ~ ., data = enrich_H3K27ac[,c(2:937)], importance = TRUE, mtry = 150, ntree=500)
 model_H3K27ac_Group
-
-# Predicting on validation set
-predValid <- predict(model_H3K27ac_Group, ValidSet, type = "class")
-
-# Checking classification accuracy
-mean(predValid == as.vector(ValidSet$Group))
-table(predValid, ValidSet$Group) 
 
 # To check important variables
 importance(model_H3K27ac_Group)        
