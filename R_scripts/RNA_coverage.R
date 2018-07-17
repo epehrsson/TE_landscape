@@ -36,6 +36,7 @@ class_RNA = class_RNA[,c(1:2,7:8)]
 colnames(class_RNA) = c("Sample","class","Coverage","Cov_length")
 class_RNA = class_RNA[which(!(class_RNA$class %in% c("Unconfident","RC"))),]
 class_RNA$class_update = convert_class(class_RNA$class)
+class_RNA$class_update = factor(class_RNA$class_update,levels=c("LINE","SINE","LTR","DNA","SVA","Other"))
 class_RNA$Length = ifelse(metadata[match(class_RNA$Sample,metadata$Sample),]$chrY == "Yes",
                           rmsk_TE_class[match(class_RNA$class_update,rmsk_TE_class$class_update),]$Total_length,
                           rmsk_TE_class[match(class_RNA$class_update,rmsk_TE_class$class_update),]$Total_length_noY)
