@@ -17,8 +17,3 @@ while read line ; do awk -v OFS='\t' -v class=$line '{if($5 == class) print $0}'
 awk -v OFS='\t' '{if($5 == "Other") print $0}' TE_WGBS_state_sorted.txt > SVA_WGBS_state_sorted.txt
 awk -v OFS='\t' '{if(($5 != "Other") && ($5 != "LINE") && ($5 != "SINE") && ($5 != "DNA") && ($5 != "LTR")) print $0}' TE_WGBS_state_sorted.txt > Other_WGBS_state_sorted.txt
 
-# Methylation state by subfamily x state (TEs with any CpG in the state)
- awk -v OFS='\t' '{if($9 > 0) print $1, $2, $3, $4, $5, $6, $7, $8, $9 > "WGBS/subfamily/by_state/"$4"_Hypomethylated.txt"}' WGBS/TE_CpG_Meth_state.txt
- awk -v OFS='\t' '{if($10 > 0) print $1, $2, $3, $4, $5, $6, $7, $8, $10 > "WGBS/subfamily/by_state/"$4"_Intermediate.txt"}' WGBS/TE_CpG_Meth_state.txt
- awk -v OFS='\t' '{if($11 > 0) print $1, $2, $3, $4, $5, $6, $7, $8, $11 > "WGBS/subfamily/by_state/"$4"_Hypermethylated.txt"}' WGBS/TE_CpG_Meth_state.txt
- awk -v OFS='\t' '{if($12 > 0) print $1, $2, $3, $4, $5, $6, $7, $8, $12 > "WGBS/subfamily/by_state/"$4"_Missing.txt"}' WGBS/TE_CpG_Meth_state.txt
