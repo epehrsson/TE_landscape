@@ -4,6 +4,13 @@
 #SBATCH --mem=5G
 #SBATCH --array=39,42%2
 
+# Total RNA-seq read coverage and length for entire genome, TEs, classes, and subfamilies
+
+# Sort bed files
+#sort -k1,1 -k2,2n rmsk_TEother_merge.txt > rmsk_TEother_merge
+#sort -k1,1 -k2,2n TEother_subfamily_merge.txt > TEother_subfamily_merge
+#sort -k1,1 -k2,2n TEother_class_merge.txt > TEother_class_merge
+
 ml bedops
 ml bedtools
 
