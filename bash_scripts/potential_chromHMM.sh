@@ -1,37 +1,28 @@
 # chromHMM potential 
 # 4/25/2016, 4/26/2016, 5/3/2016, 5/12/2016, 6/27/2016, 8/30/2016, 1/26/2017, 2/2/2017, 5/10/2017, 5/29/2017, 8/7/2017, 8/23/2017, 9/14/2017, 9/15/2017, 9/18/2017
+# Updated 5/8/18 with summit rules
 
 # TEs
-#TE_landscape/chromHMM/potential/all_chromHMM_TE_potential_0.txt
-#TE_landscape/chromHMM/potential/all_chromHMM_TE_potential_0.75.txt
-#TE_landscape/chromHMM/potential/all_chromHMM_TE_potential_0_nodiv.txt
-#TE_landscape/chromHMM/potential/all_chromHMM_TE_noCancer_potential_0.txt
-#TE_landscape/chromHMM/potential/all_chromHMM_other_potential.txt
-#TE_landscape/chromHMM/potential/all_chromHMM_other_potential_noCancer.txt
-python ../bin/TE_landscape/potential_TE.py all_chromHMM_TE.txt rmsk_TE.txt chromHMM_states.txt mnemonics.txt test.txt 0
- python ../bin/TE_landscape/potential_TE.py all_chromHMM_TE.txt rmsk_TE.txt chromHMM_states.txt mnemonics_noCancer.txt all_chromHMM_TE_noCancer_potential_0.txt 0 &
- python ../bin/TE_landscape/potential_TE.py all_chromHMM_other.txt rmsk_other.txt chromHMM_states.txt mnemonics.txt all_chromHMM_other_potential.txt 0
- python ../bin/TE_landscape/potential_TE.py all_chromHMM_other.txt rmsk_other.txt chromHMM_states.txt mnemonics_noCancer.txt all_chromHMM_other_potential_noCancer.txt 0
+python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt features/TEs/rmsk_TEother.txt chromHMM/chromHMM_states.txt sample_lists/mnemonics.txt chromHMM/potential/rmsk_TEother_chromHMM_summit_potential.txt 0 7 9 8
+python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt features/TEs/rmsk_TEother.txt chromHMM/chromHMM_states.txt sample_lists/mnemonics_noCancer.txt chromHMM/potential/rmsk_TEother_chromHMM_summit_potential_noCancer.txt 0 7 9 8
 
 # Number of TEs in state in sample
-#TE_landscape/chromHMM/subfamily/state_sample_counts.txt
- awk -v OFS='\t' '{a[$4,$5]+=$6}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' subfamily_state_sample.txt > state_sample_counts.txt
+awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit.txt
 
 # By class
-#TE_landscape/chromHMM/class/class_state_sample.txt
-#TE_landscape/chromHMM/class/classes.txt
-#TE_landscape/chromHMM/class_state_sample.txt
-awk -v OFS='\t' '{a[$5,$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' all_chromHMM_TE.txt > class_state_sample.txt
-awk -v OFS='\t' '{if($5 == "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print "SVA", sep[1], sep[2], a[i];}}' all_chromHMM_other.txt >> class_state_sample.txt
-awk -v OFS='\t' '{if($5 != "Other") a[$8,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print "Other", sep[1], sep[2], a[i];}}' all_chromHMM_other.txt >> class_state_sample.txt
+for file in chromHMM/chromHMM_summit_*.txt; do awk -v OFS='\t' -v class=$(basename $file .txt) '{a[$8, $10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print class, sep[1], sep[2], a[i];}}' $file >> chromHMM/class_state_sample_summit.txt; done
+
+# By subfamily
+awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/subfamily/subfamily_state_sample_summit.txt
+
+# Maximum states per TE in any sample
+python ~/bin/TE_landscape/state_sharing_intra_max.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/rmsk_TEother_chromHMM_summit_max.txt 7
 
 # Refseq promoters
-#TE_landscape/chromHMM/Refseq_promoters/potential_refseq_promoters_unique.txt
- python ~/bin/TE_landscape/potential_promoter.py chromHMM_refseq_promoters_unique_sorted.txt ~/genic_features/RefSeq/refseq_promoters_unique_std.txt ../chromHMM_states.txt potential_refseq_promoters_unique.txt 0
+python ~/bin/TE_landscape/potential.py chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt ~/genic_features/RefSeq/refseq_promoters_unique_std.txt chromHMM/chromHMM_states.txt sample_lists/mnemonics.txt chromHMM/potential/refseq_promoters_chromHMM_summit_potential.txt 0 4 6 5
 
 # Number of promoters in state in sample
-#TE_landscape/chromHMM/Refseq_promoters/promoter_state_sample_count.txt
- awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $6]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}'  chromHMM_refseq_promoters_unique_sorted.txt > promoter_state_sample_count.txt
+awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt > chromHMM/promoters_state_sample_counts_summit.txt
 
 # Shuffled TEs
 #TE_landscape/chromHMM/shuffled_TEs/rmsk_TE_shuffle_#_max.txt [10 files]
