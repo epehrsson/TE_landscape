@@ -163,6 +163,12 @@ rm(subfamily_state_expand)
 subfamily_state_sample_counts[is.na(subfamily_state_sample_counts)] = 0
 subfamily_state_sample_counts$State = factor(subfamily_state_sample_counts$State,levels=states[1:21])
 
+subfamily_state_sample_counts$Sample.Proportion = ifelse(subfamily_state_sample_counts$State %in% chromHMM_states,subfamily_state_sample_counts$V1/sample_counts["All","chromHMM"],
+                                                         ifelse(subfamily_state_sample_counts$State %in% meth_states,subfamily_state_sample_counts$V1/sample_counts["All","WGBS"],
+                                                                ifelse(subfamily_state_sample_counts$State == "DNase",subfamily_state_sample_counts$V1/sample_counts["All","DNase"],
+                                                                       ifelse(subfamily_state_sample_counts$State == "H3K27ac",subfamily_state_sample_counts$V1/sample_counts["All","H3K27ac"],"NA"))))
+subfamily_state_sample_counts$Sample.Proportion = as.numeric(subfamily_state_sample_counts$Sample.Proportion)
+
 subfamily_state_sample_counts_combine = merge(aggregate(data=subfamily_state_sample_counts,V1~State,function(x) sum(x > 0)),
                                               dcast(aggregate(data=subfamily_state_sample_counts,V1~State+class_update,function(x) sum(x > 0)),State~class_update,value.var = "V1"),
                                               by=c("State"))
@@ -173,5 +179,11 @@ subfamily_state_sample_counts_pc = ddply(subfamily_state_sample_combined,.(class
 subfamily_state_sample_counts_pc_combine = merge(aggregate(data=subfamily_state_sample_counts_pc,V1~State,function(x) sum(x > 0)),
                                               dcast(aggregate(data=subfamily_state_sample_counts_pc,V1~State+class_update,function(x) sum(x > 0)),State~class_update,value.var = "V1"),
                                               by=c("State"))
+
+subfamily_state_sample_counts_pc$Sample.Proportion = ifelse(subfamily_state_sample_counts_pc$State %in% chromHMM_states,subfamily_state_sample_counts_pc$V1/sample_counts["All","chromHMM"],
+                                                         ifelse(subfamily_state_sample_counts_pc$State %in% meth_states,subfamily_state_sample_counts_pc$V1/sample_counts["All","WGBS"],
+                                                                ifelse(subfamily_state_sample_counts_pc$State == "DNase",subfamily_state_sample_counts_pc$V1/sample_counts["All","DNase"],
+                                                                       ifelse(subfamily_state_sample_counts_pc$State == "H3K27ac",subfamily_state_sample_counts_pc$V1/sample_counts["All","H3K27ac"],"NA"))))
+subfamily_state_sample_counts_pc$Sample.Proportion = as.numeric(subfamily_state_sample_counts_pc$Sample.Proportion)
 
 rm(subfamily_state_sample)
