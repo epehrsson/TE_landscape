@@ -63,6 +63,11 @@ paste chromHMM_class_TEother.txt rmsk_Unconfident_RC.txt_chromHMM.bed_state > ch
 #TE_landscape/chromHMM/subfamily/subfamily_state_sample.txt
 awk -v OFS='\t' '{a[$4, $8, $10]+=$9;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' subfamily_state_sample.bed > subfamily_state_sample.txt
 
+# Unique peaks overlapping each subfamily
+while read line; do awk -v OFS='\t' -v sample=$line '{if($11 != "8_ZNF/Rpts") print > ""$4"_"$11"_"sample".txt"}' ~/TE_landscape/chromHMM/summit/TEs/rmsk_TEother_$line\_chromHMM.bed; while read subfamily; do while read state; do awk -v sample=$line -v subfam=$subfamily -v state=$state -v OFS='\t' '{a[$8, $9, $10]+=1}END{print state, sample, subfam, length(a)}' $subfamily\_$state\_$line\.txt >> subfamily_chromHMM_sample_summit.txt; done < chromHMM_states.txt; done < ~/TE_landscape/features/TEs/subfamily/subfamilies.txt; rm *_$line\.txt; done < mnemonics.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{if($11 == "8_ZNF/Rpts") print > ""$4"_8_ZNF.Rpts_"sample".txt"}' ~/TE_landscape/chromHMM/summit/TEs/rmsk_TEother_$line\_chromHMM.bed; while read subfamily; do awk -v sample=$line -v subfam=$subfamily -v OFS='\t' '{a[$8, $9, $10]+=1}END{print "8_ZNF/Rpts", sample, subfam, length(a)}' $subfamily\_8_ZNF.Rpts_$line\.txt >> subfamily_chromHMM_sample_summit_8.txt; done < ~/TE_landscape/features/TEs/subfamily/subfamilies.txt; rm *_$line\.txt; done < ~/TE_landscape/sample_lists/mnemonics.txt
+cat subfamily_chromHMM_sample_summit.txt subfamily_chromHMM_sample_summit_8.txt > ~/TE_landscape/chromHMM/subfamily/subfamily_chromHMM_sample_summit.txt
+
 # Merged features
 #TE_landscape/chromHMM/Refseq_features/chromHMM_CDS_states.txt
 #TE_landscape/chromHMM/Refseq_features/chromHMM_3UTR_states.txt
@@ -72,6 +77,7 @@ awk -v OFS='\t' '{a[$4, $8, $10]+=$9;}END{for(i in a) {split (i, sep, SUBSEP); p
 #TE_landscape/chromHMM/Refseq_features/chromHMM_promoter_states.txt
 #TE_landscape/chromHMM/Refseq_features/chromHMM_refseq_intergenic_states.txt
 #TE_landscape/chromHMM/Refseq_features/chromHMM_repeats_states.txt
+awk -v OFS='\t' '{a[$1, $2, $9]+=$10}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' chromHMM/Refseq_features/chromHMM_features.txt > chromHMM/chromHMM_refseq_features.txt
 
 # Table of number of bases in each state in merged genic features in each sample	 
 #TE_landscape/chromHMM/Refseq_features/chromHMM_feature_states.txt	
@@ -107,18 +113,21 @@ awk -v OFS='\t' '{a[$4, $6]+=$5;}END{for(i in a) {split (i, sep, SUBSEP); print 
 #TE_landscape/DNase/rmsk_TEother_merge_DNase_contribution.txt
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_DNase.txt | sort > rmsk_TEother_merge_DNase_contribution.txt
 
-# Number and width of DNase peaks overall, overlapping TEs per sample	 
+# Number and width of DNase peaks overall, overlapping TEs per sample; including summit rules	 
 #TE_landscape/DNase/DNase_stats.txt	
 while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/consolidated/narrowPeak/$line\.gz; gunzip $line\.gz; echo $line >> DNase_stats.txt; wc -l $line>> DNase_stats.txt; awk '{sum+=$3-$2}END{print sum}' $line >> DNase_stats.txt; done < DNase_peaks.txt
 while read line; do awk '{print $8, $9, $10}' rmsk_TEother_$line\-DNase.macs2.narrowPeak | sort | uniq | wc -l >> test; done < ../DNase_samples.txt
+while read line; do awk -v OFS='\t' '{print $8, $9, $10}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt | sort | uniq | wc -l >> DNase/rmsk_TEother_DNase_summit_stats.txt; done < sample_lists/DNase_samples.txt
 
 # Merged TE classes
 #TE_landscape/DNase/class_DNase_sample.txt
 awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TEother_class_Dnase.txt > class_DNase_sample.txt
 
-# Merged TE subfamilies
-#TE_landscape/DNase/subfamily_DNase_sample.txt
-awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TEother_subfamily_DNase.txt > subfamily_DNase_sample.txt
+# Merged TE subfamilies (unique peaks overlapping subfamily)
+while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt >> DNase/subfamily_DNase_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/DNase_samples.txt
+
+# Merged features
+awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i]}}' DNase/refseq_features_DNase_intersect.txt > DNase/refseq_features_DNase.txt
 
 # Merged features, no TEs
 #TE_landscape/DNase/Refseq_features/refseq_features_DNase.txt
@@ -131,47 +140,23 @@ awk -v OFS='\t' '{a[$11]+=$3-$2}END{for(i in a){print i, a[i], "genome_noTE"}}' 
 #TE_landscape/H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_H3K27ac.txt | sort > rmsk_TEother_merge_H3K27ac_contribution.txt
 
-# Number and width of H3K27ac peaks overall, overlapping TEs per sample	
+# Number and width of H3K27ac peaks overall, overlapping TEs per sample; including summit rules
 #TE_landscape/H3K27ac/H3K27ac_stats.txt	
 while read line; do echo $line >> H3K27ac_stats.txt; wc -l H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac_stats.txt; awk '{sum+=$3-$2}END{print sum}' H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac_stats.txt; done < H3K27ac_samples.txt
 while read line; do awk '{print $8, $9, $10}' H3K27ac_TEs/rmsk_TEother_$line\-H3K27ac.narrowPeak | sort | uniq | wc -l >> test; done < ../H3K27ac_samples.txt #Combine in Excel
+while read line; do awk -v OFS='\t' '{print $8, $9, $10}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt | sort | uniq | wc -l >> H3K27ac/rmsk_TEother_H3K27ac_summit_stats.txt; done < sample_lists/H3K27ac_samples.txt
 
 # Merged TE classes
 #TE_landscape/H3K27ac/class_H3K27ac_sample.txt
 awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TEother_class_H3K27ac.txt > class_H3K27ac_sample.txt
 
-# Merged TE subfamilies
-#TE_landscape/H3K27ac/subfamily_H3K27ac_sample.txt
-awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TEother_subfamily_H3K27ac.txt > subfamily_H3K27ac_sample.txt
+# Merged TE subfamilies (unique peaks overlapping subfamily)
+while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/subfamily_H3K27ac_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/H3K27ac_samples.txt
+
+# Merged features
+awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/refseq_features_H3K27ac_intersect.txt > H3K27ac/refseq_features_H3K27ac.txt
 
 # Merged features, no TEs
 #TE_landscape/H3K27ac/Refseq_features/refseq_features_H3K27ac.txt
 for file in refseq_*H3K27ac.txt; do awk -v OFS='\t' -v feature=$(basename "$file" .txt) '{a[$15]+=$14}END{for(i in a){print i, a[i], feature}}' $file | sort >> refseq_features_H3K27ac.txt; done
 awk -v OFS='\t' '{a[$11]+=$3-$2}END{for(i in a){print i, a[i], "genome_noTE"}}' genome_noTE_H3K27ac.txt | sort >> refseq_features_H3K27ac.txt #Update 8/7/17
-
-# Mouse
-
-# chromHMM
-# Number of bases in each state in each sample	 
-#TE_landscape/Mouse/chromHMM/sample_summaries/genome/ENCFF#.bed_state [15 files]	
-for file in mouse_chromHMM/*.bed ; do awk '{SUM+=$3-$2}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($4 == state) SUM+=$3-$2}END{print SUM}' $file >> $file\_state; done; done	
-
-# Table of number of bases in each state in each sample	
-#TE_landscape/Mouse/chromHMM/mouse_chromHMM.txt	
-bash combine_states.sh mouse_chromHMM_states.txt mouse_samples.txt mouse_chromHMM/*state
-
-# Number of bases in each state in each sample in merged mm9 TEs	 
-#TE_landscape/Mouse/chromHMM/sample_summaries/TEs/ENCFF#.bed_TEmerge_state [15 files]	
-for file in mouse_chromHMM_TE/*.bed_TEmerge; do awk '{SUM+=$13}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($4 == state) SUM+=$13}END{print SUM}' $file >> $file\_state; done; done	
-
-# Table of number of bases in each state in TEs in each sample	
-#TE_landscape/Mouse/chromHMM/mouse_chromHMM_TEmerge.txt	
-bash combine_states.sh mouse_chromHMM_states.txt mouse_samples.txt mouse_chromHMM_TE/*TEmerge_state
-
-# Number of bases in each state in each sample in merged mm9 all TEs	 
-#TE_landscape/Mouse/chromHMM/sample_summaries/TEs/ENCFF#.bed_TEother_merge_state [15 files]	
-for file in mouse_chromHMM_other/*.bed_TEother_merge; do awk '{SUM+=$13}END{print SUM}' $file > $file\_state; for i in 1 2 3 4 5 6 7; do awk -v state=$i '{if($7 == state) SUM+=$13}END{print SUM}' $file >> $file\_state; done; done	
-
-# Table of number of bases in each state in all TEs in each sample	 
-#TE_landscape/Mouse/chromHMM/mouse_chromHMM_TEother_merge.txt	
-bash ../combine_states.sh mouse_chromHMM_states.txt mouse_samples.txt mouse_chromHMM_other/*_state 
