@@ -1,19 +1,12 @@
 # ChIP-seq line plots
 # 9/8/2016, 9/14/2016, 9/15/2016, 9/19/2016, 11/3/2016, 11/11/2016, 11/17/2016, 11/18/16, 12/13/2016
 # 2/8/2017, 2/27/2017, 2/28/2017, 3/1/2017, 3/6/2017, 3/7/2017, 3/8/2017, 7/31/2017, 8/1/2017, 8/4/2017
+# Updated with summit TEs 5/29/18 to 6/19/18 (should be run on htcf)
 
-# Finds level of five histone modifications over 10kb region centered on TEs in bins	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample.sh	
-# Reads in list of samples, not single sample	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample_list.sh	
-# Processes multiple samples for multiple input TE sets in parallel	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample_list_parallel.sh	
-# Processes multiple samples for multiple input TE sets in parallel, histone acetylation (added option for bin file)	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample_list_parallel_acetyl.sh	
-# Processes multiple samples for multiple input TE sets in parallel, Dnase (added option for bin file)	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample_list_parallel_DNase.sh	
-# Processes multiple samples for multiple input TE sets in parallel, methylation (added option for bin file)	
-#TE_landscape/compare_marks/ChIP_histone/intersect_sample_list_parallel_methyl.sh	
+# Finds level of histone modifications and DNase over 10kb region centered on TEs in bins	
+#intersect_histone.sh
+# Finds level of DNA methylation over 10kb region centered on TEs, in bins
+#intersect_meth.sh
 
 # Each TE extended from center to 10kb region, excluding those that would extend past the ends of the chromosomes.	 
 #TE_landscape/features/TEs/rmsk_TE_10kb.txt	
@@ -26,40 +19,17 @@ while read chr size; do awk -v OFS="\t" -v chr=$chr -v size=$size '{if($1 == chr
 awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' /bar/epehrsson/TE_landscape/rmsk_TE_10kb.txt > rmsk_TE_10kb.bed
 #TE_landscape/features/TEs/rmsk_other_10kb.bed	
 awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' rmsk_other_10kb.txt > /scratch/ecp/rmsk_other_10kb.bed
+# Combined into one file
+cat features/TEs/rmsk_*_10kb.bed > features/TEs/rmsk_TEother_10kb.bed
 
-# All TEs in all samples in that state	 
-#TE_landscape/chromHMM/chromHMM_ever/TE_[state].txt [12 files]	
-grep '1_TssA' all_chromHMM_TE_sorted.txt > TE_1TssA.txt
-#TE_landscape/chromHMM/chromHMM_ever/other_[state].txt [15 files]	
-while read line; do grep $line all_chromHMM_other_sorted.txt > /scratch/ecp/other_$line\.txt ; done < chromHMM_states.txt
+# TEs in state in sample
+awk -v OFS='\t' '{print $0 > "ever/rmsk_TEother_"$8".txt"}' rmsk_TEother_chromHMM_summit_sorted.txt
+while read line; do echo $line; awk -v OFS='\t' '{if($10 != "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_"$10".txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
+while read line; do echo $line; awk -v OFS='\t' '{if($10 == "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_8_ZNF.Rpts.txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
+ 
+# Epigenetic profiles by state and mark
+#TE_landscape/compare_marks/profile_histone/rmsk_TEother_[state]_[mark]_average.txt [108 files]
+while read state; do while read mark; do echo $state $mark; cat averages/rmsk_TEother_E*_$state\_$mark\_average.txt > rmsk_TEother_$state\_$mark\_average.tmp; python calculate_bin_average_all.py rmsk_TEother_$state\_$mark\_average.tmp rmsk_TEother_$state\_$mark\_average.txt; rm rmsk_TEother_$state\_$mark\_average.tmp; done < marks.txt; done < chromHMM_states.txt
 
-# Epigenetic measure level in bins	 
-#TE_landscape/compare_marks/ChIP_histone/TE_[state]-[mod]_average.txt [108 files]	
-#TE_landscape/compare_marks/ChIP_histone/other_[state]_all-[mod]_average.txt [108 files]		
-cat TE_1TssA_*-H3K27me3_average.txt > TE_1TssA-H3K27me3_average.txt
-
-# Methylation level in bins	 
-#TE_landscape/compare_marks/ChIP_histone/other_[state]_all-Meth_average.txt [12 files]	
-bash intersect_sample_list_parallel_methyl.sh WGBS_samples.txt other_files.txt all_CpG_Meth.bed rmsk_other_10kb.bed #other_files is list of files of TEs in state by sample (chromHMM_ever)
-while read state; do cat other_$state\_E*-all_CpG_Meth.bed_average.txt > other_$state\_all-Meth_average.txt; done < chromHMM_states.txt
-#TE_landscape/compare_marks/ChIP_histone/TE_[state]_all-Meth_average.txt [12 files]		 
-bash intersect_sample_list_parallel_methyl.sh WGBS_samples.txt TE_files.txt all_CpG_Meth.bed rmsk_TE_10kb.bed
-while read state; do cat TE_$state\_E*-all_CpG_Meth.bed_average.txt > TE_$state\_all-Meth_average.txt; done < chromHMM_states.txt
-
-# Averages for all TEs x state x modification	 
-#TE_landscape/compare_marks/ChIP_histone/TE_[state]_all-[mod]_average.txt [108 files]	
-python ../../bin/TE_landscape/calculate_bin_average_all.py TE_1TssA-H3K27me3_average.txt TE_1TssA_all-H3K27me3_average.txt
-#TE_landscape/compare_marks/ChIP_histone/TEother_[state]-[mod]_average.txt [108 files]		 
-while read mod; do while read a b; do cat other_$a\_all-$mod\_average.txt TE_$b\_all-$mod\_average.txt > temp.txt; python ../../bin/TE_landscape/calculate_bin_average_all.py temp.txt TEother_$a\-$mod\_average.txt; done <chromHMM_states.txt; done < modifications.txt
-
-# Averages for all TEs x state for methylation	 
-#TE_landscape/compare_marks/ChIP_histone/TEother_[state]-Meth_average.txt [12 files]	
-while read a b; do cat other_$a\_all-Meth_average.txt TE_$b\_all-Meth_average.txt > temp.txt; python ~/bin/TE_landscape/calculate_bin_average_all.py temp.txt TEother_$a\-Meth_average.txt; done <chromHMM_states.txt
-
-# Epigenetic marks for all TEs in that state	 
-#TE_landscape/compare_marks/ChIP_histone/TE_[state]_average.txt [12 files]	
-while read state; do while read modification; do awk -v OFS='\t' -v mod=$modification '{print $0, mod}' TE_$state\-$modification\_average.txt >> TE_$state\_average.txt; done < modifications.txt ; done < chromHMM_states.txt
-
-# Combined into one file, all TEs	 
-#TE_landscape/compare_marks/ChIP_histone/TEother_average.txt	
-while read a b; do while read modification; do awk -v OFS='\t' -v mod=$modification -v state=$a '{print $0, mod, state}' TEother_$a\-$modification\_average.txt >> TEother_average.txt; done < modifications.txt ; done < chromHMM_states.txt
+# Combined histone profiles
+while read state; do while read mark; do awk -v OFS='\t' -v mark=$mark -v state=$state '{print $0, mark, state}' rmsk_TEother_$state\_$mark\_average.txt >> TEother_average.txt; done < marks.txt; done < chromHMM_states.txt
