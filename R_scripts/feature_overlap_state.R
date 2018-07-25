@@ -14,7 +14,7 @@ rownames(feature_state_mean)[22] = "Expressed_samples"
 feature_state_mean = melt(as.matrix(feature_state_mean))
 colnames(feature_state_mean) = c("State","Cohort","Enrichment")
 feature_state_mean$State = factor(feature_state_mean$State,levels=states)
-feature_state_mean = split_coding(feature_state_mean,2)
+feature_state_mean = split_coding(feature_state_mean)
 
 # By class
 feature_state_mean_class = ddply(rmsk_TE_measure,~class_update,function(z) 
@@ -24,7 +24,7 @@ feature_state_mean_class$State = factor(rep(c(chromHMM_states,meth_states[c(1,3,
 
 feature_state_mean_class = melt(feature_state_mean_class)
 colnames(feature_state_mean_class) = c("Class","State","Cohort","Enrichment")
-feature_state_mean_class = split_coding(feature_state_mean_class,3)
+feature_state_mean_class = split_coding(feature_state_mean_class)
 
 # Older code
 #test = melt(as.matrix(apply(rmsk_TE_measure[,cohorts],2,function(x) apply(rmsk_TE_measure[,35:63],2,function(y) {table = aggregate(data=rmsk_TE_measure,y~x,mean);(table$y[2]-table$y[1])/mean(y)}))))
