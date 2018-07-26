@@ -112,6 +112,7 @@ combine_potential_class = merge(combine_potential_class,combine_potential,by=c("
 colnames(combine_potential_class)[5:6] = c("Count","Total")
 combine_potential_class$TEs.Proportion = combine_potential_class$Count/combine_potential_class$Total
 
+# Raw number of TEs ever in each state by class
 combine_class_ever = ddply(combine_potential_class,.(Class,State),summarise,Proportion=sum(Count[which(Samples > 0)])/sum(Total[which(Samples > 0)]))
 
 rm(list=c("potential_TE_DNase_class","potential_TE_H3K27ac_class","RNA_potential_class",

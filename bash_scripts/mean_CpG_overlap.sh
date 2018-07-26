@@ -12,6 +12,7 @@ python ../bin/TE_landscape/average_methylation_overall.py all_CpG_Meth.bed WGBS_
 #TE_landscape/WGBS/CpG_noTE_Meth_average.txt	
 
 # Average methylation level of CpGs overlapping merged Refseq features
+## Split by feature to reduce memory
 awk '{print $0 > $1}' WGBS/feature_CpG_Meth.bed
 for file in refseq_*; do echo $file; python ~/bin/TE_landscape/average_methylation_overall.py $file sample_lists/WGBS_samples.txt $file\_average.txt feature; done 
 python ~/bin/TE_landscape/average_methylation_overall.py intergenic sample_lists/WGBS_samples.txt refseq_intergenic_average.txt feature

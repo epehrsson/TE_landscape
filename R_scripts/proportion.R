@@ -21,8 +21,8 @@ mnemonics_states_TE = melt(as.matrix(mnemonics_states_TE)[2:16,])
 colnames(mnemonics_states_TE) = c("State","Sample","Bases")
 mnemonics_states_TE$Cohort = rep("TE",dim(mnemonics_states_TE)[1])
 
-# Refseq features, no TEs
-# Number of bases in each state in each sample in merged genic features, no TEs
+# Refseq features
+# Number of bases in each state in each sample in merged genic features
 mnemonics_states_features = read.table("chromHMM/chromHMM_refseq_features.txt",sep='\t')
 colnames(mnemonics_states_features) = c("Sample","Cohort","State","Bases")
 mnemonics_states_features$Cohort = gsub("refseq_","",mnemonics_states_features$Cohort)
