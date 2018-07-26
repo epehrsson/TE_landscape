@@ -5,10 +5,21 @@
 # chromHMM
 
 # TEs
+# Original matrix creation
+#TE_landscape/chromHMM/all_chromHMM_TE.txt
+for file in chromHMM_bedfiles/*.bed_TE; do suffix=$(basename $file | cut -d '_' -f1); awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i];}}' $file | awk -v x=$suffix 'BEGIN{OFS="\t";}{print $0, x}' - ; done >> all_chromHMM_TE.txt
+#TE_landscape/chromHMM/all_chromHMM_TE_sorted.txt
+sort -k1,1V -k2,2n -k3,3n -k6,6 -k10,10 all_chromHMM_TE.txt > all_chromHMM_TE_sorted.txt
+#TE_landscape/chromHMM/all_chromHMM_other.txt
+for file in chromHMM_bedfiles/*.bed_other; do suffix=$(basename $file | cut -d '_' -f1); awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i];}}' $file | awk -v x=$suffix 'BEGIN{OFS="\t";}{print $0, x}' - ; done >> all_chromHMM_other.txt
+#TE_landscape/chromHMM/all_chromHMM_other_sorted.txt
+sort -k1,1V -k2,2n -k3,3n -k6,6 -k10,10 all_chromHMM_other.txt > all_chromHMM_other_sorted.txt
+
 # Filtering to summit
 while read line; do python ~/bin/TE_landscape/filter_summit.py chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_TE 1 8 chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed chromHMM; python ~/bin/TE_landscape/filter_summit.py chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_other 1 8 chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed chromHMM; cat chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed > chromHMM/summit/TEs/rmsk_TEother_$line\_chromHMM.bed; rm chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed; rm chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed; done < sample_lists/mnemonics.txt
 
 # Including those with no summit
+## From original TE x sample x state file, split by sample
 while read line; do python identify_no_summit.py $line rmsk_TEother_$line\_chromHMM.bed rmsk_TEother_$line\_chromHMM_noSummit.txt 7 8; done < mnemonics.txt
 
 # Matrix of TE x sample x state
@@ -41,6 +52,7 @@ awk '{if($10 != "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_"$10".tx
 # Refseq promoters
 # Filtering to summit
 python ~/bin/TE_landscape/filter_summit.py chromHMM/Refseq_promoters/chromHMM_refseq_promoters_unique.txt 1 5 chromHMM/summit/promoters/chromHMM_refseq_promoters_unique_summit.txt chromHMM
+
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $8, $10]+=$9}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[6], a[i], sep[5]}}' chromHMM/summit/promoters/chromHMM_refseq_promoters_unique_summit.txt | sort -k1,1V -k2,2n -k3,3n -k5,5 - > chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt
 
 # Shuffled TEs
