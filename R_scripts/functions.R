@@ -22,7 +22,7 @@ wilcox_to_all = function(all,metadata){ #all and metadata are vectors, e.g., col
 }
 
 convert_class = function(class_vector){
-  class_vector = factor(class_vector,levels=unique(c(levels(class_vector),"SVA")))
+  class_vector = factor(class_vector,levels=unique(c(levels(class_vector),"SVA","Other")))
   class_vector[which(class_vector == "Other")] = "SVA"
   class_vector[which(class_vector %in% c("DNA?","LINE?","LTR?","SINE?","Unknown","Unknown?","RC","Unconfident","Unconfident_RC"))] = "Other"
   class_vector = factor(class_vector,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
