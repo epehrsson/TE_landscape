@@ -98,6 +98,12 @@ measure_states_extra = c("States.chromHMM","Max_states_intra","States.WGBS","Max
 measure_metrics = c("Length","mappability","JC_distance","CpGs","CpGs_per_length")
 measure_metrics_subfam = c("Count","Total_length","Length","Mappability","Age","CpGs","Count_CpGs","CpGs_per_TE","CpGs_per_kbp")
 enrichment_names = c("Length_ijk","Length_ik","Length_jk","Length_k","Enrichment","Length_percent_jk","Members","Count","Percent")
+
+# Mouse-human chromHMM states
+human_mouse_chromHMM_states = as.data.frame(matrix(c(chromHMM_states[c(1:2,7,6,4,15,13)],"1","2","3","4","5","6","7"),nrow=7))
+colnames(human_mouse_chromHMM_states) = c("Human_State","Mouse_State")
+
+mouse_chromHMM_colors = setNames(chromHMM_colors[as.vector(human_mouse_chromHMM_states$Human_State)],as.vector(human_mouse_chromHMM_states$Mouse_State))
 ```
 
 ## Load functions
@@ -1087,8 +1093,6 @@ rm(all_lengths)
 ### Supplementary Figure 8
 
 ```{r Figure S8, echo=FALSE}
-source("R_scripts/WGBS_sample_CpG_average.R")
-
 # Other sample classifications
 by_sample_all_long = melt(by_sample_all[,c("State","Sample","Proportion","Contribution",sample_categories[2:6])],id.vars=c("State","Sample","Proportion","Contribution"))
 colnames(by_sample_all_long)[5:6] = c("Category","Group")
@@ -1371,7 +1375,9 @@ lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched
 ### Subfamily permutation for candidates
 ### RERUN when updated
 
-Only subfamilies ever enriched in state, active states only, categories with 1+ enrichments. MHC across all subfamilies, states, and categories/groupings with at least one enrichment. 
+Looks for subfamily x state x sample group combinations enriched in more samples than expectation. Filtered on enrichment threshold (LOR>1.5) and 10 members in the state; excludes subfamilies with <30 members (accounts for state/chrY). Runs all metadata categories at once.
+
+MHC on only subfamilies x states x categories/groupings ever enriched in state, active states only, categories with 1+ enrichments. 
 
 ```{r subfam permutation, cache=TRUE, cache.lazy=FALSE, eval=FALSE}
 # Subfamilies ever enriched in a state
@@ -1869,54 +1875,76 @@ ADD
 
 ## Mouse
 
-### Figure 7
-
-```{r Figure 7, echo=FALSE,eval=FALSE}
+```{r mouse scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
 #source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 source("R_scripts/human_mouse_ortholog_WGBS.R") #Requires WGBS_subfamily_enrichment_TE.R
+source("R_scripts/human_mouse_subfamily_WGBS.R")
 
-a = ggplot(human_mouse_orthologs_WGBS,aes(x=E054,y=ENCFF592SYK/100)) + geom_point(alpha=0.1) + ylab("Mouse TE methylation level") + xlab("Human TE methylation level") + geom_density2d()
+rmsk_TE_class$Mouse_orthologs = table(human_mouse_orthologs_mm10$class_update)[as.vector(rmsk_TE_class$class_update)]
+rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE_subfamily[which(rmsk_TE_subfamily$subfamily %in% mm10_rmsk_TE$subfamily),],~class_update,summarize,
+                                          Mouse_ortholog_subfamily = length(subfamily)),by="class_update",all.x=TRUE)
+rmsk_TE_class[which(is.na(rmsk_TE_class$Mouse_ortholog_subfamily)),]$Mouse_ortholog_subfamily = 0
 
-b = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human,y=Mouse,color=Pair)) + geom_point(alpha=0.5) + scale_color_discrete(guide=FALSE) + xlab("Human subfamily % hypomethylated") + ylab("Mouse subfamily % hypomethylated")
-
-grid.arrange(a,b,nrow=1)
-
-# Mosaic plot
-human_mouse_orthologs_WGBS_category_pairs = lapply(seq(1,13,1),function(x) table(human_mouse_orthologs_WGBS_category[,c(as.vector(human_mouse_samples[x,1]),as.vector(human_mouse_samples[x,2]))]))
-human_mouse_orthologs_WGBS_category_pairs_summed = Reduce('+',human_mouse_orthologs_WGBS_category_pairs)
-names(attributes(human_mouse_orthologs_WGBS_category_pairs_summed)$dimnames) <- c("Mouse","Human")
-
-c = mosaic(human_mouse_orthologs_WGBS_category_pairs_summed[c(2,3,1),c(2,3,1)],shade=TRUE,return_grob=TRUE)
+# Relies on intervening unix analysis
+source("R_scripts/human_mouse_ortholog_chromHMM.R") 
 ```
 
-### Supplementary Figure 17
+### Comparison of human-mouse TE ortholog methylation and chromHMM state
+### RERUN when updated
 
-```{r Figure S17, echo=FALSE,eval=FALSE}
-source("R_scripts/TE_ortholog_class_stats.R")
-#source("R_scripts/human_mouse_ortholog_WGBS.R")
+```{r write chromHMM, eval=FALSE}
+write.table(unique(human_mouse_orthologs_WGBS_hypo[,c(hg19_coordinates,"Human_sample")]),file="Mouse/hg19_ortholog_hypo.test",sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
+write.table(unique(human_mouse_orthologs_WGBS_hypo[,mm10_coordinates]),file="Mouse/mm10_ortholog_hypo.test",sep="\t",col.names=FALSE,row.names=FALSE,quote=FALSE)
+```
 
+```{r overlap with GENCODE,eval=FALSE}
+write.table(unique(human_mouse_orthologs_WGBS_hypo_chromHMM[which(human_mouse_orthologs_WGBS_hypo_chromHMM$Human_State == "1_TssA" & human_mouse_orthologs_WGBS_hypo_chromHMM$Mouse_State == "1"),hg19_coordinates]),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file="Mouse/hg19_orthologs_hypo_1TssA.bed")
+```
+
+### Figure 7
+
+A) Axes are individual TE methylation level - all 13 samples pairs. Excludes TEs missing methylation in either sample of a pair.
+B) Y-axis is % of human TEs in each state in that state in mouse; colors as before - all 13 sample pairs
+C) Axes are subfamily % hypomethylated (of those with CpGs)
+
+```{r Figure 7}
+a = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_methylation,y=Mouse_methylation)) + stat_bin2d(bins=50) + scale_fill_gradient(low="white",high="darkblue",name="TEs") + xlab("Human") + ylab("Mouse") + coord_equal()
+
+state_freq = ddply(human_mouse_orthologs_WGBS_paired,.(Human_state),summarise,Entries=100*length(Human_state)/dim(human_mouse_orthologs_WGBS_paired)[1])
+
+b = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_state,fill=Mouse_state)) + geom_bar(position="fill") + scale_fill_manual(values=meth_colors,guide=FALSE) + xlab("Human") + ylab("Mouse") + theme(axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(labels=as.vector(apply(state_freq,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2]),0),"%)",sep=""))))
+
+c = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human_proportion,y=Mouse_proportion,color=Anatomy)) + geom_point(alpha=0.5) + scale_color_manual(values=anatomy_colors) + xlab("Human") + ylab("Mouse") + geom_smooth(method='lm',se=FALSE,fullrange=TRUE) + facet_wrap(~Human) + theme(legend.position = "bottom",legend.direction = "horizontal")
+
+state_freq_chromHMM = ddply(human_mouse_orthologs_WGBS_hypo_chromHMM,.(Human_State),summarise,Entries=100*length(Human_State)/dim(human_mouse_orthologs_WGBS_hypo_chromHMM)[1])
+
+d = ggplot(human_mouse_orthologs_WGBS_hypo_chromHMM,aes(x=Human_State,fill=Mouse_State)) + geom_bar(position="fill") + xlab("Human") + ylab("Mouse") + theme(axis.text.x = element_text(angle=90,hjust=1)) + scale_fill_manual(values=mouse_chromHMM_colors,name="Mouse state") + scale_x_discrete(labels=as.vector(apply(state_freq_chromHMM,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2]),1),"%)",sep=""))))
+
+grid.arrange(a,b,c,d,nrow=3,layout_matrix=rbind(c(1,2),c(3,3),c(4,4)),heights=c(0.25,0.5,0.25))
+```
+
+### Supplementary Figure 14
+
+```{r Figure S14, echo=FALSE}
+# Mouse orthologs and subfamilies by class
 par(mfrow=c(1,2)) 
 
-pie(rmsk_TE_class$Mouse_orthologs,labels=paste(rmsk_TE_class$Mouse_orthologs,"(",round(rmsk_TE_class$Mouse_orthologs/sum(rmsk_TE_class$Mouse_orthologs)*100,0),"%)",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Orthologous TEs",cex=1,cex.main=2,line=-10,radius=0.5)
+pie(rmsk_TE_class$Mouse_orthologs,labels=paste(rmsk_TE_class$Mouse_orthologs,"(",round(rmsk_TE_class$Mouse_orthologs/sum(rmsk_TE_class$Mouse_orthologs)*100,0),"%)",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Orthologous TEs",cex=1,cex.main=1,line=-5,radius=0.5)
 
-pie(rmsk_TE_class$Mouse_ortholog_subfamily,labels=paste(rmsk_TE_class$Mouse_ortholog_subfamily,"(",round(rmsk_TE_class$Mouse_ortholog_subfamily/sum(rmsk_TE_class$Mouse_ortholog_subfamily)*100,0),"%)",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Orthologous subfamilies",cex=1,cex.main=2,line=-10,radius=0.5)
+pie(rmsk_TE_class$Mouse_ortholog_subfamily,labels=paste(rmsk_TE_class$Mouse_ortholog_subfamily,"(",round(rmsk_TE_class$Mouse_ortholog_subfamily/sum(rmsk_TE_class$Mouse_ortholog_subfamily)*100,0),"%)",sep=""),col=class_colors[as.vector(rmsk_TE_class$class_update)],clockwise=TRUE,main="Orthologous subfamilies",cex=1,cex.main=1,line=-5,radius=0.5)
 
-b = ggplot(human_mouse_samples,aes(x=Test,y=Spearman)) + geom_boxplot() + ylab("Spearman correlation across TEs") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human","Mouse-mouse","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1))
+a = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_methylation,y=Mouse_methylation)) + stat_bin2d(bins=50) + scale_fill_gradient(low="white",high="darkblue",name="TEs") + xlab("Human") + ylab("Mouse") + facet_wrap(~Human_sample)
 
-c = ggplot(human_mouse_samples,aes(x=Test,y=Subfamily_Spearman)) + geom_boxplot() + ylab("Spearman correlation across subfamilies") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human, random tissue","Mouse-mouse, random tissue","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1))
+b = ggplot(human_mouse_spearman,aes(x=Test,y=Correlation,fill=Tissue)) + geom_boxplot() + ylab("Spearman correlation across TEs") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human","Mouse-mouse","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1)) + scale_fill_discrete(guide=FALSE)
 
-hg19_mm10_TE_WGBS_subfamily_hypo_paired_age = merge(ddply(hg19_mm10_TE_WGBS_subfamily_hypo_paired,.(subfamily),summarise,unlist(cor.test(Mouse,Human,method="spearman"))["estimate.rho"]),rmsk_TE_subfamily[c("subfamily","Age")],by="subfamily")
-colnames(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age)[2] = "Spearman_correlation"
-hg19_mm10_TE_WGBS_subfamily_hypo_paired_age$Spearman_correlation = as.numeric(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age$Spearman_correlation)
+c = ggplot(human_mouse_spearman_subfamily,aes(x=Test,y=Correlation,fill=Tissue)) + geom_boxplot() + ylab("Spearman correlation across subfamilies") + theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=45,hjust=1)) + scale_x_discrete(labels=c("Human-human","Mouse-mouse","Human-mouse, same tissue","Human-mouse, random tissue")) + scale_y_continuous(limits=c(0,1)) 
 
-d = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age,aes(x=Age,y=Spearman_correlation)) + geom_point() + ylab("Spearman's rho")
-
-grid.arrange(b,c,d,nrow=2,layout_matrix=rbind(c(1,2),c(3,3)))
+grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,1),c(2,3)),widths=c(0.45,0.55))
 ```
 
 ### Mouse ortholog analysis
 
-```{r analysis Fig S16a,eval=FALSE}
+```{r mouse ortholog analysis}
 # Number of mouse TEs
 MOUSE_TE = dim(mm10_rmsk_TE)[1]
 MOUSE_TE
@@ -1954,12 +1982,41 @@ median(unique(human_mouse_orthologs_mm10[,hg19_coordinates])$human_stop_hg19-uni
 median(unique(human_mouse_orthologs_mm10[,mm10_coordinates])$mouse_stop_mm10-unique(human_mouse_orthologs_mm10[,mm10_coordinates])$mouse_start_mm10)
 
 # Average age of TEs with mouse orthologs
-median(merge(rmsk_TE_measure,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates,by.y=hg19_coordinates[c(1:4,6,5,7)])$JC_distance)
+median(rmsk_TE$JC_distance)
+median(merge(rmsk_TE,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates,by.y=hg19_coordinates[c(1:4,6,5,7)])$JC_distance)
+
+# Number, % of hg19 orthologs with CpGs
+dim(merge(TE_meth_average[,c(TE_coordinates,"CpGs")],unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates))
+dim(merge(TE_meth_average[,c(TE_coordinates,"CpGs")],unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates))[1]/dim(unique(human_mouse_orthologs_mm10[,hg19_coordinates]))[1]
+
+# Average number of CpGs per hg19 ortholog with CpGs
+median(merge(TE_meth_average[,c(TE_coordinates,"CpGs")],unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates)$CpGs)
+
+# Number, % of mm10 TEs with CpGs
+dim(mm10_rmsk_TE_WGBS)[1]
+dim(mm10_rmsk_TE_WGBS)[1]/MOUSE_TE
+
+# Number, % of mm10 orthologs with CpGs
+dim(merge(mm10_rmsk_TE_WGBS,unique(human_mouse_orthologs_mm10[,mm10_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=mm10_coordinates))
+dim(merge(mm10_rmsk_TE_WGBS,unique(human_mouse_orthologs_mm10[,mm10_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=mm10_coordinates))[1]/dim(unique(human_mouse_orthologs_mm10[,mm10_coordinates]))[1]
+
+# Number of unique orthologous TEs with CpGs in mm10, hg19, and hg19->mm10 (both have CpGs)
+dim(unique(human_mouse_orthologs_WGBS[,mm10_coordinates]))[1]
+dim(unique(human_mouse_orthologs_WGBS[,hg19_coordinates]))[1]
+dim(unique(human_mouse_orthologs_WGBS[,c("human_chr_mm10","human_start_mm10","human_stop_mm10","human_strand_mm10")]))[1]
+
+# Number of mouse subfamilies
+length(unique(mm10_rmsk_TE$subfamily))
 
 # Number of subfamilies shared between human and mouse
 length(intersect(levels(mm10_rmsk_TE$subfamily),levels(rmsk_TE$subfamily)))
 
+# Number of subfamilies shared between human and mouse with CpGs in both 
+dim(hg19_mm10_TE_WGBS_subfamily_hypo)[1]
+setdiff(intersect(levels(mm10_rmsk_TE$subfamily),levels(rmsk_TE$subfamily)),hg19_mm10_TE_WGBS_subfamily_hypo$subfamily)
+
 # Average age of subfamilies also in mouse 
+median(rmsk_TE_subfamily$Age)
 median(rmsk_TE_subfamily[which(rmsk_TE_subfamily$subfamily %in% mm10_rmsk_TE$subfamily),]$Age)
 
 # Proportion of hg19 TEs and subfamilies with ortholog in mouse, by class
@@ -1969,28 +2026,7 @@ rmsk_TE_class$Mouse_ortholog_subfamily/rmsk_TE_class$Subfamilies
 
 ### Mouse WGBS analysis
 
-```{r analysis Fig S16b,eval=FALSE}
-# Number, % of mm10 TEs with CpGs
-dim(mm10_rmsk_TE_CpG_count)[1]
-dim(mm10_rmsk_TE_CpG_count)[1]/MOUSE_TE
-
-# Number, % of hg19 orthologs with CpGs
-dim(merge(TE_CpG_count,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates))
-dim(merge(TE_CpG_count,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates))[1]/dim(unique(human_mouse_orthologs_mm10[,hg19_coordinates]))[1]
-
-# Average number of CpGs per hg19 ortholog with CpGs
-mean(merge(TE_CpG_count,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates)$CpGs)
-median(merge(TE_CpG_count,unique(human_mouse_orthologs_mm10[,hg19_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=hg19_coordinates)$CpGs)
-
-# Number, % of mm10 orthologs with CpGs
-dim(merge(mm10_rmsk_TE_CpG_count,unique(human_mouse_orthologs_mm10[,mm10_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=mm10_coordinates))
-dim(merge(mm10_rmsk_TE_CpG_count,unique(human_mouse_orthologs_mm10[,mm10_coordinates]),by.x=TE_coordinates[c(1:4,6,5,7)],by.y=mm10_coordinates))[1]/dim(unique(human_mouse_orthologs_mm10[,mm10_coordinates]))[1]
-
-# Number of unique orthologous TEs with CpGs in mm10, hg19, and hg19->mm10
-dim(unique(human_mouse_orthologs_WGBS[,mm10_coordinates]))[1]
-dim(unique(human_mouse_orthologs_WGBS[,hg19_coordinates]))[1]
-dim(unique(human_mouse_orthologs_WGBS[,c("human_chr_mm10","human_start_mm10","human_stop_mm10","human_strand_mm10")]))[1]
-
+```{r mouse WGBS analysis}
 # TEs with meth data in at least one mouse/human sample
 test = human_mouse_orthologs_WGBS[which(apply(human_mouse_orthologs_WGBS,1,function(x) sum(is.na(x[20:32])) < 13) & apply(human_mouse_orthologs_WGBS,1,function(x) sum(is.na(x[33:41])) < 9)),]
 
@@ -2000,113 +2036,84 @@ dim(unique(human_mouse_orthologs_WGBS[,hg19_coordinates]))[1]-dim(unique(test[,h
 # Number of mouse TEs
 dim(unique(human_mouse_orthologs_WGBS[,mm10_coordinates]))[1]-dim(unique(test[,mm10_coordinates]))[1]
 
-# Number of TEs with methylation data in E054 and ENCFF592SYK
-dim(human_mouse_orthologs_WGBS[which(!is.na(human_mouse_orthologs_WGBS$E054) & !is.na(human_mouse_orthologs_WGBS$ENCFF592SYK)),])
+# Number of TEs with methylation data per sample
+ddply(human_mouse_orthologs_WGBS_paired,.(Human_sample,Mouse_sample),summarise,Both=sum(!is.na(Human_methylation) & !is.na(Mouse_methylation)))
 
-# Individual TE Spearman correlations
-ddply(human_mouse_samples,.(Test),summarise,Mean=mean(Spearman),SD=sd(Spearman))
+# Chi-sq test for human-mouse pairs (WGBS)
+# Table of human/mouse states, overall
+table(human_mouse_orthologs_WGBS_paired[,c("Mouse_state","Human_state")])
 
-# Number of pairs where TE is hypomethylated in both
-dim(human_mouse_orthologs_mm10_hypo)
-dim(unique(human_mouse_orthologs_mm10_hypo[,hg19_coordinates]))
-dim(unique(human_mouse_orthologs_mm10_hypo[,mm10_coordinates]))
-dim(unique(human_mouse_orthologs_mm10_hypo[,c(hg19_coordinates,"Human_sample")]))
-dim(unique(human_mouse_orthologs_mm10_hypo[,c(mm10_coordinates,"Mouse_sample_mm10")]))
-
-# Number of subfamilies shared between human and mouse with CpGs in both 
-dim(hg19_mm10_TE_WGBS_subfamily_hypo)[1]
-setdiff(intersect(levels(mm10_rmsk_TE$subfamily),levels(rmsk_TE$subfamily)),hg19_mm10_TE_WGBS_subfamily_hypo$subfamily)
-
-# Subfamily Spearman correlations 
-ddply(human_mouse_samples,.(Test),summarise,Mean=mean(Subfamily_Spearman),SD=sd(Subfamily_Spearman))
-
-# Subfamily age vs. degree of correlation with mouse
-cor.test(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age$Age,as.numeric(hg19_mm10_TE_WGBS_subfamily_hypo_paired_age$Spearman_correlation),method="spearman")
-```
-
-### Chi-sq test for human-mouse pairs (WGBS)
-
-```{r analysis Fig S16c,eval=FALSE}
-# All methylation states
-p.adjust(unlist(lapply(human_mouse_orthologs_WGBS_category_pairs,function(x) unlist(chisq.test(x))["p.value"])),method="bonf")
+# All methylation states, overall and by sample
+ddply(human_mouse_orthologs_WGBS_paired,.(),summarise,Pvalue=unlist(chisq.test(x=Human_state,y=Mouse_state))["p.value"])
+ddply(human_mouse_orthologs_WGBS_paired,.(Human_sample),summarise,Pvalue=unlist(chisq.test(x=Human_state,y=Mouse_state))["p.value"])
 
 # Hypomethylated vs. all other states
-p.adjust(apply(human_mouse_samples,1,function(x) unlist(chisq.test(matrix(c(nrow(human_mouse_orthologs_WGBS_category[which(human_mouse_orthologs_WGBS_category[,x[1]] == "Hypomethylated" & human_mouse_orthologs_WGBS_category[,x[2]] == "Hypomethylated"),]),nrow(human_mouse_orthologs_WGBS_category[which(human_mouse_orthologs_WGBS_category[,x[1]] == "Hypomethylated" & human_mouse_orthologs_WGBS_category[,x[2]] %in% c("Hypermethylated","Intermediate")),]),nrow(human_mouse_orthologs_WGBS_category[which(human_mouse_orthologs_WGBS_category[,x[1]] %in% c("Hypermethylated","Intermediate") & human_mouse_orthologs_WGBS_category[,x[2]] == "Hypomethylated"),]),nrow(human_mouse_orthologs_WGBS_category[which(human_mouse_orthologs_WGBS_category[,x[1]] %in% c("Hypermethylated","Intermediate") & human_mouse_orthologs_WGBS_category[,x[2]] %in% c("Hypermethylated","Intermediate")),])),nrow=2)))["p.value"]),method="bonf")
+test = human_mouse_orthologs_WGBS_paired[,c("Human_sample","Human_state","Mouse_state")]
+test$Human_state = mapvalues(test$Human_state,meth_states[2:3],rep("Missing",2))
+test$Mouse_state = mapvalues(test$Mouse_state,meth_states[2:3],rep("Missing",2))
+
+ddply(test,.(),summarise,Pvalue=unlist(chisq.test(x=Human_state,y=Mouse_state))["p.value"])
+ddply(test,.(Human_sample),summarise,Pvalue=unlist(chisq.test(x=Human_state,y=Mouse_state))["p.value"])
+
+# Individual TE Spearman correlations
+ddply(human_mouse_spearman,.(Test),summarise,Median=median(Correlation),IQR=IQR(Correlation))
+by(human_mouse_spearman[which(human_mouse_spearman$Test != "Paired"),],human_mouse_spearman[which(human_mouse_spearman$Test != "Paired"),]$Test,function(x) unlist(wilcox.test(x[which(x$Tissue == "Same"),]$Correlation,x[which(x$Tissue == "Different"),]$Correlation))["p.value"])
+by(human_mouse_spearman,human_mouse_spearman$Tissue,function(x) pairwise.wilcox.test(x$Correlation,x$Test))
+
+# Subfamily Spearman correlations 
+ddply(human_mouse_spearman_subfamily,.(Test),summarise,Median=median(Correlation),IQR=IQR(Correlation))
+by(human_mouse_spearman_subfamily[which(human_mouse_spearman_subfamily$Test != "Paired"),],human_mouse_spearman_subfamily[which(human_mouse_spearman_subfamily$Test != "Paired"),]$Test,function(x) unlist(wilcox.test(x[which(x$Tissue == "Same"),]$Correlation,x[which(x$Tissue == "Different"),]$Correlation))["p.value"])
+by(human_mouse_spearman_subfamily,human_mouse_spearman_subfamily$Tissue,function(x) pairwise.wilcox.test(x$Correlation,x$Test))
+
+# Number of pairs where TE is hypomethylated in both
+dim(human_mouse_orthologs_WGBS_hypo)
+dim(unique(human_mouse_orthologs_WGBS_hypo[,hg19_coordinates]))
+dim(unique(human_mouse_orthologs_WGBS_hypo[,mm10_coordinates]))
+dim(unique(human_mouse_orthologs_WGBS_hypo[,c(hg19_coordinates,"Human_sample")]))
+dim(unique(human_mouse_orthologs_WGBS_hypo[,c(mm10_coordinates,"Mouse_sample")]))
 ```
 
-### Comparison of human-mouse TE ortholog methylation and chromHMM state
-### RERUN when updated
+### Age analysis
 
-```{r write chromHMM, eval=FALSE}
-write.table(unique(human_mouse_orthologs_mm10_hypo[,c(hg19_coordinates,"Human_sample")]),file="Mouse/hg19_ortholog_hypo.txt",sep="\t",row.names=FALSE,col.names=FALSE,quote=FALSE)
-write.table(unique(human_mouse_orthologs_mm10_hypo[,mm10_coordinates]),file="Mouse/mm10_ortholog_hypo.txt",sep="\t",col.names=FALSE,row.names=FALSE,quote=FALSE)
-```
-
-### Relies on intervening unix analysis
-
-```{r,eval=FALSE}
-# Human chromHMM state for hg19 TEs hypomethylated in mouse/human
-hg19_orthologs_hypo_chromHMM = read.table("Mouse/hg19_ortholog_hypo_chromHMM.txt",sep='\t')[,1:9]
-colnames(hg19_orthologs_hypo_chromHMM) = c(hg19_coordinates,"Human_sample","Human_state")
-
-# mm9 chromHMM state for mm10 TEs hypomethylated in mouse/human
-mm10_orthologs_hypo_chromHMM = read.table("Mouse/mm10_ortholog_hypo_chromHMM.txt",sep='\t')[,1:9]
-colnames(mm10_orthologs_hypo_chromHMM) = c(mm10_coordinates,"Mouse_State","Mouse_sample_mm9")
-
-# Combine chromHMM and WGBS
-human_mouse_orthologs_mm10_hypo_chromHMM = merge(human_mouse_orthologs_mm10_hypo,hg19_orthologs_hypo_chromHMM,by=c(hg19_coordinates,"Human_sample"),all.x=TRUE)
-human_mouse_orthologs_mm10_hypo_chromHMM = merge(human_mouse_orthologs_mm10_hypo_chromHMM,mm10_orthologs_hypo_chromHMM,by=c(mm10_coordinates,"Mouse_sample_mm9"),all.x=TRUE)
-human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State = factor(human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State)
-human_mouse_orthologs_mm10_hypo_chromHMM$Human_state = factor(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state,chromHMM_states)
-```
-
-### Supplementary Figure 18
-
-```{r Figure S18, echo=FALSE,eval=FALSE}
-# Mouse-human chromHMM states
-human_mouse_chromHMM_states = matrix(c(chromHMM_states[c(1:2,7,6,4,15,13)],"1","2","3","4","5","6","7"),nrow=7)
-
-mosaic(table(human_mouse_orthologs_mm10_hypo_chromHMM[,c("Human_state","Mouse_State")]),shade=TRUE,return_grob=TRUE)
+```{r}
+test = ddply(human_mouse_orthologs_WGBS_paired,.(human_chr_hg19,human_start_hg19,human_subfamily,human_class,mouse_chr_mm10,mouse_start_mm10,JC_distance),summarise,Concordant=sum(Human_state == Mouse_state),Con_hypo=sum(Human_state == Mouse_state & Human_state == "Hypomethylated"))
+cor.test(test$JC_distance,test$Con_hypo,method="spearman")
+cor.test(test$JC_distance,test$Concordant,method="spearman")
+by(test,test$human_class,function(x) cor.test(x$JC_distance,x$Con_hypo,method="spearman"))
+by(test,test$human_class,function(x) cor.test(x$JC_distance,x$Concordant,method="spearman"))
 ```
 
 ### Human-mouse ortholog chromHMM analysis
 
-```{r analysis Fig S17,eval=FALSE}
+```{r mouse chromHMM analysis}
 # Corresponding samples
-chromHMM_mouse_samples = unique(human_mouse_orthologs_mm10_hypo_chromHMM[,c("Human_sample","Mouse_sample_mm9")])
-table(human_mouse_orthologs_mm10_hypo_chromHMM$Human_sample,human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_sample_mm9)
+chromHMM_mouse_samples = unique(human_mouse_orthologs_WGBS_hypo_chromHMM[,c("Human_sample","Mouse_sample_chromHMM")])
+table(human_mouse_orthologs_WGBS_hypo_chromHMM$Human_sample,human_mouse_orthologs_WGBS_hypo_chromHMM$Mouse_sample_chromHMM)
 
 # Number of pairs and unique TEs in each state
-dim(human_mouse_orthologs_mm10_hypo_chromHMM)
-dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[,hg19_coordinates]))
-dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[,c(hg19_coordinates,"Human_sample")]))
-dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[,mm10_coordinates]))
-dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[,c(mm10_coordinates,"Mouse_sample_mm9")]))
+dim(human_mouse_orthologs_WGBS_hypo_chromHMM)
+dim(unique(human_mouse_orthologs_WGBS_hypo_chromHMM[,hg19_coordinates]))
+dim(unique(human_mouse_orthologs_WGBS_hypo_chromHMM[,c(hg19_coordinates,"Human_sample")]))
+dim(unique(human_mouse_orthologs_WGBS_hypo_chromHMM[,mm10_coordinates]))
+dim(unique(human_mouse_orthologs_WGBS_hypo_chromHMM[,c(mm10_coordinates,"Mouse_sample_chromHMM")]))
 
-apply(human_mouse_chromHMM_states,1,function(x) { c(
-  pairs = dim(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),])[1],
-  human = dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),hg19_coordinates]))[1],
-  mouse = dim(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),mm10_coordinates]))[1]
-)})
+# Corresponding states
+human_mouse_orthologs_chromHMM_match = merge(human_mouse_orthologs_WGBS_hypo_chromHMM,human_mouse_chromHMM_states,by=c("Mouse_State","Human_State"))
 
-# Chi-squared for each sample pair (rows and columns with no data removed)
-p.adjust(unlist(lapply(lapply(seq(1,11,1),function(x) table(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_sample == chromHMM_mouse_samples[x,1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_sample_mm9 == chromHMM_mouse_samples[x,2]),c("Human_state","Mouse_State")])),function(x) unlist(chisq.test(x[which(rowSums(x) > 0),which(colSums(x) > 0)]))["p.value"])),method="bonf")
+# Number of pairs and human/mouse TEs per state
+ddply(human_mouse_orthologs_chromHMM_match,.(Human_State),function(x) dim(x)[1])
+ddply(human_mouse_orthologs_chromHMM_match,.(Human_State),function(x) dim(unique(x[,hg19_coordinates]))[1])
+ddply(human_mouse_orthologs_chromHMM_match,.(Human_State),function(x) dim(unique(x[,mm10_coordinates]))[1])
 
-# Summarise hg19 TE class by state
-apply(human_mouse_chromHMM_states,1,function(x) table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),hg19_coordinates])$human_class))
+# hg19 TE class per state
+ddply(human_mouse_orthologs_chromHMM_match,.(Human_State),function(x) table(unique(x[,hg19_coordinates])$human_class))
 
-# Summarise hg19 TE subfamily by state
-apply(human_mouse_chromHMM_states,1,function(x) sort(table(droplevels(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),hg19_coordinates])$human_subfamily))))
+# hg19 TE subfamily per state
+human_mouse_orthologs_chromHMM_subfamily = melt(ddply(human_mouse_orthologs_chromHMM_match,.(Human_State),function(x) table(unique(x[,hg19_coordinates])$human_subfamily)),id.var="Human_State")
+human_mouse_orthologs_chromHMM_subfamily = merge(human_mouse_orthologs_chromHMM_subfamily,rmsk_TE_subfamily[,c("subfamily","Count")],by.x="variable",by.y="subfamily")
+human_mouse_orthologs_chromHMM_subfamily = human_mouse_orthologs_chromHMM_subfamily[which(human_mouse_orthologs_chromHMM_subfamily$value > 0),]
 
-test = apply(human_mouse_chromHMM_states,1,function(x) log2((table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),hg19_coordinates])$human_subfamily)/sum(table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == x[1] & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == x[2]),hg19_coordinates])$human_subfamily)))/(table(unique(human_mouse_orthologs_mm10[,hg19_coordinates])$human_subfamily)/sum(table(unique(human_mouse_orthologs_mm10[,hg19_coordinates])$human_subfamily)))))
-
-test[order(test[,1]),]
-test[order(test[,3]),]
-test[order(test[,4]),]
-```
-
-```{r overlap with GENCODE,eval=FALSE}
-write.table(unique(human_mouse_orthologs_mm10_hypo_chromHMM[which(human_mouse_orthologs_mm10_hypo_chromHMM$Human_state == "1_TssA" & human_mouse_orthologs_mm10_hypo_chromHMM$Mouse_State == "1"),hg19_coordinates]),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file="Mouse/hg19_orthologs_hypo_1TssA.bed")
+ddply(human_mouse_orthologs_chromHMM_subfamily,.(Human_State),function(x) x[order(x$value/x$Count),])
 ```
 
 # Methods 
