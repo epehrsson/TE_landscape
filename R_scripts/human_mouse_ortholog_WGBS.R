@@ -3,7 +3,6 @@
 
 # WGBS
 ## hg19 TEs with WGBS average methylation
-#load("R_datasets/TE_meth_average.RData")
 
 ## mm10 TEs with WGBS average methylation
 mm10_rmsk_TE_WGBS = read.table("Mouse/WGBS/mm10_rmsk_TE_WGBS_avg.txt",sep='\t',header=TRUE)
