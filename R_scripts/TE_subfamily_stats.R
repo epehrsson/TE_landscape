@@ -39,6 +39,7 @@ colnames(TE_CpG_count) = c(TE_coordinates[c(1:4,6,5,7)],"CpGs")
 subfamily_wCpG_count = aggregate(data=TE_CpG_count,CpGs~subfamily,length)
 colnames(subfamily_wCpG_count)[2] = "Count_CpGs"
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_wCpG_count,by="subfamily",all.x=TRUE)
+rmsk_TE_subfamily[is.na(rmsk_TE_subfamily)] = 0
 rm(list=c("TE_CpG_count","subfamily_wCpG_count"))
 
 # Proportion of each subfamily in each feature
