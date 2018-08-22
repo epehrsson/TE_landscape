@@ -77,10 +77,6 @@ https://enhancer.lbl.gov/cgi-bin/imagedb3.pl?form=search&show=1&search.form=no&s
 mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from hg19.chromInfo"  > hg19.genome
 genic_features/hg19.genome		
 
-# Mouse chromosome sizes	
-#TE_landscape/raw_data/mouse/mm9.genome	
-mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from mm9.chromInfo"  > mm9.genome
-
 # Mappability
 # Rsmk 36bp mappability file (Sundaram et al), standard chromosomes
 #TE_landscape/mappability/rmsk.txt.mapability.36mer -> /bar/genomes/hg19/rmsk/rmsk.txt.mapability.36mer
@@ -100,10 +96,6 @@ wget hgdownload.cse.ucsc.edu/gbdb/hg19/bbi/wgEncodeCrgMapabilityAlign36mer.bw
 # RepeatMasker file for hg19	 
 #TE_landscape/features/rmsk.txt	
 /bar/genomes/hg19/rmsk/rmsk.txt.gz
-
-# RepeatMasker file for mm9	 
-#TE_landscape/raw_data/mouse/mm9_rmsk.txt -> /bar/genomes/mm9/rmsk/rmsk.txt	
-/bar/genomes/mm9/rmsk/rmsk.txt
 
 # RepeatMasker file for mm10	 
 #TE_landscape/features/mouse/rmsk_mm10.txt	

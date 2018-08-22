@@ -43,25 +43,6 @@ awk -v OFS='\t' '{if($12 == "Low_complexity" || $12 == "Satellite" || $12 == "Si
 bedtools merge -i rmsk_repeats.txt > rmsk_repeats_merge.txt
 
 # Mouse
-# mm9
-# Mouse TEs, chromosomes 1-19, X, Y, M only	
-#TE_landscape/features/mouse/mm9_rmsk_standard.txt	
-awk -v OFS='\t' '{if($6 !~ /_/) print $0}' mm9_rmsk.txt > mm9_rmsk_standard.txt
-
-# RepeatMasker file restricted to all TE classes, chr 1-19, X, Y, and M	
-#TE_landscape/features/mouse/TEs/mm9_rmsk_TE.txt	
-awk -v OFS='\t' '{if(($12 == "LTR" || $12 == "DNA" || $12 == "SINE" || $12 == "LINE") && ($6 !~ /_/)) print $6, $7, $8, $11, $12, $13, $10}' mm9_rmsk.txt > mm9_rmsk_TE.txt
-#TE_landscape/features/mouse/TEs/mm9_rmsk_other.txt	
-awk -v OFS='\t' '{if(($12 == "Other" || $12 == "RC" || $12 == "Unknown") && ($6 !~ /_/)) print $6, $7, $8, $11, $12, $13, $10}' mm9_rmsk.txt > mm9_rmsk_other.txt
-#TE_landscape/features/mouse/TEs/mm9_rmsk_TEother.txt	
-
-# Merged TE RepeatMasker file	 
-#TE_landscape/features/mouse/TEs/mm9_rmsk_TEmerge.txt	
-bedtools merge -i mm9_rmsk_TE.txt > mm9_rmsk_TEmerge.txt
-#TE_landscape/features/mouse/TEs/mm9_rmsk_TEother_merge.txt	
-cat mm9_rmsk_TE.txt mm9_rmsk_other.txt | sort -k1,1 -k2,2n - | bedtools merge -i - > mm9_rmsk_TEother_merge.txt
-
-# mm10
 # mm10 mouse TEs, chromosomes 1-19, X, Y, M only	 
 #TE_landscape/features/mouse/TEs/mm10_rmsk_TE.txt	
 awk -v OFS='\t' '{if(($12 == "LTR" || $12 == "DNA" || $12 == "SINE" || $12 == "LINE" || 12 == "Other" || $12 == "RC" || $12 == "Unknown" || $12 == "DNA?" || $12 == "LINE?" || $12 == "LTR?" || $12 == "SINE?" || $12 == "RC?") && ($6 !~ /_/)) print $6, $7, $8, $11, $12, $13, $10}' rmsk_mm10.txt > mm10_rmsk_TE.txt
