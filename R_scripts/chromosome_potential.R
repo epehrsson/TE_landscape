@@ -7,6 +7,27 @@ chrom_state$chromosome = factor(chrom_state$chromosome,levels=standard_chromosom
 chrom_state$State = factor(chrom_state$State,levels=chromHMM_states)
 chrom_state_total = ddply(chrom_state,.(chromosome,State),summarise,Bases=sum(as.numeric(Bases)))
 
+chr_state_WGBS = read.table("WGBS/chr_CpG_meth_states.txt",sep='\t')
+colnames(chr_state_WGBS) = c("chromosome","Sample",meth_states)
+chr_state_WGBS[is.na(chr_state_WGBS)] = 0
+chr_state_WGBS$Sample = mapvalues(chr_state_WGBS$Sample,seq(4,40,1),as.vector(metadata[which(!is.na(metadata$WGBS)),]$Sample))
+chr_state_WGBS$chromosome = factor(chr_state_WGBS$chromosome,levels=standard_chromosomes)
+chr_state_WGBS = melt(chr_state_WGBS,id.vars=c("chromosome","Sample"))
+colnames(chr_state_WGBS)[3:4] = c("State","CpGs")
+chr_state_WGBS_total = ddply(chr_state_WGBS,.(chromosome,State),summarise,CpGs=sum(CpGs))
+
+chr_state_DNase = read.table("DNase/chr_DNase.txt",sep=" ")
+colnames(chr_state_DNase) = c("Sample","chromosome","Peaks")
+chr_state_DNase$chromosome = factor(chr_state_DNase$chromosome,levels=standard_chromosomes)
+chr_state_DNase = merge(chr_state_DNase,hg19_genome,by.x="chromosome",by.y="chrom")
+chr_state_DNase_total = ddply(chr_state_DNase,.(chromosome),summarise,Peaks=sum(Peaks),Size=sum(as.numeric(size)))
+
+chr_state_H3K27ac = read.table("H3K27ac/chr_H3K27ac.txt",sep=" ")
+colnames(chr_state_H3K27ac) = c("Sample","chromosome","Peaks")
+chr_state_H3K27ac$chromosome = factor(chr_state_H3K27ac$chromosome,levels=standard_chromosomes)
+chr_state_H3K27ac = merge(chr_state_H3K27ac,hg19_genome,by.x="chromosome",by.y="chrom")
+chr_state_H3K27ac_total = ddply(chr_state_H3K27ac,.(chromosome),summarise,Peaks=sum(Peaks),Size=sum(as.numeric(size)))
+
 # TE chromosome distribution
 # Length of each chromosome
 hg19_standard = hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes),]
