@@ -133,13 +133,7 @@ subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$Cp
 subfamily_CpG_meth = merge(subfamily_CpG_meth,metadata[,c(1,4:9)],by=c("Sample"),all.x=TRUE)
 
 # Members in state (average methylation)
-source("R_scripts/WGBS_subfamily_enrichment_TE.R")
-TE_meth_subfamily_members = melt(ldply(TE_meth_subfamily),id.vars=c("subfamily","family","class_update",".id"))
-colnames(TE_meth_subfamily_members)[4:6] = c("State","Sample","Members")
-
-# Join
-subfamily_CpG_meth = merge(subfamily_CpG_meth,TE_meth_subfamily_members[,c("subfamily","State","Sample","Members")],by=c("subfamily","Sample","State"))
-rm(TE_meth_subfamily_members)
+subfamily_CpG_meth = merge(subfamily_CpG_meth,TE_meth_subfamily[,c("subfamily","State","Sample","Members")],by=c("subfamily","Sample","State"))
 
 # Divide by number of members with CpGs in subfamily
 subfamily_CpG_meth$Count = rmsk_TE_subfamily[match(subfamily_CpG_meth$subfamily,rmsk_TE_subfamily$subfamily),]$Count_CpGs
