@@ -503,3 +503,10 @@ plot_biplot = function(pca,axes=c(1,2),metric,category,colors,variables=NULL,gui
     geom_segment(data=loadings_filter,aes(x=0,y=0,xend=loadings_filter[,axes[1]]*scale*0.95,yend=loadings_filter[,axes[2]]*scale*0.95),color="red",arrow = arrow(length = unit(0.01, "npc"))) + 
     geom_text(data=loadings_filter,aes(x=loadings_filter[,axes[1]]*scale,y=loadings_filter[,axes[2]]*scale,label=variable),color="red",size=3)
 }
+
+tissue_matrix = function(x,matrix){
+  c(All = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2),])[1],
+    Specific = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples < 5 & matrix[[paste(x,".y",sep="")]] == 2),])[1],
+    On = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples > 8),])[1],
+    Off = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples < 2),])[1])
+}
