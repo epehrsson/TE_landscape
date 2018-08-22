@@ -12,10 +12,8 @@ rmsk_TE_class = ddply(rmsk_TE,~class_update,summarize,
                       Subfamilies = length(unique(subfamily)), 
                       Median_length = median(Length), 
                       SD_length = sd(Length), 
-                      Mappability = mean(mappability), 
-                      Mappability_SD = sd(mappability), 
-                      Age = mean(JC_distance), 
-                      Age_SD = sd(JC_distance))
+                      Mappability = median(mappability), 
+                      Age = median(JC_distance))
 rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),],~class_update,summarize,Count_noY = length(Length)),by="class_update")
 
 # Proportion of each class overlapping each feature
@@ -42,10 +40,8 @@ names(test)[13] = "Other"
 rmsk_TE_class$TEs_wCpG = test[as.vector(rmsk_TE_class$class_update)]
 rm(list=c("TE_CpG_count","test"))
 
-# CpGs per TE, number/proportion of TEs with CpGs
+# Number/proportion of TEs with CpGs
 rmsk_TE_class$TEs_wCpG_per = rmsk_TE_class$TEs_wCpG/rmsk_TE_class$Count
-rmsk_TE_class$Mean_CpG = rmsk_TE_class$CpGs/rmsk_TE_class$Count
-rmsk_TE_class$Mean_CpG_wCpG = rmsk_TE_class$CpGs/rmsk_TE_class$TEs_wCpG
 
 # Total length per class
 class_lengths = cbind(read.table("features/TEs/class/class_lengths.txt",sep='\t'),read.table("features/TEs/class/class_lengths_noY.txt",sep='\t'))[c(1:3,5,7:8),c(1:2,4)]
