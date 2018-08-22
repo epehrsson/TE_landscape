@@ -149,10 +149,17 @@ rm(list=c("class_chromHMM","class_CpG_meth","TE_DNase_class","TE_H3K27ac_class")
 contribution_class = ddply(by_sample_class,.(class,State),summarise,Bases_state_class=sum(Bases_state_class))
 ## Adding total class width across all samples
 test = rmsk_TE_class[,c("class_update","chromHMM_total_width")]
-test$State = "Total"
+test$State = "Bases"
 colnames(test)[1:2] = c("class","Bases_state_class")
 contribution_class = rbind(contribution_class,test)
 rm(test)
+## Adding total class CpGs 
+test = rmsk_TE_class[,c("class_update","CpGs")]
+test$State = "CpGs"
+colnames(test)[1:2] = c("class","Bases_state_class")
+contribution_class = rbind(contribution_class,test)
+rm(test)
+
 ## Proportion of TE bases in each class by state (includes duplicate bases)
 contribution_class = ddply(contribution_class,.(State),transform,Bases_state=sum(Bases_state_class))
 contribution_class$Proportion = contribution_class$Bases_state_class/contribution_class$Bases_state

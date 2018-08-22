@@ -154,8 +154,9 @@ combined_proportion$State = factor(combined_proportion$State,levels=names(all_st
 
 # Contribution (across samples)
 contribution = ddply(dcast(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),1:4],Sample+State~Cohort,value.var="Bases"),.(State),summarise,Genome=sum(Genome),TE=sum(TE))
-contribution$State = factor(contribution$State,levels=c(levels(contribution$State),"Total"))
-contribution[22,] = list("Total",sum(contribution[1:15,]$Genome),sum(contribution[1:15,]$TE))
+contribution$State = factor(contribution$State,levels=c(levels(contribution$State),"Bases","CpGs"))
+contribution[22,] = list("Bases",sum(contribution[1:15,]$Genome),sum(contribution[1:15,]$TE))
+contribution[23,] = list("CpGs",ALL_CPGS,TE_CPGS)
 contribution$Proportion = contribution$TE/contribution$Genome
 
 ## Composite contribution
