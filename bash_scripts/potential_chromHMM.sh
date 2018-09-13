@@ -15,6 +15,9 @@ for file in chromHMM/chromHMM_summit_*.txt; do awk -v OFS='\t' -v class=$(basena
 # By subfamily
 awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/subfamily/subfamily_state_sample_summit.txt
 
+## Proportion of subfamily in active regulatory state
+for file in E066 E071 E081 E083 E084 E086 E088 E092 E094 E096 E105 E106; do awk -v OFS='\t' '{if(($10 == "1_TssA") || ($10 == "2_TssAFlnk") || ($10 == "3_TxFlnk") || ($10 == "6_EnhG") || ($10 == "7_Enh")) print $1, $2, $3, $4, $5, $6, $7, $8}' /scratch/ecp/pandas/$file | uniq | awk '{a[$4,$8]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' - >> Mouse/chromHMM/hg19_chromHMM_subfamily_active.txt; done
+
 # Maximum states per TE in any sample
 python ~/bin/TE_landscape/state_sharing_intra_max.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/rmsk_TEother_chromHMM_summit_max.txt 7
 
@@ -34,3 +37,11 @@ awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBS
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.75.txt
 #TE_landscape/chromHMM/potential/all_chromHMM_promoter_potential_0.txt
  python ../bin/TE_landscape/potential_promoter.py all_chromHMM_promoter.txt promoters.txt chromHMM_states.txt all_chromHMM_promoter_potential_0.txt 0
+
+# Mouse
+## mm10 TEs in state x subfamily x sample
+awk -v OFS='\t' '{a[$4,$8,$9]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' Mouse/chromHMM/mm10_chromHMM_TE_sorted_all.txt > Mouse/chromHMM/mm10_chromHMM_subfamily.txt
+
+## Proportion in any active regulatory state
+awk -v OFS='\t' '{if(($8 == "TssA") || ($8 == "TssAFlnk1") || ($8 == "TssAFlnk2") || ($8 == "Enh") || ($8 == "EnhLo1") || ($8 == "EnhLo2")) print $1, $2, $3, $4, $5, $6, $7, $9}' Mouse/chromHMM/mm10_chromHMM_TE_sorted_all.txt | uniq | awk -v OFS='\t' '{a[$4,$8]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' - > Mouse/chromHMM/mm10_chromHMM_subfamily_active.txt
+
