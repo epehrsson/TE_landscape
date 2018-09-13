@@ -47,7 +47,7 @@ bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_TE/*state
 
 # Merged TE classes
 # Number of bases in each state in merged TE classes in each sample
- while read line; do awk -v OFS='\t' -v class=$line '{a[$7,$9]+=$8}END{for(i in a) {split (i, sep, SUBSEP); print class, sep[1], sep[2], a[i];}}' ../TEs/intersect/class/rmsk_$line\.txt_chromHMM.bed >> class_state_sample.txt; done < classes.txt
+while read line; do awk -v OFS='\t' -v class=$line '{a[$7,$9]+=$8}END{for(i in a) {split (i, sep, SUBSEP); print class, sep[1], sep[2], a[i];}}' chromHMM/TEs/intersect/class/rmsk_$line\.txt_chromHMM.bed >> chromHMM/class/class_state_sample.txt; done < chromHMM/class/classes.txt
 
 #TE_landscape/chromHMM/class/rmsk_[class].txt_chromHMM.bed_state [13 files]
 for file in TE_classes/rmsk_*.txt_chromHMM.bed; do awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' $file > $file\_state; while read line; do grep $line $file | awk 'BEGIN{SUM=0}{SUM+=$8}END{print SUM}' - >> $file\_state; done < chromHMM_states.txt ; done
@@ -109,6 +109,9 @@ awk -v OFS='\t' '{a[$4, $6]+=$5;}END{for(i in a) {split (i, sep, SUBSEP); print 
 
 # DNase
 
+# Whole genome, number of peaks by chromosome
+while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak >> DNase/chr_DNase.txt ; done < sample_lists/DNase_samples.txt
+
 # Merged TEs
 #TE_landscape/DNase/rmsk_TEother_merge_DNase_contribution.txt
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_DNase.txt | sort > rmsk_TEother_merge_DNase_contribution.txt
@@ -135,6 +138,9 @@ for file in refseq_*DNase.txt; do awk -v OFS='\t' -v feature=$(basename "$file" 
 awk -v OFS='\t' '{a[$11]+=$3-$2}END{for(i in a){print i, a[i], "genome_noTE"}}' genome_noTE_DNase.txt | sort >> refseq_features_DNase.txt #Updated 8/7/17
 
 # H3K27ac
+
+# Whole genome, number of peaks by chromosome
+while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac/chr_H3K27ac.txt ; done < sample_lists/H3K27ac_samples.txt
 
 # Merged TEs
 #TE_landscape/H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt

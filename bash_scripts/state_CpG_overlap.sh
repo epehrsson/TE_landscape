@@ -5,6 +5,10 @@
 #TE_landscape/WGBS/all_CpG_Meth_states.txt		 
 awk '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print i" "hypo[i]" "inter[i]" "hyper[i]" "miss[i];}' all_CpG_Meth.bed > all_CpG_Meth_states.txt
 
+## By chromosome
+awk '{print $0 > $1}' ~/TE_landscape/WGBS/all_CpG_Meth.bed
+for file in chr*; do awk -v chr=$file -v OFS='\t' '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print chr, i, hypo[i], inter[i], hyper[i], miss[i];}' $file >> chr_CpG_meth_states.txt; done &
+
 # Number of CpGs in each state, TE CpGs, each sample
 #TE_landscape/WGBS/CpG_TE_Meth_states.txt		 
 awk '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print i" "hypo[i]" "inter[i]" "hyper[i]" "miss[i];}' CpG_TE_Meth.bed > CpG_TE_Meth_states.txt
