@@ -185,21 +185,19 @@ while read line; do echo $line; bedtools intersect -wo -a raw_data/H3K27ac/H3K27
 #TE_landscape/features/shuffled_TEs/run_intersect.sh
 
 # RNA-seq
-# Intersect TEs with RNA-seq bedfiles (run by Daofeng on server)
-#TE_landscape/RNAseq/intersect_sample_list_RNA_raw.sh
-#TE_landscape/RNAseq/intersect_sample_list_RNA_raw_ag.sh
+# Intersect TEs with RNA-seq bedfiles
 #TE_landscape/RNAseq/htcf_ecp/refseq_exons.txt.sorted
 #TE_landscape/RNAseq/htcf_ecp/rmsk_TEother.txt.sorted
-#TE_landscape/RNAseq/htcf_ecp/run.sh
-#TE_landscape/RNAseq/htcf_ecp/samples.txt
-#TE_landscape/RNAseq/htcf_ecp/samples2.txt
 
 # Mouse
 
-# chromHMM
-# mm9 TEs
-#TE_landscape/Mouse/chromHMM/intersect/TEs/ENCFF#.bed_TE [15 files]
-for file in mouse_chromHMM/*.bed ; do bedtools intersect -wo -a $file -b mm9_rmsk_TE.txt > $file\_TE; done
+# chromHMM (mm10)
+## Intersected with all mm10 TEs
+while read a b c; do gunzip raw_data/mouse/chromHMM/$c\.bed.gz; bedtools intersect -wo -a features/mouse/mm10_rmsk_TE.txt -b raw_data/mouse/chromHMM/$c\.bed > Mouse/chromHMM/$c\_TE_all.txt; gzip raw_data/mouse/chromHMM/$c\.bed; done < Mouse/human_mouse_samples.txt &
+
+## Intersected with TEs with human orthologs
+while read a b c; do gunzip raw_data/mouse/chromHMM/$c\.bed.gz; cut -f12-18 Mouse/liftover/hg19_mm10_TE_intersect_same.bed | bedtools intersect -wo -a - -b raw_data/mouse/chromHMM/$c\.bed > Mouse/chromHMM/$c\_TE.txt; gzip raw_data/mouse/chromHMM/$c\.bed; done < Mouse/human_mouse_samples.txt
+
 
 # WGBS (mm10)
 #TE_landscape/Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_ENCFF#.bed [9 files]

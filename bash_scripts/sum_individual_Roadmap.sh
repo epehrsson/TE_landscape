@@ -106,9 +106,12 @@ while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{f
 for i in {1..10}; do cat rmsk_TE_shuffle_$i\_E*-H3K27ac.narrowPeak | cut -f1-7 | sort | uniq > test; python ~/bin/TE_landscape/H3K27ac_peaks.py test ~/TE_landscape/sample_lists/H3K27ac_samples.txt rmsk_TE_shuffle_$i\_ rmsk_TE_shuffle_$i\_H3K27ac_peaks.txt; done
 
 # Mouse
-# chromHMM state for each mm9 TE
-#TE_landscape/Mouse/chromHMM/mouse_mm9_chromHMM_TE.txt
-while read line ; do awk -v OFS='\t' -v sample=$line '{a[$10, $11, $12, $13, $14, $15, $16, $4, sample]+=$17;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i];}}'  mouse_chromHMM_TE/$line\.bed_TE >> mouse_mm9_chromHMM_TE.txt; done < mouse_samples.txt
+# chromHMM
+## Any overlap for all mm10 TEs
+while read a b c; do awk -v OFS='\t' -v sample=$c '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$17}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sample, a[i]}}' Mouse/chromHMM/$c\_TE_all.txt | sort -k1,1V -k2,2V -k3,3n -k9,9 - >> Mouse/chromHMM/mm10_chromHMM_TE_sorted_all.txt; done < Mouse/human_mouse_samples.txt
+
+## Any overlap for mm10 TEs with human ortholog
+while read a b c; do uniq Mouse/chromHMM/$c\_TE.txt | awk -v OFS='\t' -v sample=$c '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$17}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sample, a[i]}}' - | sort -k1,1V -k2,2V -k3,3n -k9,9 - >> Mouse/chromHMM/mm10_chromHMM_TE_sorted.txt; done < Mouse/human_mouse_samples.txt
 
 # DNase
 # Total overlap with Dnase per TE
