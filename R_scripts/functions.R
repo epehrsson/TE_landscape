@@ -1,3 +1,10 @@
+add_stars = function(positions=c(),heights=c(),symbol="*",size=2,color="red"){
+  star_list =  mapply(function(x, y) {paste(" + annotate(\"text\",x=",x,",y=",y,",label=\"",symbol,"\",size=",size,",color=\"",color,"\")",sep="")},
+                      positions,heights)
+  star_list = paste(star_list,collapse=" ")
+  return(star_list)
+}
+
 count_na = function(data_frame){
   counts = apply(data_frame,2,function(x) sum(is.na(x)))
   return(counts)
