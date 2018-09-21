@@ -9,6 +9,8 @@
 
 # Format TEs 
 state_switching_intra = read.table("chromHMM/state_switching/rmsk_TEother_chromHMM_intra.txt",sep='\t',header=TRUE,row.names=1)
+## Remove erroneous Quies entry
+state_switching_intra[15,15] = state_switching_intra[15,15] - 1
 state_switching_intra[lower.tri(state_switching_intra)] = t(state_switching_intra)[lower.tri(state_switching_intra)]
 
 # For Chi-sq tests
