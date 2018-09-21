@@ -8,6 +8,8 @@ correlate_subfamily$p.value = as.numeric(as.character(correlate_subfamily$p.valu
 correlate_subfamily$p.adjust = p.adjust(correlate_subfamily$p.value,method="fdr")
 correlate_subfamily$estimate.rho = as.numeric(as.character(correlate_subfamily$estimate.rho))
 correlate_subfamily$class_update = factor(correlate_subfamily$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
+correlate_subfamily$Category = ifelse(correlate_subfamily$Metric %in% standard_chromosomes,"Chromosome",
+                                      ifelse(correlate_subfamily$Metric %in% cohorts,"Feature","Sequence"))
 
 # Correlation between input variables (including feature ratio)
 correlate_subfam_feature = ldply(all_metrics,function(x) correlate_spearman(rmsk_TE_subfamily_measure,x,all_metrics))
