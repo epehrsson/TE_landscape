@@ -22,7 +22,6 @@ rmsk_TE_measure[,chromHMM_states] = apply(rmsk_TE_measure[,chromHMM_states],2,fu
 
 # Add number of samples in methylation state per TE
 rmsk_TE_measure = merge(rmsk_TE_measure,TE_meth_average[,c(TE_coordinates,meth_states,"States")],by=TE_coordinates,all.x=TRUE)
-rmsk_TE_measure$CpGs_per_length = rmsk_TE_measure$CpGs/rmsk_TE_measure$Length
 rmsk_TE_measure = rename(rmsk_TE_measure,c("States"="States.WGBS"))
 rmsk_TE_measure[,meth_states] = apply(rmsk_TE_measure[,meth_states],2,function(x) as.numeric(x/sample_counts["All","WGBS"]))
 

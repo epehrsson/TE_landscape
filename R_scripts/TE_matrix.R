@@ -27,6 +27,9 @@ rmsk_TE = merge(rmsk_TE,TE_CpG_count,all.x=TRUE,by=TE_coordinates)
 rmsk_TE[is.na(rmsk_TE)] = 0
 rm(TE_CpG_count)
 
+# Add CpG density
+rmsk_TE$CpGs_per_length = rmsk_TE$CpGs/rmsk_TE$Length
+
 # Overlap between TEs and Refseq features
 feature_files = list.files(path="features/intersect_features/",pattern="rmsk_TEother_",full.names=TRUE)
 features = lapply(feature_files,function(x) read.table(x,sep='\t'))
