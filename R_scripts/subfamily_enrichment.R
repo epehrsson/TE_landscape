@@ -64,7 +64,7 @@ subfamily_state_sample$Length_ik = ifelse(metadata[match(subfamily_state_sample$
 subfamily_state_sample$Length_k = ifelse(metadata[match(subfamily_state_sample$Sample,metadata$Sample),]$chrY == "Yes",GENOME_WIDTH,GENOME_WIDTH_noY)
 
 # LOR Enrichment for subfamily x state x sample
-subfamily_state_sample$Enrichment = log2((subfamily_state_sample$Length_ijk/subfamily_state_sample$Length_jk)/(subfamily_state_sample$Length_ik/subfamily_state_sample$Length_k))
+subfamily_state_sample$Enrichment = log2(1e-20+((subfamily_state_sample$Length_ijk/subfamily_state_sample$Length_jk)/(subfamily_state_sample$Length_ik/subfamily_state_sample$Length_k)))
 
 # Add class and family
 subfamily_state_sample = merge(subfamily_state_sample,rmsk_TE_subfamily[,c("subfamily","family","class_update")],by="subfamily",all.x=TRUE)
@@ -124,7 +124,7 @@ colnames(subfamily_CpG_meth)[7] = "CpG_ik"
 subfamily_CpG_meth$CpG_jk = apply(subfamily_CpG_meth,1,function(x) all_CpG_meth[x[2],x[3]])
 
 # Enrichment of state CpGs in sample x subfamily
-subfamily_CpG_meth$Enrichment = log2((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/ALL_CPGS))
+subfamily_CpG_meth$Enrichment = log2(1e-20+((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/ALL_CPGS)))
 
 # Proportion of all state CpGs in subfamily
 subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_jk
