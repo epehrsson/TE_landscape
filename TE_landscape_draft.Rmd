@@ -271,9 +271,9 @@ a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(
 
 b = ggplot(combine_class_proportion,aes(x=class,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of class in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_blank()) + facet_wrap(~Cohort,nrow=1)
 
-c = ggplot(contribution,aes(x=State,y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse(limits=c(1,0)) + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank()) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels,limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + geom_text(aes(label=round(Proportion,2)),hjust=1.01,size=3) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
+c = ggplot(contribution,aes(x=State,y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse(limits=c(1,0)) + ylab("Proportion of state in TEs") + theme(axis.title.y=element_blank()) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels,limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases"),position="top") + geom_text(aes(label=round(Proportion,2)),hjust=1.01,size=3) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
 
-d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y=element_blank()) + scale_x_discrete(limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + scale_fill_manual(values=class_colors,guide=FALSE) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
+d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.text.y=element_blank()) + scale_x_discrete(limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + scale_fill_manual(values=class_colors,guide=FALSE) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
 
 legend_class = get_legend(ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.text.y=element_blank(),legend.position="bottom",legend.direction = "horizontal") + scale_fill_manual(values=class_colors,name="Class") + guides(fill = guide_legend(nrow = 1)))
 
@@ -344,6 +344,8 @@ grid.arrange(a,b,heights=c(0.5,0.5))
 ```{r proportion investigation}
 ddply(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],.(State,Cohort),summarise,Median=median(Bases),Mean=mean(Bases),SD=sd(Bases),Min=min(Bases),Max=max(Bases),CV=sd(Bases)/mean(Bases))
 
+ddply(all_state_proportion[which(all_state_proportion$Cohort == "Genome"),],.(State,Cohort),summarise,Median=median(Proportion))
+
 dcast(all_state_proportion[which(all_state_proportion$Mark == "WGBS" & all_state_proportion$Cohort == "Genome"),c("Sample","State","Proportion")],Sample~State,value.var="Proportion")
 
 test = ddply(all_state_proportion[which(all_state_proportion$Feature == "Genome"),],.(State),transform,Mean=mean(Proportion),SD=sd(Proportion))
@@ -353,8 +355,8 @@ test = ddply(all_state_proportion_matrix,.(State,Group),summarise,Genome_median=
 test[order(test$State,test$Genome_median),]
 
 # Not MHC corrected (0.05/21 ~ 0.0024)
-ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome-TE,TE))["estimate.cor"],Genome_pvalue = unlist(cor.test(Genome-TE,TE)["p.value"]))
-ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome,TE/Genome))["estimate.cor"],Genome_pvalue = unlist(cor.test(Genome,TE/Genome)["p.value"]))
+ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome-TE,TE,method="spearman"))["estimate.rho"],Genome_pvalue = unlist(cor.test(Genome-TE,TE,method="spearman")["p.value"]))
+ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.test(Genome,TE/Genome,method="spearman"))["estimate.rho"],Genome_pvalue = unlist(cor.test(Genome,TE/Genome,method="spearman")["p.value"]))
 ```
 
 ### Supplementary Figure 2
@@ -363,7 +365,7 @@ ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.te
 source("R_scripts/feature_overlap.R")
 
 ## Average proportion by sample
-a = ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion)),aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels))
+a = ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion)),aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels))
 
 # Total proportion split by protein-coding/non-coding
 b = ggplot(combined_proportion,aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + ylab("Proportion of feature in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x=element_blank()) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_grid(Coding~Mark,labeller=labeller(Coding=coding_labels))
@@ -724,10 +726,10 @@ combine_boxplot[which(combine_boxplot$Sample == "E017"),]
 source("R_scripts/state_switching.R")
 
 # chromHMM states
-a = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(aes(y = ..density..),binwidth=1,fill="blue",color="grey",alpha=0.5) + geom_histogram(data = chromHMM_TE_state,aes(x=Max_states_intra,y = ..density..),binwidth=1,fill="darkred",color="grey",alpha=0.5) + ylab("Proportion of TEs") + xlab("Number of chromHMM states") + scale_y_continuous(limits=c(0,1))
+a = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(aes(y = ..density..),binwidth=1,fill="blue",color="grey",alpha=0.5) + geom_histogram(data = chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),],aes(x=Max_states_intra,y = ..density..),binwidth=1,fill="darkred",color="grey",alpha=0.5) + ylab("Proportion of TEs") + xlab("Number of chromHMM states") + scale_y_continuous(limits=c(0,1))
 
 # chromHMM states by class 
-b = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(aes(y = ..density..),binwidth=1,fill="blue",color="grey",alpha=0.5) + geom_histogram(data = chromHMM_TE_state,aes(x=Max_states_intra,y = ..density..),binwidth=1,fill="darkred",color="grey",alpha=0.5) + theme(axis.title.y = element_blank()) + xlab("Number of chromHMM states") + facet_wrap(~class_update) + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(0,15)) 
+b = ggplot(chromHMM_TE_state,aes(x=States)) + geom_histogram(aes(y = ..density..),binwidth=1,fill="blue",color="grey",alpha=0.5) + geom_histogram(data = chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),],aes(x=Max_states_intra,y = ..density..),binwidth=1,fill="darkred",color="grey",alpha=0.5) + theme(axis.title.y = element_blank()) + xlab("Number of chromHMM states") + facet_wrap(~class_update) + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(0,15)) 
 
 # State switching inter, chromHMM
 c = ggplot(melt(as.matrix(state_switching_inter)),aes(x=Var2,y=Var1,fill=value/sample_counts["All","chromHMM"])) + geom_tile() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal()
@@ -792,7 +794,7 @@ cor.test((chromHMM_TE_state$stop-chromHMM_TE_state$start),chromHMM_TE_state$Stat
 cor.test((TE_meth_average$stop-TE_meth_average$start),TE_meth_average$States,method="spearman")
 
 # Correlation of number of states ever, max in one sample
-cor.test(chromHMM_TE_state$Max_states_intra,chromHMM_TE_state$States,method="spearman")
+by(chromHMM_TE_state,chromHMM_TE_state$Category,function(x) cor.test(x$Max_states_intra,x$States,method="spearman"))
 
 # By chromosome
 ddply(chromHMM_TE_state,.(chromosome,Category),summarise,Max_states_intra=median(Max_states_intra),States=median(States))
@@ -811,7 +813,7 @@ test
 ## Proportion of those with >1 state in only 2 states
 test$Total[2]/sum(test$Total[2:15])
 
-table(chromHMM_TE_state$Max_states_intra)
+table(chromHMM_TE_state[,c("Max_states_intra","Category")])
 max_intra_outlier = chromHMM_TE_state[which(chromHMM_TE_state$Max_states_intra > 7),]
 ddply(max_intra_outlier,.(),summarise,Length=median(stop-start),Tissues=median(Tissues)/127)
 max_intra_outlier = merge(max_intra_outlier,rmsk_TE[,c(TE_coordinates,cohorts)],by=TE_coordinates,all.x=TRUE)
@@ -1136,23 +1138,22 @@ a = ggplot(subfam_states,aes(x=value,fill=variable)) + geom_histogram(position="
 # Clustering
 family_shapes=setNames(c(17,rep(16,20),18,rep(16,23)),sort(as.vector(unique(rmsk_TE_subfamily$family))))
 
-b = ggplot(sample_chromHMM_tsne,aes(x=V1,y=V2,color=Group,shape=Age)) + geom_point(size=3) + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
+b = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point(size=3) + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep="")) + theme(aspect.ratio = 1)
 
-c = ggplot(subfamily_chromHMM_tsne,aes(x=V1,y=V2,color=class_update,shape=family)) + geom_point(size=3) + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
+c = ggplot(subfamily_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family)) + geom_point(size=3) + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE) + labs(x=paste("PC1 (",round(subfamily_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(subfamily_chromHMM_pca$eigenvalues[2],1),"%)",sep="")) + theme(aspect.ratio = 1)
 
 # Enrichment
 d = ggplot(subfamily_state_sample_counts,aes(x=State,y=Sample.Proportion,color=class_update)) + geom_point(position=position_jitterdodge(jitter.width=0.5)) + coord_flip() + theme(axis.title.y=element_blank()) + ylab("Proportion of samples enriched LOR > 1.5") + scale_color_manual(values=class_colors,guide=FALSE) + geom_vline(xintercept=seq(1.5,20.5,1), colour='grey') + scale_x_discrete(limits = rev(states[c(1:15,20:21,16:19)]),labels=setNames(paste(subfamily_state_sample_counts_combine$State,"\n(n=",subfamily_state_sample_counts_combine$V1,")",sep=""),subfamily_state_sample_counts_combine$State))
 
 # HOMER
-tf = read.table("enrichment/TF_matrix.txt",sep='\t',header=TRUE)
-tf = tf[,1:4]
-tf$Target_PC = as.numeric(gsub("%","",tf$Target_PC))
-tf$Background_PC = as.numeric(gsub("%","",tf$Background_PC))
-tf = melt(tf,id.vars=c("subfamily","TF"))
+homer = read.table("enrichment/homer/HOMER_LTR22A_7_Enh_enriched/knownResults.txt",sep='\t',header=TRUE,comment.char = "@")
+homer_top5 = head(homer[order(homer$q.value..Benjamini.),],n=5)
+homer_top5 = melt(homer_top5[,c(1,5,7,9)],id.vars=c("Motif.Name","q.value..Benjamini."))
+homer_top5$PC = as.numeric(gsub("%","",homer_top5$value))
 
-e = ggplot(tf,aes(x=TF,y=value,fill=variable)) + geom_bar(stat="identity",position="dodge") + facet_grid(~subfamily,scales="free_x",space="free_x") + ylab("% TEs with motif") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_blank()) + scale_fill_discrete(guide=FALSE)
+e = ggplot(homer_top5,aes(x=reorder(Motif.Name,`q.value..Benjamini.`,median),y=PC,fill=variable)) + geom_bar(stat="identity",position="dodge") + ylab("% TEs with motif") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_blank()) + scale_fill_discrete(guide=FALSE) + scale_x_discrete(labels=c("Nkx2.1","Nkx2.2","Tcf3","Fli1","HNF4a"))
 
-grid.arrange(a,b,c,d,e,nrow=4,ncol=2,layout_matrix=rbind(c(1,1),c(2,4),c(3,4),c(5,5)),heights=c(0.2,0.3,0.3,0.2),widths=c(0.35,0.65))
+grid.arrange(a,b,c,d,e,nrow=4,ncol=2,layout_matrix=rbind(c(1,1),c(2,4),c(3,4),c(5,4)),heights=c(0.2,0.3,0.3,0.2),widths=c(0.35,0.65))
 ```
 
 ### Supplementary Figure 9
@@ -1191,22 +1192,31 @@ ddply(subfamily_state_potential[which(subfamily_state_potential$State == "H3K27a
 
 ```{r Figure S10, echo=FALSE}
 ## Samples
-a = ggplot(sample_WGBS_tsne,aes(x=V1,y=V2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
-b = ggplot(sample_DNase_tsne,aes(x=V1,y=V2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
-c = ggplot(sample_H3K27ac_tsne,aes(x=V1,y=V2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+a = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_WGBS_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+
+b = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC3,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC3 (",round(sample_WGBS_pca$eigenvalues[3],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+
+c = ggplot(sample_DNase_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_DNase_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_DNase_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+
+d = ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_H3K27ac_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_H3K27ac_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
 
 ## chromHMM other groupings
-d = ggplot(sample_chromHMM_tsne,aes(x=V1,y=V2,color=Anatomy)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
-e = ggplot(sample_chromHMM_tsne,aes(x=V1,y=V2,color=Type)) + geom_point() + scale_color_manual(values=type_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
-f = ggplot(sample_chromHMM_tsne,aes(x=V1,y=V2,color=Germline)) + geom_point() + scale_color_manual(values=germline_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
-g = ggplot(sample_chromHMM_tsne,aes(x=V1,y=V2,color=Cancer)) + geom_point() + scale_color_manual(values=cancer_colors,guide=FALSE) + xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
+e = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Anatomy)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
+
+f = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Type)) + geom_point() + scale_color_manual(values=type_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
+
+g = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Germline)) + geom_point() + scale_color_manual(values=germline_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
+
+h = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Cancer)) + geom_point() + scale_color_manual(values=cancer_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
 
 ## Subfamilies
-h = ggplot(subfamily_WGBS_tsne,aes(x=V1,y=V2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
-i = ggplot(subfamily_DNase_tsne,aes(x=V1,y=V2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
-j = ggplot(subfamily_H3K27ac_tsne,aes(x=V1,y=V2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ xlab("Axis 1") + ylab("Axis 2") + theme(aspect.ratio = 1)
+i = ggplot(subfamily_WGBS_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ labs(x=paste("PC1 (",round(subfamily_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(subfamily_WGBS_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
 
-grid.arrange(a,b,c,d,e,f,g,h,i,j,ncol=3) 
+j = ggplot(subfamily_DNase_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ labs(x=paste("PC1 (",round(subfamily_DNase_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(subfamily_DNase_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
+
+k = ggplot(subfamily_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,guide=FALSE)+ labs(x=paste("PC1 (",round(subfamily_H3K27ac_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(subfamily_H3K27ac_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
+
+grid.arrange(a,b,c,d,e,f,g,h,i,j,k,ncol=3) 
 ```
 
 ### tSNE
@@ -1217,7 +1227,9 @@ dim(sample_chromHMM_3D)
 dim(subfamily_chromHMM_3D)
 dim(sample_WGBS_3D)
 dim(subfamily_WGBS_3D)
+dim(sample_DNase_enrichment)
 dim(subfamily_DNase_enrichment)
+dim(sample_H3K27ac_enrichment)
 dim(subfamily_H3K27ac_enrichment)
 ```
 
@@ -1328,7 +1340,7 @@ source("R_scripts/subfamily_correlate.R") # Requires TE_correlation_subfamily.R
 
 # Metric vs. metric
 ## Metrics
-a = ggplot(correlate_subfam_feature[which(correlate_subfam_feature$State %in% measure_metrics_subfam & correlate_subfam_feature$Metric %in% measure_metrics_subfam & correlate_subfam_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text=element_text(size=7.5)) + scale_x_discrete(limits=measure_metrics_subfam,labels=measure_labels) + scale_y_discrete(limits=rev(measure_metrics_subfam),labels=measure_labels)
+#a = ggplot(correlate_subfam_feature[which(correlate_subfam_feature$State %in% measure_metrics_subfam & correlate_subfam_feature$Metric %in% measure_metrics_subfam & correlate_subfam_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text=element_text(size=7.5)) + scale_x_discrete(limits=measure_metrics_subfam,labels=measure_labels) + scale_y_discrete(limits=rev(measure_metrics_subfam),labels=measure_labels)
 
 ## Features
 #ggplot(correlate_subfam_feature[which(correlate_subfam_feature$State %in% c(features[1:3],"coding_exon",features[5:8],"Vista_enhancers") & correlate_subfam_feature$Metric %in% c(features[1:3],"coding_exon",features[5:8],"Vista_enhancers") & correlate_subfam_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(limits=c(features[1:3],"coding_exon",features[5:8],"Vista_enhancers")) + scale_y_discrete(limits=rev(c(features[1:3],"coding_exon",features[5:8],"Vista_enhancers")))
@@ -1337,12 +1349,30 @@ a = ggplot(correlate_subfam_feature[which(correlate_subfam_feature$State %in% me
 #ggplot(correlate_subfam_feature[which(correlate_subfam_feature$State %in% standard_chromosomes & correlate_subfam_feature$Metric %in% standard_chromosomes & correlate_subfam_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1)) + scale_x_discrete(limits=standard_chromosomes[1:24]) + scale_y_discrete(limits=rev(standard_chromosomes[1:24]))
 
 # State vs. state
-b = ggplot(correlate_subfam_state[which(correlate_subfam_state$State %in% states & correlate_subfam_state$State2 %in% states & correlate_subfam_state$class_update == "All"),],aes(x=State,y=State2,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text=element_text(size=7)) + scale_x_discrete(limits=states[c(1:14,16:17,19:21)]) + scale_y_discrete(limits=rev(states[c(1:14,16:17,19:21)]))
+a = ggplot(correlate_subfam_state[which(correlate_subfam_state$State %in% states & correlate_subfam_state$State2 %in% states & correlate_subfam_state$class_update == "All"),],aes(x=State,y=State2,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text=element_text(size=7)) + scale_x_discrete(limits=states[c(1:14,16:17,19:21)]) + scale_y_discrete(limits=rev(states[c(1:14,16:17,19:21)]))
 
 # State vs. metric, feature, chromosome
-c = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers",standard_chromosomes) & correlate_subfamily$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7)) + scale_y_discrete(limits=rev(states[c(1:14,16:17,19:21)])) + scale_x_discrete(limits=c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers",standard_chromosomes[1:24]),labels=c(measure_labels,genic_labels)) + facet_wrap(~class_update,nrow=3) + geom_vline(color="black",xintercept=9.5) + geom_vline(color="black",xintercept=18.5) 
+#c = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers",standard_chromosomes) & correlate_subfamily$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7)) + scale_y_discrete(limits=rev(states[c(1:14,16:17,19:21)])) + scale_x_discrete(limits=c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers",standard_chromosomes[1:24]),labels=c(measure_labels,genic_labels)) + facet_wrap(~class_update,nrow=3) + geom_vline(color="black",xintercept=9.5) + geom_vline(color="black",xintercept=18.5)
 
-grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3,3)),heights=c(0.2,0.8))
+b = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers") & correlate_subfamily$class_update == "LTR"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="Rho",limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=30,hjust=1,vjust=1),axis.text=element_text(size=7)) + scale_y_discrete(limits=rev(states[c(1:14,16:17,19:21)])) + scale_x_discrete(limits=c(measure_metrics_subfam,features[1:3],"coding_exon",features[5:8],"Vista_enhancers"),labels=c(measure_labels,genic_labels)) + geom_vline(color="black",xintercept=9.5)
+
+# GREAT GO BP
+great_names = gsub(".txt","",list.files("enrichment/great/"))
+great = lapply(great_names,function(x) read.table(paste("enrichment/great/",x,".txt",sep=""),sep='\t'))
+names(great) = great_names
+great = ldply(great)
+colnames(great) = c("set","Term Name","Binom Rank","Binom Raw P-Value","Binom FDR Q-Val","Binom Fold Enrichment","Binom Observed Region Hits","Binom Region Set Coverage",
+                    "Hyper Rank","Hyper FDR Q-Val","Hyper Fold Enrichment","Hyper Observed Gene Hits","Hyper Total Genes","Hyper Gene Set Coverage")
+
+c = ggplot(great[which(great$set == "AmnSINE1_7_Enh"),],aes(x=rev(reorder(`Term Name`,`Binom Raw P-Value`,median)),y=log10(`Binom Raw P-Value`),label=`Binom Raw P-Value`)) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),plot.title = element_text(hjust = 1)) 
+
+d = ggplot(great[which(great$set == "AmnSINE2_DNase"),],aes(x=rev(reorder(`Term Name`,`Binom Raw P-Value`,median)),y=log10(`Binom Raw P-Value`),label=`Binom Raw P-Value`)) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),plot.title = element_text(hjust = 1))
+
+e = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=rev(reorder(`Term Name`,`Binom Raw P-Value`,median)),y=log10(`Binom Raw P-Value`),label=`Binom Raw P-Value`)) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),plot.title = element_text(hjust = 1)) 
+
+f = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=rev(reorder(`Term Name`,`Binom Raw P-Value`,median)),y=log10(`Binom Raw P-Value`),label=`Binom Raw P-Value`)) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),plot.title = element_text(hjust = 1))
+
+grid.arrange(a,b,c,d,e,f,layout_matrix=rbind(c(1,2),c(3,3),c(4,4),c(5,5),c(6,6)),heights=c(0.25,0.2,0.2,0.2,0.15))
 ```
 
 ### Subfamily enrichment correlation
@@ -1759,6 +1789,8 @@ ddply(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),],.(cpgIsland_binar
 a = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(name="rho",limits=c(-1,1),high="darkred",low="darkblue",mid="white") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background=element_rect(fill="lightgrey"),aspect.ratio = 1) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs"))
 
 b = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background=element_rect(fill="lightgrey"),aspect.ratio = 1) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + facet_wrap(~class_update,nrow=1)
+
+grid.arrange(a,b)
 ```
 
 ### Supplementary Figure 15
@@ -2187,6 +2219,20 @@ by(human_mouse_spearman_subfamily_active,human_mouse_spearman_subfamily_active$T
 write.table(ldply(c("BRAIN","GI_INTESTINE","GI_STOMACH","HEART","LUNG"),function(x) hg19_mm10_chromHMM_promoter[which(hg19_mm10_chromHMM_promoter$Human_samples < 5 & hg19_mm10_chromHMM_promoter[[paste(x,".x",sep="")]] == 2 & hg19_mm10_chromHMM_promoter$Mouse_samples < 5 & hg19_mm10_chromHMM_promoter[[paste(x,".y",sep="")]] == 2),]),file="Mouse/tissue_specific_promoter.txt",sep='\t',quote=FALSE,row.names=FALSE)
 
 lapply(c("BRAIN","GI_INTESTINE","GI_STOMACH","HEART","LUNG"),function(x) write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples < 5 & hg19_mm10_chromHMM_active[[paste(x,".x",sep="")]] == 2 & hg19_mm10_chromHMM_active$Mouse_samples < 5 & hg19_mm10_chromHMM_active[[paste(x,".y",sep="")]] == 2),],file=paste("Mouse/tissue_specific_active_",x,".txt",sep=""),sep='\t',quote=FALSE,row.names=FALSE))
+```
+
+### Human-mouse constitutive orthologs
+
+```{r print constitutive}
+## Promoter state
+write.table(hg19_mm10_chromHMM_promoter[which(hg19_mm10_chromHMM_promoter$Human_samples > 8 & hg19_mm10_chromHMM_promoter$Mouse_samples > 8),],file="Mouse/constitutive_both_promoter.txt",sep='\t',quote=FALSE,row.names=FALSE)
+write.table(hg19_mm10_chromHMM_promoter[which(hg19_mm10_chromHMM_promoter$Human_samples > 8 & hg19_mm10_chromHMM_promoter$Mouse_samples < 2),],file="Mouse/constitutive_human_promoter.txt",sep='\t',quote=FALSE,row.names=FALSE)
+write.table(hg19_mm10_chromHMM_promoter[which(hg19_mm10_chromHMM_promoter$Human_samples < 2 & hg19_mm10_chromHMM_promoter$Mouse_samples > 8),],file="Mouse/constitutive_mouse_promoter.txt",sep='\t',quote=FALSE,row.names=FALSE)
+
+## Active regulatory states
+write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples > 8 & hg19_mm10_chromHMM_active$Mouse_samples > 8),],file="Mouse/constitutive_both_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
+write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples > 8 & hg19_mm10_chromHMM_active$Mouse_samples < 2),],file="Mouse/constitutive_human_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
+write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples < 2 & hg19_mm10_chromHMM_active$Mouse_samples > 8),],file="Mouse/constitutive_mouse_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
 
 # Methods 
