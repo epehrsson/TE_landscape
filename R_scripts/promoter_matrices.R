@@ -1,4 +1,6 @@
 # Creates matrices of promoter x number of samples in each state for all 4 measures
+refseq_promoters = read.table("~/genic_features/RefSeq/refseq_promoters_unique_std.txt",sep='\t')
+colnames(refseq_promoters) = c("chromosome","start","stop","strand")
 
 # Number of samples each promoter is in each chromHMM state
 chromHMM_promoter_state = read.table("chromHMM/potential/refseq_promoters_chromHMM_summit_potential.txt",sep='\t',header=TRUE)
@@ -17,6 +19,7 @@ promoter_meth_average$Missing = apply(promoter_meth_average,1,function(x) sum(is
 promoter_DNase_peaks = read.table(file="DNase/refseq_promoter_unique_DNase_summit.txt",sep='\t')
 colnames(promoter_DNase_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
 promoter_DNase_peaks = dcast(promoter_DNase_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
+promoter_DNase_peaks = merge(refseq_promoters,promoter_DNase_peaks,by=c("chromosome","start","stop","strand"),all.x=TRUE)
 promoter_DNase_peaks[is.na(promoter_DNase_peaks)] = 0
 
 # Number of samples a promoter overlaps a DNase peak
@@ -26,6 +29,7 @@ promoter_DNase_peaks$Samples = apply(promoter_DNase_peaks,1,function(x) sum(as.n
 promoter_H3K27ac_peaks = read.table(file="H3K27ac/refseq_promoter_unique_H3K27ac_summit.txt",sep='\t')
 colnames(promoter_H3K27ac_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
 promoter_H3K27ac_peaks = dcast(promoter_H3K27ac_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
+promoter_H3K27ac_peaks = merge(refseq_promoters,promoter_H3K27ac_peaks,by=c("chromosome","start","stop","strand"),all.x=TRUE)
 promoter_H3K27ac_peaks[is.na(promoter_H3K27ac_peaks)] = 0
 
 # Number of samples a promoter overlaps a H3K27ac peak
