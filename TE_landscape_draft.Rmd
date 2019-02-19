@@ -18,8 +18,6 @@ library(plyr)
 packageVersion("plyr")
 library(reshape2)
 packageVersion("reshape2")
-library(vcd)
-packageVersion("vcd")
 library(ggplot2)
 packageVersion("ggplot2")
 library(NMF)
@@ -28,11 +26,12 @@ library(gridExtra)
 packageVersion("gridExtra")
 library(RColorBrewer)
 packageVersion("RColorBrewer")
-library(Rtsne)
-packageVersion("Rtsne")
 library(scales)
+packageVersion("scales")
 library(mgcv)
+packageVersion("mgcv")
 library(extrafont)
+packageVersion("extrafont")
 ```
 
 ## Set universal plot parameters
@@ -832,9 +831,13 @@ max_intra_outlier = merge(max_intra_outlier,rmsk_TE[,c(TE_coordinates,cohorts)],
 max_intra_outlier
 write.table(max_intra_outlier[,c(TE_coordinates,"class_update",cohorts)],file="States_intra_8_TEs.bed",sep='\t',row.names=FALSE,quote=FALSE)
 
-## Max states per TE
+# Number of TEs per category
 table(chromHMM_TE_state$Category)/NUM_TE
 
+# Number of TEs overlapping bin summits by class
+table(chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),]$class_update)
+
+## Max states per TE
 ddply(chromHMM_TE_state,.(Category),summarise,Mean=mean(Max_states_intra),SD=sd(Max_states_intra),Median=median(Max_states_intra),IQR(Max_states_intra))
 ddply(chromHMM_TE_state,.(class_update,Category),summarise,Count=length(Max_states_intra),Mean=mean(Max_states_intra),SD=sd(Max_states_intra),Median=median(Max_states_intra),IQR(Max_states_intra))
 
@@ -853,6 +856,17 @@ sum(test$Proportion[2:4])
 
 ## Proportion of those with >2 states
 sum(test$Proportion[3:4])/sum(test$Proportion)
+```
+
+### Number of states per TE, by state
+
+TEs ever in each state versus the total number of states they are in across all samples. 
+
+```{r state dynamics}
+lapply(chromHMM_states,function(x) median(chromHMM_TE_state[which(chromHMM_TE_state[[x]] > 0),]$States))
+lapply(meth_states,function(x) median(TE_meth_average[which(TE_meth_average[[x]] > 0),]$States))
+
+ggplot(test,aes(x=States,fill=variable)) + geom_density(alpha=0.5,adjust=10) + scale_fill_manual(values=chromHMM_colors)
 ```
 
 ### DNase/H3K27ac peak analysis
@@ -1049,12 +1063,12 @@ by_sample_KW_class[which(by_sample_KW_class$Group < 0.05),]
 
 # Number of enriched samples by Group
 # MHC adjusted for state and class
-permute_up = permute_up = ddply(by_sample_class[,c("class","State","Sample","Proportion_state","Contribution")],.(State,class),function(y) permute_by_sample(y,"Proportion_state","+",unique(y$Contribution),"Proportion_state",-1))
+permute_up = ddply(by_sample_class[,c("class","State","Sample","Proportion_state","Contribution")],.(State,class),function(y) permute_by_sample(y,"Proportion_state","+",unique(y$Contribution),"Proportion_state",-1))
 permute_up = permute_up[which(permute_up$Samples.x > 0),]
 permute_up$Padjust = p.adjust(permute_up$Pvalue,method="fdr")
 permute_up[which(permute_up$Padjust < 0.1 & permute_up$Category == "Group" & permute_up$State %in% states[c(1:7,16:17,20:21)]),]
 
-permute_down =  permute_down = ddply(by_sample_class[,c("class","State","Sample","Proportion_state","Contribution")],.(State,class),function(y) permute_by_sample(y,"Proportion_state","-",unique(y$Contribution),"Proportion_state",-1))
+permute_down = ddply(by_sample_class[,c("class","State","Sample","Proportion_state","Contribution")],.(State,class),function(y) permute_by_sample(y,"Proportion_state","-",unique(y$Contribution),"Proportion_state",-1))
 permute_down = permute_down[which(permute_down$Samples.y - permute_down$Samples.x > 0),]
 permute_down$Padjust = p.adjust(permute_down$Pvalue,method="fdr")
 permute_down[which(permute_down$Padjust < 0.1 & permute_down$Category == "Group" & permute_down$State %in% states[c(1:7,16:17,20:21)]),]
@@ -1232,7 +1246,7 @@ k = ggplot(subfamily_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update
 grid.arrange(a,b,c,d,e,f,g,h,i,j,k,ncol=3) 
 ```
 
-### tSNE
+### PCA
 
 ```{r subfam clustering}
 # Matrix dimensions
@@ -1347,6 +1361,8 @@ ddply(TE_meth_subfamily_stats,.(State),summarise,Median=mean(Median),Range=mean(
 
 ### Supplementary Figure 12
 
+GO BP results downloaded in tsv format from GREAT. 
+
 ```{r Figure S12, echo=FALSE}
 source("R_scripts/TE_correlation_subfamily.R") # Requires subfamily_enrichment.R
 source("R_scripts/subfamily_correlate.R") # Requires TE_correlation_subfamily.R
@@ -1392,6 +1408,10 @@ correlate_subfam_feature[which(abs(correlate_subfam_feature$estimate.rho) > 0.3 
 
 # State vs. state
 correlate_subfam_state[which(abs(correlate_subfam_state$estimate.rho) > 0.3 & correlate_subfam_state$State %in% states & correlate_subfam_state$State2 %in% states & correlate_subfam_state$class_update == "All" & correlate_subfam_state$State != correlate_subfam_state$State2 & correlate_subfam_state$p.value < 0.05),]
+
+## Range of correlation for active regulatory states, subfamily enrichment
+median(correlate_subfam_state[which(correlate_subfam_state$class_update == "All" & correlate_subfam_state$State %in% states[c(1:2,7,16:17,20:21)] & correlate_subfam_state$State2 %in% states[c(1:2,7,16:17,20:21)] & correlate_subfam_state$State != correlate_subfam_state$State2),]$estimate.rho)
+median(correlate_subfam_state[which(correlate_subfam_state$class_update == "LTR" & correlate_subfam_state$State %in% states[c(1:2,7,16:17,20:21)] & correlate_subfam_state$State2 %in% states[c(1:2,7,16:17,20:21)] & correlate_subfam_state$State != correlate_subfam_state$State2),]$estimate.rho)
 
 # State vs. metric
 ## Metrics
@@ -1488,9 +1508,9 @@ ddply(test,.(subfamily),summarise,sum(V1))
 ### LINE subfamilies
 
 ```{r LINE subfamilies}
-test = subfamily_state_sample_counts[which(subfamily_state_sample_counts$V1 > 0 & subfamily_state_sample_counts$State %in% states[c(1:7,16:17,20:21)] & subfamily_state_sample_counts$class_update == "LINE"),]
+test = ddply(subfamily_state_sample_counts[which(subfamily_state_sample_counts$class_update == "LINE" & subfamily_state_sample_counts$V1 > 0 & subfamily_state_sample_counts$State %in% states[c(1:7,16:17,20:21)]),],.(subfamily),summarise,Count=sum(V1))
 test
-sum(test[which(test$State == "7_Enh"),]$V1)
+sum(test$Count)
 
 # Age of LINE subfamilies
 test = rmsk_TE_subfamily[which(rmsk_TE_subfamily$class_update == "LINE"),]
@@ -1510,7 +1530,9 @@ test = subfamily_state_sample_counts[which(subfamily_state_sample_counts$V1 > 0 
 test[order(test$V1),]
 
 # Intron overlap
-tail(rmsk_TE_subfamily[order(rmsk_TE_subfamily$introns),c("subfamily","family","class_update","Count","introns","introns_pc","introns_nc")],n=20)
+test = subfamily_state_sample_counts[which(subfamily_state_sample_counts$State %in% c("3_TxFlnk","4_Tx","5_TxWk","6_EnhG") & subfamily_state_sample_counts$V1 > 0),]
+test = merge(test,rmsk_TE_subfamily[,c("subfamily","Count","introns","introns_pc","introns_nc")],by="subfamily")
+head(test[order(test$introns),],n=40)
 ```
 
 ### MER57E3
@@ -1650,6 +1672,9 @@ write.table(candidates_individual,file="enrichment/enrichment_candidates_indv.tx
 candidates_features = merge(candidates_individual,rmsk_TE[,c("chromosome","start","stop","subfamily","strand","family","class_update",features[c(1:3,5:8)],"coding_exon","Vista_enhancers")],all.x=TRUE,by=c("chromosome","start","stop","subfamily","strand"))
 
 candidates_features_summary = ddply(candidates_features,.(subfamily,class_update,State),function(x) apply(x[,c(features[c(1:3,5:8)],"coding_exon","Vista_enhancers")],2,function(x) sum(!is.na(x))/length(x)))
+
+# Percent overlap of each candidate subfamily with RefSeq features (only members in state when enriched)
+write.table(candidates_features_summary,file="enrichment/candidates_features_summary.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Supplementary Figure 13
@@ -2235,6 +2260,8 @@ write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samp
 write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples > 8 & hg19_mm10_chromHMM_active$Mouse_samples < 2),],file="Mouse/constitutive_human_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
 write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples < 2 & hg19_mm10_chromHMM_active$Mouse_samples > 8),],file="Mouse/constitutive_mouse_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
+
+http://epigenomegateway.wustl.edu/browser/?genome=hg19&session=CrUnGegbbU&statusId=1624390483 (Remy the chef)
 
 # Methods 
 
