@@ -333,21 +333,6 @@ wget hgdownload.cse.ucsc.edu/gbdb/hg19/bbi/wgEncodeCrgMapabilityAlign36mer.bw
 cp /bar/genomes/mm10/rmsk/rmsk.txt.gz rmsk_mm10.txt.gz
 ```
 
-```{bash get_mouse_chromHMM.sh, eval=FALSE}
-wget https://www.encodeproject.org/files/ENCFF580WIS/@@download/ENCFF580WIS.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF520TYE/@@download/ENCFF520TYE.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF360BWA/@@download/ENCFF360BWA.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF850SZS/@@download/ENCFF850SZS.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF027XQM/@@download/ENCFF027XQM.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF750AZO/@@download/ENCFF750AZO.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF410WGK/@@download/ENCFF410WGK.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF445BPN/@@download/ENCFF445BPN.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF882VQM/@@download/ENCFF882VQM.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF580YIU/@@download/ENCFF580YIU.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF786MCR/@@download/ENCFF786MCR.bed.gz .
-wget https://www.encodeproject.org/files/ENCFF491PKK/@@download/ENCFF491PKK.bed.gz .
-```
-
 ```{bash filter_repeats.sh, eval=FALSE}
 # Filter repeat file
 # 4/19/2016, 4/25/2016, 4/27/2016, 5/9/2016, 5/19/2016, 6/9/2016, 9/12/2016, 9/14/2016, 1/26/2017, 2/2/2017, 2/6/2017, 2/8/2017, 5/10/2017, 6/14/2017
@@ -648,7 +633,6 @@ python calcAge_generalized.py rmsk.txt.gz.JCage
 awk -v OFS='\t' '{if(($6 == "LTR" || $6 == "DNA" || $6 == "SINE" || $6 == "LINE") && ($1 !~ /_/)) print $1, $2, $3, $4, $5, $6, $7, $8, $9}' rmsk.txt.gz.JCage > rmsk_TE_JCage.txt
 #TE_landscape/age/rmsk_other_JCage.txt	
 awk -v OFS='\t' '{if(($6 == "LTR?" || $6 == "DNA?" || $6 == "SINE?" || $6 == "LINE?" || $6 == "Unknown?" || $6 == "Unknown" || $6 == "Other" || $6 == "RC") && ($1 !~ /_/)) print $1, $2, $3, $4, $5, $6, $7, $8, $9}' rmsk.txt.gz.JCage > rmsk_other_JCage.txt
-
 ```
 
 ```{bash mappability.sh, eval=FALSE}
@@ -906,20 +890,17 @@ awk -v OFS='\t' '{print $1, $2, $3, $10, $11}' $file | bedtools intersect -wo -a
 # DNase
 #TE_landscape/Mouse/DNase_mm10/mm10_orthologs_DNase.txt
 for file in ENCFF*.bed; do bedtools intersect -wo -a mm10_hg19_TE_intersect_same.bed -b $file | awk -v OFS='\t' -v sample=$file '{print $0, sample}' - >> mm10_orthologs_DNase.txt; done
-
 ```
 
-```{bash intersect_sample_list_DNase_peak.sh, eval=FALSE}
-```
+```{bash intersect runfiles, eval=FALSE}
+intersect_sample_list_DNase_peak.sh
 
-```{bash RNA runfiles, eval=FALSE}
 intersect_RNA_agnostic.sh
 intersect_RNA_features.sh
 intersect_RNA_chrY.sh
 ```
 
 ```{bash combine_RNA.sh, eval=FALSE}
-
 # Average RNA-seq expression
 # 5/31/2017, 6/6/2017
 # Updated 4/19/2018 with agnostic-only
@@ -961,11 +942,9 @@ while read line; do cut -f9 refseq_exons.txt.sorted_$line\_average.txt | paste r
 cut -f1-7 rmsk_TEother.txt.sorted_E000.neg.wig_average.txt > rmsk_TEother_average.txt
 while read line; do cut -f10 rmsk_TEother.txt.sorted_$line\_average.txt | paste rmsk_TEother_average.txt - > rmsk_TEother_average; mv rmsk_TEother_average rmsk_TEother_average.txt ; done < RNA_samples_stranded.txt
 while read line; do cut -f10 rmsk_TEother.txt.sorted_$line\_average.txt | paste rmsk_TEother_average.txt - > rmsk_TEother_average; mv rmsk_TEother_average rmsk_TEother_average.txt ; done < RNA_samples_agnostic.txt
-
 ```
 
 ```{bash sum_overlap_Roadmap.sh, eval=FALSE}
-
 # Sum overlap by merged feature
 # 4/20/2016, 4/25/2016, 4/26/2016, 5/19/2016, 6/27/2016, 9/5/2016,
 # 2/2/2017, 2/3/2017, 2/8/2017, 3/2/2017, 5/8/2017, 5/24/2017, 6/5/2017, 6/12/2017, 7/4/2017, 8/2/2017, 8/4/2017, 8/5/2017, 8/7/2017, 8/18/2017, 9/19/2017
@@ -1134,7 +1113,6 @@ awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[
 #TE_landscape/H3K27ac/Refseq_features/refseq_features_H3K27ac.txt
 for file in refseq_*H3K27ac.txt; do awk -v OFS='\t' -v feature=$(basename "$file" .txt) '{a[$15]+=$14}END{for(i in a){print i, a[i], feature}}' $file | sort >> refseq_features_H3K27ac.txt; done
 awk -v OFS='\t' '{a[$11]+=$3-$2}END{for(i in a){print i, a[i], "genome_noTE"}}' genome_noTE_H3K27ac.txt | sort >> refseq_features_H3K27ac.txt #Update 8/7/17
-
 ```
 
 ```{bash combine_states.sh, eval=FALSE}
@@ -1168,7 +1146,6 @@ for file in refseq_*_average.txt; do feature=$( basename "$file" _average.txt );
 for file in CpG_refseq_*_merge_noTE_Meth.bed; do feature=$(basename "$file" .bed); python ~/bin/TE_landscape/average_methylation_overall.py $file ../../sample_lists/WGBS_samples.txt $feature\_average.txt; done
 #TE_landscape/WGBS/Refseq_features/CpG_refseq_intergenic_noTE_Meth_average.txt		 
 python ~/bin/TE_landscape/average_methylation_overall.py CpG_refseq_intergenic_noTE_Meth.bed ../../sample_lists/WGBS_samples.txt CpG_refseq_intergenic_noTE_Meth_average.txt
-
 ```
 
 ```{bash state_CpG_overlap.sh, eval=FALSE}
@@ -1203,7 +1180,6 @@ awk -v OFS='\t' '{for (i=5;i<=NF;i++){if($i == -1) miss[$1, i]+=1; else if ($i <
 # Number of CpGs in each state, CpGs overlapping Refseq features, no TEs, each sample
 #TE_landscape/WGBS/Refseq_features/CpG_feature_Meth_states.txt
  for file in CpG_refseq_*_noTE_Meth.bed; do awk -v OFS='\t' -v feature=$(basename "$file" .bed) '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i=4;i<=NF;i++){print i, hypo[i], inter[i], hyper[i], miss[i], feature;}}' $file >>  CpG_feature_Meth_states.txt; done
-
 ```
 
 ```{bash sum_individual_Roadmap.sh, eval=FALSE}
@@ -1383,11 +1359,9 @@ awk -v OFS='\t' '{if($9 == "NA") print $0, "Missing"; else if ($9 < 0.3) print $
 while read line ; do awk -v OFS='\t' -v class=$line '{if($5 == class) print $0}' TE_WGBS_state_sorted.txt > $line\_WGBS_state_sorted.txt; done < ../features/TEs/class/TE_class.txt
 awk -v OFS='\t' '{if($5 == "Other") print $0}' TE_WGBS_state_sorted.txt > SVA_WGBS_state_sorted.txt
 awk -v OFS='\t' '{if(($5 != "Other") && ($5 != "LINE") && ($5 != "SINE") && ($5 != "DNA") && ($5 != "LTR")) print $0}' TE_WGBS_state_sorted.txt > Other_WGBS_state_sorted.txt
-
 ```
 
 ```{bash CpG_count.sh, eval=FALSE}
-
 # Number of CpGs in feature
 # 9/5/16, 8/23/2016, 8/24/2016, 2/2/2017, 2/6/2017, 6/19/2017, 6/20/2017, 7/21/2017, 8/18/2017, 8/23/2017, 8/27/2017
 
@@ -1428,7 +1402,6 @@ awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,S
 
 # Mouse TEs (12/7/17)
  awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_WGBS.bed > Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_CpG_count.txt
-
 ```
 
 ```{bash potential_chromHMM.sh, eval=FALSE}
@@ -1478,133 +1451,6 @@ awk -v OFS='\t' '{a[$4,$8,$9]+=1}END{for(i in a) {split (i, sep, SUBSEP); print 
 
 ## Proportion in any active regulatory state
 awk -v OFS='\t' '{if(($8 == "TssA") || ($8 == "TssAFlnk1") || ($8 == "TssAFlnk2") || ($8 == "Enh") || ($8 == "EnhLo1") || ($8 == "EnhLo2")) print $1, $2, $3, $4, $5, $6, $7, $9}' Mouse/chromHMM/mm10_chromHMM_TE_sorted_all.txt | uniq | awk -v OFS='\t' '{a[$4,$8]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' - > Mouse/chromHMM/mm10_chromHMM_subfamily_active.txt
-```
-
-```{bash peak_widths.sh, eval=FALSE}
-
-# Peak/state widths
-# 4/27/2016, 7/31/2017, 8/3/2017
-
-# ChromHMM, block size by state and sample
-#TE_landscape/chromHMM/chromHMM_blocks.txt
-while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, $4, sample}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> chromHMM/chromHMM_blocks.txt; done < sample_lists/mnemonics.txt
-
-## Number of blocks per sample
-while read line; do awk -v sample=$line -v OFS='\t' '{state[$4]+=1}END{for(i in state){print sample, i, state[i]}}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> chromHMM/chromHMM_peaks.txt; done < sample_lists/mnemonics.txt
-
-#TE_landscape/DNase/peak_widths.txt
-while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' ../raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak >> peak_widths.txt; done < ../sample_lists/DNase_samples.txt
-
-#TE_landscape/raw_data/H3K27ac/H3K27ac_narrow_peaks/peak_widths.txt
-while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' $line\-H3K27ac.narrowPeak >> peak_widths.txt; done < ../../../sample_lists/H3K27ac_samples.txt
-
-```
-
-```{bash run_homer.sh, eval=FALSE}
-
-# Run HOMER on enrichment candidates
-input_list=$1 # subfamily\tstate
-
-# HOMER results by subfamily (in state when enriched vs. never in state)
-while read subfamily state
-do 
-  echo $subfamily $state
-  findMotifsGenome.pl enrichment/bedfiles/$subfamily\_$state\_enriched.bed hg19 enrichment/homer/HOMER_$subfamily\_$state\_enriched -size given -nomotif -bg enrichment/bedfiles/$subfamily\_never_$state\.bed
-  awk -v OFS='\t' -v subfam=$subfamily -v state=$state '{print subfam, state, $0}' enrichment/homer/HOMER_$subfamily\_$state\_enriched/knownResults.txt >> enrichment/homer/HOMER_enriched_knownResults.txt
-done < $input_list 2>> enrichment/homer/HOMER_output.txt
-
-```
-
-```{bash liftover_human_mouse.sh, eval=FALSE}
-
-# Human-mouse orthologs
-# 9/14/2016, 9/15/2016, 9/16/2016, 2/8/2017, 2/9/2017, 5/10/2017, 5/11/2017, 5/29/2017, 6/12/2017
-
-#To load liftOver
-ml kentUCSC
-
-# Liftover between human TEs and mouse mm10	 
-#TE_landscape/Mouse/liftover/rmsk_TE_hg19tomm10.bed	
-liftOver rmsk_TEother_numbered.txt ../../genomes/hg19/chainFiles/hg19ToMm10.over.chain.gz rmsk_TE_hg19tomm10.bed out_mm10.txt -minMatch=0.1
-
-# Human TEs that do not lift over to mouse	
-#TE_landscape/Mouse/liftover/out_mm10.txt	
-
-# Numbers of human TEs that lifted over to mouse	 
-#TE_landscape/Mouse/liftover/numbers.txt	
-awk '{print $4}' rmsk_TE_hg19tomm10.bed > numbers.txt
-
-# Pull out human TEs lifted over to mouse by number	 
-#TE_landscape/Mouse/liftover/rmsk_TE_in_mm10.txt	
-python ../bin/TE_landscape/subset_file.py rmsk_TEother.txt numbers.txt rmsk_TE_in_mm10.txt
-
-# Combine human and lifted over mouse coordinates	 
-#TE_landscape/Mouse/rmsk_TE_mm10.bed	
-cut -f1-3,6 rmsk_TE_hg19tomm10.bed | paste - rmsk_TE_in_mm10.txt > rmsk_TE_mm10.bed
-
-# Lifted-over human coordinates intersected with mouse TE coordinates	 
-#TE_landscape/Mouse/liftover/hg19_mm10_TE_intersect.bed	
-bedtools intersect -wo -a rmsk_TE_mm10.bed -b mm10_rmsk_TE.txt > hg19_mm10_TE_intersect.bed
-
-# Human-mouse orthologs TEs with same subfamily name (hg19-mm10)	 
-#TE_landscape/Mouse/liftover/hg19_mm10_TE_intersect_same.bed	
-awk -v OFS="\t" '{if($8==$15)print $0}' hg19_mm10_TE_intersect.bed > hg19_mm10_TE_intersect_same.bed
-
-# mm10 TEs with orthologs in humans	 
-#TE_landscape/Mouse/DNase_mm10/mm10_hg19_TE_intersect_same.bed	
-awk -v OFS='\t' '{print $12, $13, $14, $15, $16, $17, $18}' ~/TE_landscape/Mouse/hg19_mm10_TE_intersect_same.bed | sort | uniq > mm10_hg19_TE_intersect_same.bed
-
-# Test to confirm I am not missing orthologs by filtering repeats (1/19/18)
- awk -v OFS='\t' '{print $6, $7, $8, $11, $12, $13, $10}' features/mouse/rmsk_mm10.txt | bedtools intersect -wo -a Mouse/rmsk_TE_mm10.bed -b - > Mouse/hg19_mm10_repeat_intersect.bed
- awk -v OFS="\t" '{if($8==$15)print $0}' Mouse/hg19_mm10_repeat_intersect.bed > Mouse/hg19_mm10_repeat_intersect_same.bed
-```
-
-```{bash ortholog_hypo_chromHMM.sh, eval=FALSE}
-
-# Human-mouse orthologs, chromHMM
-# 5/29/2017, 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017, 10/10/2017
-
-# hg19 chromHMM
-## chromHMM state for all orthologous hg19 TEs
-## Confirmed that it only pulled out TEs with matching subfamily and that the number of unique TEs is 269096 for all
-cut -f5-11 Mouse/liftover/hg19_mm10_TE_intersect_same.bed | uniq | sort -k1,1 -k2,2n > Mouse/hg19_orthologs.txt
-for file in E066 E071 E081 E083 E084 E086 E088 E092 E094 E096 E105 E106; do tail -n +2 /scratch/ecp/pandas/$file | sort -k1,1 -k2,2n - | bedtools intersect -sorted -wo -a Mouse/hg19_orthologs.txt -b - -f 1 -r > Mouse/hg19_ortholog_chromHMM_$file\.txt; done
-for file in Mouse/chromHMM/hg19_ortholog_chromHMM_*.txt; do cut -f8-18 $file >> Mouse/chromHMM/hg19_chromHMM_TE.txt; done
-
-```
-
-```{bash investigate_ortholog.sh, eval=FALSE}
-
-# Mouse-human candidates
-# 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017, 10/24/2018, 10/25/2018, 1/15/2019
-
-## Overlap with GENCODE promoters 
-bedtools intersect -wo -a Mouse/hg19_orthologs_hypo_1TssA.bed -b ~/genic_features/Gencode/Gencodev19_promoter.txt > Mouse/hg19_orthologs_hypo_1TssA_Gencode.txt
-
-# Tissue-specific orthologs in human and mouse that are intergenic
-bedtools closest -a <(cut -f8-31 Mouse/tissue_specific_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
-
-## >50kb from the nearest gene
-bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 50000) || ($37 < -50000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
-
-## >100kb from the nearest gene
-bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 100000) || ($37 < -100000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
-
-# Constitutively active TEs in one or both species, intergenic
-bedtools closest -a <(cut -f8-31 Mouse/constitutive_both_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
-```
-
-```{bash make_Browser.sh, eval=FALSE}
-# Process tracks for display on the Browser
-
-# mm10 chromHMM categorical tracks
-## Fourth column must be positive integer
-while read a b c; do gunzip raw_data/mouse/chromHMM/$c\.bed.gz; awk -v OFS='\t' '{if($4 == "TssA"){print $1, $2, $3, 1} else if ($4 == "TssAFlnk1"){print $1, $2, $3, 2} else if ($4 == "TssAFlnk2"){print $1, $2, $3, 3} else if ($4 == "Tx1"){print $1, $2, $3, 4} else if ($4 == "Tx2"){print $1, $2, $3, 5} else if ($4 == "Enh"){print $1, $2, $3, 6} else if ($4 == "EnhLo1"){print $1, $2, $3, 7} else if ($4 == "EnhLo2"){print $1, $2, $3, 8} else if ($4 == "HetCons"){print $1, $2, $3, 9} else if ($4 == "HetFac"){print $1, $2, $3, 10} else if ($4 == "TssBiv"){print $1, $2, $3, 11} else if ($4 == "EnhPois1"){print $1, $2, $3, 12} else if ($4 == "EnhPois2"){print $1, $2, $3, 13} else if ($4 == "QuiesG"){print $1, $2, $3, 14} else if ($4 == "Quies"){print $1, $2, $3, 15}}' raw_data/mouse/chromHMM/$c\.bed | sort -k1,1 -k2,2n - > /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed; bgzip /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed; tabix -p bed /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed.gz; done < Mouse/human_mouse_samples.txt &
-
-# mm10 WGBS
-for file in ~/TE_landscape/raw_data/mouse/WGBS/*.bed; do awk -v OFS='\t' '{print $1, $2, $3, $10}' $file | sort -k1,1 -k2,2n - > $(basename $file .bed)_readDepth.bed; bgzip ~/public_html/mouseENCODE/$(basename $file .bed)_readDepth.bed; done
-for file in ~/TE_landscape/raw_data/mouse/WGBS/*.bed; do awk -v OFS='\t' '{print $1, $2, $3, $11}' $file | sort -k1,1 -k2,2n - > $(basename $file .bed)_meth.bed; bgzip ~/public_html/mouseENCODE/$(basename $file .bed)_meth.bed; done
-for file in *.bed.gz; do tabix -p bed $file; done #In public_html/mouseENCODE
 ```
 
 ```{bash enhancer_matrix.sh, eval=FALSE}
@@ -2705,6 +2551,19 @@ THRESHOLD_IJK_CPG = 6
 THRESHOLD_IK_CPG = 50
 ```
 
+```{bash run_homer.sh, eval=FALSE}
+# Run HOMER on enrichment candidates
+input_list=$1 # subfamily\tstate
+
+# HOMER results by subfamily (in state when enriched vs. never in state)
+while read subfamily state
+do 
+  echo $subfamily $state
+  findMotifsGenome.pl enrichment/bedfiles/$subfamily\_$state\_enriched.bed hg19 enrichment/homer/HOMER_$subfamily\_$state\_enriched -size given -nomotif -bg enrichment/bedfiles/$subfamily\_never_$state\.bed
+  awk -v OFS='\t' -v subfam=$subfamily -v state=$state '{print subfam, state, $0}' enrichment/homer/HOMER_$subfamily\_$state\_enriched/knownResults.txt >> enrichment/homer/HOMER_enriched_knownResults.txt
+done < $input_list 2>> enrichment/homer/HOMER_output.txt
+```
+
 ### Figure 5
 
 ```{r Figure 5 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
@@ -3223,7 +3082,7 @@ write.table(permute_subfam_pc_wide,file="enrichment/state_subfamily_clusters_pc.
 ### Print bedfiles for candidates (enriched and never)
 
 ```{r print bedfiles, eval=FALSE}
-source('R_scripts/TE_correlation.R')
+source("R_scripts/TE_correlation.R")
 
 candidates = read.table(file="enrichment/enrichment_candidates.txt",sep='\t') #Results of candidate Excel analysis
 colnames(candidates) = c("State","subfamily")
@@ -3472,7 +3331,7 @@ apply(rmsk_TE_measure[,states],2,function(x) apply(rmsk_TE_measure[,cohorts],2,f
 
 ### TE feature vs. metric
 
-```{r, eval=FALSE}
+```{r feature v metric, eval=FALSE}
 source("R_scripts/feature_overlap_metric.R") #Requires TE_correlation.R
 feature_metric_mean[order(feature_metric_mean$Enrichment),]
 feature_metric_mean_class[order(feature_metric_mean_class$Enrichment),]
@@ -3495,7 +3354,7 @@ apply(rmsk_TE_measure[,states],2,function(x) table(rmsk_TE_measure[which(x > 0),
 
 ### Potential without chrY test
 
-```{r eval=FALSE}
+```{r potential noY, eval=FALSE}
 # Potential without chrY
 test = chromHMM_TE_state[which(chromHMM_TE_state$chromosome != "chrY"),]
 test.a = sample_distribution(test,c(8:22),sample_counts["All","chromHMM"])
@@ -3513,6 +3372,61 @@ ADD
 ```
 
 ## Mouse
+
+```{bash liftover_human_mouse.sh, eval=FALSE}
+# Human-mouse orthologs
+# 9/14/2016, 9/15/2016, 9/16/2016, 2/8/2017, 2/9/2017, 5/10/2017, 5/11/2017, 5/29/2017, 6/12/2017
+
+#To load liftOver
+ml kentUCSC
+
+# Liftover between human TEs and mouse mm10	 
+#TE_landscape/Mouse/liftover/rmsk_TE_hg19tomm10.bed	
+liftOver rmsk_TEother_numbered.txt ../../genomes/hg19/chainFiles/hg19ToMm10.over.chain.gz rmsk_TE_hg19tomm10.bed out_mm10.txt -minMatch=0.1
+
+# Human TEs that do not lift over to mouse	
+#TE_landscape/Mouse/liftover/out_mm10.txt	
+
+# Numbers of human TEs that lifted over to mouse	 
+#TE_landscape/Mouse/liftover/numbers.txt	
+awk '{print $4}' rmsk_TE_hg19tomm10.bed > numbers.txt
+
+# Pull out human TEs lifted over to mouse by number	 
+#TE_landscape/Mouse/liftover/rmsk_TE_in_mm10.txt	
+python ../bin/TE_landscape/subset_file.py rmsk_TEother.txt numbers.txt rmsk_TE_in_mm10.txt
+
+# Combine human and lifted over mouse coordinates	 
+#TE_landscape/Mouse/rmsk_TE_mm10.bed	
+cut -f1-3,6 rmsk_TE_hg19tomm10.bed | paste - rmsk_TE_in_mm10.txt > rmsk_TE_mm10.bed
+
+# Lifted-over human coordinates intersected with mouse TE coordinates	 
+#TE_landscape/Mouse/liftover/hg19_mm10_TE_intersect.bed	
+bedtools intersect -wo -a rmsk_TE_mm10.bed -b mm10_rmsk_TE.txt > hg19_mm10_TE_intersect.bed
+
+# Human-mouse orthologs TEs with same subfamily name (hg19-mm10)	 
+#TE_landscape/Mouse/liftover/hg19_mm10_TE_intersect_same.bed	
+awk -v OFS="\t" '{if($8==$15)print $0}' hg19_mm10_TE_intersect.bed > hg19_mm10_TE_intersect_same.bed
+
+# mm10 TEs with orthologs in humans	 
+#TE_landscape/Mouse/DNase_mm10/mm10_hg19_TE_intersect_same.bed	
+awk -v OFS='\t' '{print $12, $13, $14, $15, $16, $17, $18}' ~/TE_landscape/Mouse/hg19_mm10_TE_intersect_same.bed | sort | uniq > mm10_hg19_TE_intersect_same.bed
+
+# Test to confirm I am not missing orthologs by filtering repeats (1/19/18)
+ awk -v OFS='\t' '{print $6, $7, $8, $11, $12, $13, $10}' features/mouse/rmsk_mm10.txt | bedtools intersect -wo -a Mouse/rmsk_TE_mm10.bed -b - > Mouse/hg19_mm10_repeat_intersect.bed
+ awk -v OFS="\t" '{if($8==$15)print $0}' Mouse/hg19_mm10_repeat_intersect.bed > Mouse/hg19_mm10_repeat_intersect_same.bed
+```
+
+```{bash ortholog_hypo_chromHMM.sh, eval=FALSE}
+# Human-mouse orthologs, chromHMM
+# 5/29/2017, 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017, 10/10/2017
+
+# hg19 chromHMM
+## chromHMM state for all orthologous hg19 TEs
+## Confirmed that it only pulled out TEs with matching subfamily and that the number of unique TEs is 269096 for all
+cut -f5-11 Mouse/liftover/hg19_mm10_TE_intersect_same.bed | uniq | sort -k1,1 -k2,2n > Mouse/hg19_orthologs.txt
+for file in E066 E071 E081 E083 E084 E086 E088 E092 E094 E096 E105 E106; do tail -n +2 /scratch/ecp/pandas/$file | sort -k1,1 -k2,2n - | bedtools intersect -sorted -wo -a Mouse/hg19_orthologs.txt -b - -f 1 -r > Mouse/hg19_ortholog_chromHMM_$file\.txt; done
+for file in Mouse/chromHMM/hg19_ortholog_chromHMM_*.txt; do cut -f8-18 $file >> Mouse/chromHMM/hg19_chromHMM_TE.txt; done
+```
 
 ```{r mouse scripts, cache=TRUE, cache.lazy=FALSE}
 #source("R_scripts/proportion.R")
@@ -3886,6 +3800,39 @@ write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samp
 write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples < 2 & hg19_mm10_chromHMM_active$Mouse_samples > 8),],file="Mouse/constitutive_mouse_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
 
+```{bash investigate_ortholog.sh, eval=FALSE}
+# Mouse-human candidates
+# 5/30/2017, 7/26/2017, 7/31/2017, 10/3/2017, 10/24/2018, 10/25/2018, 1/15/2019
+
+## Overlap with GENCODE promoters 
+bedtools intersect -wo -a Mouse/hg19_orthologs_hypo_1TssA.bed -b ~/genic_features/Gencode/Gencodev19_promoter.txt > Mouse/hg19_orthologs_hypo_1TssA_Gencode.txt
+
+# Tissue-specific orthologs in human and mouse that are intergenic
+bedtools closest -a <(cut -f8-31 Mouse/tissue_specific_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
+
+## >50kb from the nearest gene
+bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 50000) || ($37 < -50000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
+
+## >100kb from the nearest gene
+bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 100000) || ($37 < -100000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
+
+# Constitutively active TEs in one or both species, intergenic
+bedtools closest -a <(cut -f8-31 Mouse/constitutive_both_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
+```
+
+```{bash make_Browser.sh, eval=FALSE}
+# Process tracks for display on the Browser
+
+# mm10 chromHMM categorical tracks
+## Fourth column must be positive integer
+while read a b c; do gunzip raw_data/mouse/chromHMM/$c\.bed.gz; awk -v OFS='\t' '{if($4 == "TssA"){print $1, $2, $3, 1} else if ($4 == "TssAFlnk1"){print $1, $2, $3, 2} else if ($4 == "TssAFlnk2"){print $1, $2, $3, 3} else if ($4 == "Tx1"){print $1, $2, $3, 4} else if ($4 == "Tx2"){print $1, $2, $3, 5} else if ($4 == "Enh"){print $1, $2, $3, 6} else if ($4 == "EnhLo1"){print $1, $2, $3, 7} else if ($4 == "EnhLo2"){print $1, $2, $3, 8} else if ($4 == "HetCons"){print $1, $2, $3, 9} else if ($4 == "HetFac"){print $1, $2, $3, 10} else if ($4 == "TssBiv"){print $1, $2, $3, 11} else if ($4 == "EnhPois1"){print $1, $2, $3, 12} else if ($4 == "EnhPois2"){print $1, $2, $3, 13} else if ($4 == "QuiesG"){print $1, $2, $3, 14} else if ($4 == "Quies"){print $1, $2, $3, 15}}' raw_data/mouse/chromHMM/$c\.bed | sort -k1,1 -k2,2n - > /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed; bgzip /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed; tabix -p bed /tavern/epehrsson/mouseENCODE/signal_tracks/$c\.bed.gz; done < Mouse/human_mouse_samples.txt &
+
+# mm10 WGBS
+for file in ~/TE_landscape/raw_data/mouse/WGBS/*.bed; do awk -v OFS='\t' '{print $1, $2, $3, $10}' $file | sort -k1,1 -k2,2n - > $(basename $file .bed)_readDepth.bed; bgzip ~/public_html/mouseENCODE/$(basename $file .bed)_readDepth.bed; done
+for file in ~/TE_landscape/raw_data/mouse/WGBS/*.bed; do awk -v OFS='\t' '{print $1, $2, $3, $11}' $file | sort -k1,1 -k2,2n - > $(basename $file .bed)_meth.bed; bgzip ~/public_html/mouseENCODE/$(basename $file .bed)_meth.bed; done
+for file in *.bed.gz; do tabix -p bed $file; done #In public_html/mouseENCODE
+```
+
 http://epigenomegateway.wustl.edu/browser/?genome=hg19&session=CrUnGegbbU&statusId=1624390483 (Remy the chef)
 
 # Methods 
@@ -3927,6 +3874,24 @@ tail(rmsk_TE_subfamily_measure[order(rmsk_TE_subfamily_measure$blacklist),c("sub
 ```
 
 # Supplement
+
+```{bash peak_widths.sh, eval=FALSE}
+# Peak/state widths
+# 4/27/2016, 7/31/2017, 8/3/2017
+
+# ChromHMM, block size by state and sample
+#TE_landscape/chromHMM/chromHMM_blocks.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, $4, sample}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> chromHMM/chromHMM_blocks.txt; done < sample_lists/mnemonics.txt
+
+## Number of blocks per sample
+while read line; do awk -v sample=$line -v OFS='\t' '{state[$4]+=1}END{for(i in state){print sample, i, state[i]}}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed >> chromHMM/chromHMM_peaks.txt; done < sample_lists/mnemonics.txt
+
+#TE_landscape/DNase/peak_widths.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' ../raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak >> peak_widths.txt; done < ../sample_lists/DNase_samples.txt
+
+#TE_landscape/raw_data/H3K27ac/H3K27ac_narrow_peaks/peak_widths.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' $line\-H3K27ac.narrowPeak >> peak_widths.txt; done < ../../../sample_lists/H3K27ac_samples.txt
+```
 
 ### Supplementary Figure 18
 
