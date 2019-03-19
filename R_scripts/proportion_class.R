@@ -142,7 +142,7 @@ by_sample_class$Enrichment_TE = log2(by_sample_class$Proportion_TE/(by_sample_cl
 by_sample_class = merge(by_sample_class,contribution[,c("State","Genome")],by="State",all.x=TRUE)
 by_sample_class = ddply(by_sample_class,.(State,class),transform,class_sum=sum(Bases_state_class))
 by_sample_class$Contribution = by_sample_class$class_sum/by_sample_class$Genome
-by_sample_class$class = factor(by_sample_class$class,levels=c("LINE","SINE","LTR","DNA","SVA","Other"))
+by_sample_class$class = factor(by_sample_class$class,levels=c("DNA","LINE","LTR","SINE","SVA","Other"))
 rm(list=c("class_chromHMM","class_CpG_meth","TE_DNase_class","TE_H3K27ac_class"))
 
 # By-sample contribution (includes duplicate bases)
