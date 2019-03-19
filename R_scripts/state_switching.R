@@ -13,9 +13,6 @@ state_switching_intra = read.table("chromHMM/state_switching/rmsk_TEother_chromH
 state_switching_intra[15,15] = state_switching_intra[15,15] - 1
 state_switching_intra[lower.tri(state_switching_intra)] = t(state_switching_intra)[lower.tri(state_switching_intra)]
 
-# For Chi-sq tests
-state_switching_intra_raw = state_switching_intra
-
 #Normalize matrix
 for (i in 1:15){
   state_switching_intra[i,] = state_switching_intra[i,]/state_switching_intra[i,i]
@@ -26,9 +23,6 @@ for (i in 1:15){
 
 # Format TEs
 state_switching_inter = read.table("chromHMM/state_switching/rmsk_TEother_chromHMM_inter.txt",sep='\t',header=TRUE,row.names=1)
-
-# For Chi-sq tests
-state_switching_inter_raw = state_switching_inter
 
 # Normalize row by number of TEs ever in state
 for (i in 1:15){
@@ -53,17 +47,11 @@ ss_inter_class$Class = factor(ss_inter_class$Class,levels=c("DNA","LINE","LTR","
 # WGBS inter state switching
 # Format TEs
 ss_inter_meth = read.table("WGBS/TE_WGBS_state_inter.txt",sep='\t',header=TRUE,row.names=1)
-ss_inter_meth[lower.tri(ss_inter_meth)] = t(ss_inter_meth)[lower.tri(ss_inter_meth)]
-
-# Reorder columns and rows
-ss_inter_meth = ss_inter_meth[c(2,3,1,4),c(2,3,1,4)]
-
-# For Chi-sq tests
-ss_inter_meth_raw = ss_inter_meth
+ss_inter_meth = ss_inter_meth[meth_states,meth_states]
 
 # Normalize by number of TEs ever in state
 for (i in 1:4){
-  ss_inter_meth[i,] = ss_inter_meth[i,]/apply(TE_meth_average_category[,c(2,4,3,5)],2,function(x) sum(x[2:38]))[i]
+  ss_inter_meth[i,] = ss_inter_meth[i,]/apply(TE_meth_average_category[,meth_states],2,function(x) sum(x[2:38]))[i]
 }
 
 # WGBS, by class
@@ -71,10 +59,9 @@ ss_inter_meth_class = lapply(list.files(path="WGBS/class",pattern="WGBS_state_so
 names(ss_inter_meth_class) = c("DNA","LINE","LTR","Other","SINE","SVA")
 
 for (j in 1:6){
-  ss_inter_meth_class[[j]][lower.tri(ss_inter_meth_class[[j]])] = t(ss_inter_meth_class[[j]])[lower.tri(ss_inter_meth_class[[j]])]
-  ss_inter_meth_class[[j]] = ss_inter_meth_class[[j]][c(2,3,1,4),c(2,3,1,4)]
+  ss_inter_meth_class[[j]] = ss_inter_meth_class[[j]][meth_states,meth_states]
   for (i in 1:4){
-    ss_inter_meth_class[[j]][i,] = ss_inter_meth_class[[j]][i,]/apply(TE_meth_average_class[which(TE_meth_average_class$class_update == names(ss_inter_meth_class)[j]),c(3,5,4,6)],2,function(x) sum(x[2:38]))[i]
+    ss_inter_meth_class[[j]][i,] = ss_inter_meth_class[[j]][i,]/apply(TE_meth_average_class[which(TE_meth_average_class$class_update == names(ss_inter_meth_class)[j]),meth_states],2,function(x) sum(x[2:38]))[i]
   }
 }
 ss_inter_meth_class = ldply(ss_inter_meth_class)
