@@ -53,7 +53,3 @@ rmsk_TE_chromosome = dcast(rmsk_TE_chromosome,subfamily~chromosome,value.var="Ch
 rmsk_TE_chromosome[is.na(rmsk_TE_chromosome)] = 0
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,rmsk_TE_chromosome,by="subfamily")
 rm(rmsk_TE_chromosome)
-
-# Adding C-GATE
-rmsk_TE_subfamily$CGate = rep("no",968)
-rmsk_TE_subfamily[which(rmsk_TE_subfamily$subfamily %in% cgate_subfams),]$CGate = "yes"
