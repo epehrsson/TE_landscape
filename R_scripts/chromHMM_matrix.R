@@ -28,9 +28,11 @@ chromHMM_TE_state$class_update = convert_class(chromHMM_TE_state$class)
 # Summit or majority assignment
 print("Summit assignments")
 
-summit = read.table("/scratch/ecp/pandas/E001",sep='\t',header=TRUE)
-summit = unique(summit[,c(TE_coordinates,"Category")])
+summit = read.table("features/TEs/rmsk_TEother_summit.txt",sep='\t')
+colnames(summit) = TE_coordinates[c(1:4,6,5,7)]
+summit$Category = rep("summit",dim(summit)[1])
 chromHMM_TE_state = merge(chromHMM_TE_state,summit,by=TE_coordinates,all.x=TRUE)
+chromHMM_TE_state[which(is.na(chromHMM_TE_state$Category)),]$Category = "majority"
 rm(summit)
   
 # Number of samples each TE is in each chromHMM state, no cancer cell lines or IMR90
