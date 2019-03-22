@@ -45,5 +45,3 @@ metadata[which(metadata$Sample %in% c("E116","E117","E123","E124","E126","E127")
 # Add whether sample is IMR90 or cancer cell line
 metadata$Exclude = rep("Include",127)
 metadata[which(metadata$Sample %in% c("E017","E114","E115","E117","E118","E123")),]$Exclude = "Exclude"
-
-save(metadata,file="R_datasets/metadata.RData")
