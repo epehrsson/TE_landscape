@@ -1,3 +1,28 @@
+# General
+count_na = function(data_frame){
+  counts = apply(data_frame,2,function(x) sum(is.na(x)))
+  return(counts)
+}
+
+filter_metadata = function(metadata,metric){
+  if (metric == "WGBS") {
+    metadata_matrix = metadata[which(!is.na(metadata$WGBS)),]
+  } else if (metric == "DNase") {
+    metadata_matrix = metadata[which(!is.na(metadata$DNase)),]
+  } else if (metric == "H3K27ac") {
+    metadata_matrix = metadata[which(!is.na(metadata$H3K27ac)),]
+  } else{
+    metadata_matrix = metadata
+  }
+}
+
+format_pca = function(pca,metadata,metadata_col){
+  pca$eigenvectors = cbind(as.data.frame(pca$x),metadata[match(rownames(pca$x),metadata[[metadata_col]]),])
+  pca$eigenvalues = 100*pca$sdev^2/sum(pca$sdev^2)
+  return(pca)
+}
+
+# Plotting
 add_stars = function(positions=c(),heights=c(),symbol="*",size=2,color="red"){
   star_list =  mapply(function(x, y) {paste(" + annotate(\"text\",x=",x,",y=",y,",label=\"",symbol,"\",size=",size,",color=\"",color,"\")",sep="")},
                       positions,heights)
@@ -5,29 +30,19 @@ add_stars = function(positions=c(),heights=c(),symbol="*",size=2,color="red"){
   return(star_list)
 }
 
-count_na = function(data_frame){
-  counts = apply(data_frame,2,function(x) sum(is.na(x)))
-  return(counts)
+get_legend = function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
 }
 
-kruskal_if = function(x,variableA,variableB){ #Where x is data frame subset, variableA are values to be split, variableB is column to be tested
-  if(length(unique(x[[variableB]])) > 1){
-    p_value = unlist(kruskal.test(x[[variableA]] ~ x[[variableB]]))["p.value"]
-  }
-  else{
-    p_value = NA
-  }
-  return(p_value)
+gg_color_hue = function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
-wilcox_to_all = function(all,metadata){ #all and metadata are vectors, e.g., columns of data frames
-  groups = levels(metadata)
-  tests = p.adjust(as.numeric(unlist(lapply(groups,function(x) unlist(wilcox.test(all[which(metadata == x)],all[which(metadata != x)]))["p.value"]))),method="bonferroni")
-  names(tests) = groups
-  tests = ldply(tests)
-  return(tests)
-}
-
+# Matrix processing
 convert_class = function(class_vector){
   class_vector = factor(class_vector,levels=unique(c(levels(class_vector),"SVA","Other")))
   class_vector[which(class_vector == "Other")] = "SVA"
@@ -113,70 +128,7 @@ correlate_spearman = function(matrix, indpt_var, response_vars){ #For all TEs, c
   return(class)
 }
 
-enrichment_proportion = function(matrix,enrichment,threshold,metric,members_threshold=0){
-  #Cannot process more than one state at a time
-  metadata_matrix = filter_metadata(metadata,metric)
-
-  proportions = list()
-  
-  for (i in 1:6) {
-    filtered_matrix = matrix[,c("subfamily",enrichment,sample_categories[i],"Members")]
-    colnames(filtered_matrix) = c("subfamily","Enrichment","Category","Members")
-    aggregate_matrix = ddply(filtered_matrix,.(subfamily,Category),function(x) dim(x[which(x$Enrichment > threshold & x$Members >= members_threshold),])[1])
-    colnames(aggregate_matrix)[3] = c("Enriched")
-    aggregate_matrix$Metadata = rep(sample_categories[i],dim(aggregate_matrix)[1])
-    proportions[[i]] = aggregate_matrix
-  }
-  proportions = ldply(proportions)
-  proportions$Proportion = apply(proportions,1,function(x) as.numeric(x[3])/length(metadata_matrix[which(metadata_matrix[,x[4]] == x[2]),x[4]]))
-  
-  return(proportions)
-}
-
-subfamily_member_to_matrix = function(in_list,state){
-  new_matrix = dcast(in_list[which(in_list$State == state),],Class + Family + Subfamily ~ Sample)
-  new_matrix[is.na(new_matrix)] = 0
-  return(new_matrix)
-}
-
-# Plotting
-get_legend = function(myggplot){
-  tmp <- ggplot_gtable(ggplot_build(myggplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)
-}
-
-gg_color_hue = function(n) {
-  hues = seq(15, 375, length = n + 1)
-  hcl(h = hues, l = 65, c = 100)[1:n]
-}
-
-heatmap_color = function (n) {
-  x <- ramp(seq.int(0, 1, length.out = n))
-  if (ncol(x) == 4L) 
-    rgb(x[, 1L], x[, 2L], x[, 3L], x[, 4L], maxColorValue = 255)
-  else rgb(x[, 1L], x[, 2L], x[, 3L], maxColorValue = 255)
-}
-
-format_pca = function(pca,metadata,metadata_col){
-  pca$eigenvectors = cbind(as.data.frame(pca$x),metadata[match(rownames(pca$x),metadata[[metadata_col]]),])
-  pca$eigenvalues = 100*pca$sdev^2/sum(pca$sdev^2)
-  return(pca)
-}
-
-filter_metadata = function(metadata,metric){
-  if (metric == "WGBS") {
-    metadata_matrix = metadata[which(!is.na(metadata$WGBS)),]
-  } else if (metric == "DNase") {
-    metadata_matrix = metadata[which(!is.na(metadata$DNase)),]
-  } else if (metric == "H3K27ac") {
-    metadata_matrix = metadata[which(!is.na(metadata$H3K27ac)),]
-  } else{
-    metadata_matrix = metadata
-  }
-}
-
+# Enrichment
 plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment",subfamilies=NULL) 
 {
   #Input matrix should be subfamily_state_sample_filter
@@ -214,80 +166,6 @@ plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=
   #Plot
   aheatmap(test,Rowv=FALSE,Colv=FALSE,distfun="binary",breaks=0.5,legend=FALSE,color=c("white","cornflowerblue"),border_color="NA",
            annRow=data.frame(Class=rmsk_TE_subfamily[match(rownames(test),rmsk_TE_subfamily$subfamily),]$class_update),annColors=column_colors,annCol=column_metadata,annLegend=FALSE)
-}
-
-plot_binary_heatmap_indv = function(individual,metric="chromHMM",highlight_samples=NULL)
-{
-  #Input is individual TEs from subfamily ever in state, all samples
-  candidate_indv = individual
-  print("Got individual TEs") 
-  
-  #Filter metadata based on metric
-  metadata_matrix = filter_metadata(metadata,metric)
-  print("Filtered metadata")
-  
-  #Column metadata
-  column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
-  column_colors = list(Age=age_colors,Cancer=cancer_colors,Germline=germline_colors,Type=type_colors,Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
-  if (!is.null(highlight_samples)){
-    column_metadata$Enriched = factor(rep("No",dim(metadata_matrix)[1]),levels=c("No","Yes"))
-    column_metadata[which(metadata_matrix$Sample %in% highlight_samples),]$Enriched = "Yes"
-    column_colors$Enriched = c("white","black")
-  }
-  print("Assigned metadata colors")
-  
-  candidate_indv = dcast(candidate_indv,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Coverage")
-  rownames(candidate_indv) = apply(candidate_indv,1,function(x) paste(x[1],x[2],x[3],x[4],x[5],x[6],x[7],sep="_"))
-  candidate_indv[,setdiff(metadata_matrix$Sample,colnames(candidate_indv))] = rep(NA,dim(candidate_indv)[1])
-  candidate_indv = candidate_indv[,8:dim(candidate_indv)[2]]
-  candidate_indv = candidate_indv[,as.vector(metadata_matrix$Sample)]
-  print("Formatted matrix")
-  
-  #Convert NA to 0
-  candidate_indv[is.na(candidate_indv)] = 0
-  print("Removed NAs")
-  
-  # Plot
-  aheatmap(candidate_indv,Rowv=FALSE,Colv=FALSE,distfun="binary",color=c("white","red"),annCol=column_metadata,annColors=column_colors,border_color="NA",annLegend=FALSE)
-}
-
-write_subfamily_candidates = function(candidate_list,state,print_coords=TRUE){
-  # See 7/11/2016, 8/29/2016, 9/29/2016, 11/22/2016, 11/27/2016, 5/23/2017, 5/24/2017, 5/29/2017, 5/30/2017, 6/15/2017
-  
-  stateX = paste("X",state,sep="")
-  if (state == "8_ZNF/Rpts"){
-    print_state = "8_ZNF.Rpts"
-  } else {
-    print_state = state
-  }
-  
-  # Statistics for candidate subfamilies
-  test = ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$subfamily %in% candidate_list & subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state),],.(subfamily),summarise,Min = min(Members),Max = max(Members),Median = median(Members))
-  test = merge(test,rmsk_TE_subfamily_ever[,c("subfamily",state)],by="subfamily")
-  colnames(test)[5] = "Members_ever"
-  test = merge(test,subfamily_state_sample_counts[which(subfamily_state_sample_counts$State == state),c(1:3,5)],by="subfamily")
-  colnames(test)[8] = "Samples_enriched"
-  test = merge(test,rmsk_TE_subfamily[,c(1,4)],by="subfamily")
-  colnames(test)[9] = "Members"
-  write.table(test[,c(1,6:7,8,9,5,2:4)],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_stat.txt",sep=""))
-  
-  # Write enriched subfamily coordinates
-  if (print_coords == TRUE){
-    if (state %in% chromHMM_states){
-      # TEs ever in state, by subfamily	 
-      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] > 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",print_state,".bed",sep="")))
-      # TEs never in state, by subfamily	 
-      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[stateX]] == 0),c(colnames(rmsk_TE_measure)[1:4],stateX,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",print_state,".bed",sep="")))
-    } else {
-      # TEs ever in state, by subfamily	 
-      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] > 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_",print_state,".bed",sep="")))
-      # TEs never in state, by subfamily	 
-      lapply(candidate_list,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x & rmsk_TE_measure[[state]] == 0),c(colnames(rmsk_TE_measure)[1:4],state,"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/",x,"_no",print_state,".bed",sep="")))
-    }
-  }
-  
-  # Write samples where candidate subfamilies are enriched in state	 
-  write.table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State == state & subfamily_state_sample_filter$subfamily %in% candidate_list),c("subfamily","Sample","State")],row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t',file=paste("enrichment/candidate_",print_state,"_enriched.txt",sep=""))
 }
 
 get_subfamily_in_state = function(subfamily,state,metric){
@@ -344,80 +222,6 @@ get_subfamily_enriched = function(subfamily,State){
   return(subfamily_bedfile)
 }
 
-investigate_candidate_indv = function(subfamily,state,metric,enrichment=THRESHOLD_LOR,print_fig=FALSE){
-  # Get members ever in state
-  subfamily_in_state = get_subfamily_in_state(subfamily,state,metric)
-  
-  # Samples where subfamily is enriched in state
-  samples = get_enriched_samples(subfamily,state,enrichment)
-  
-  # Metadata for samples where subfamily is enriched
-  print(metadata[which(metadata$Sample %in% samples),c(1:2,4:9)])
-  
-  # Plot subfamily
-  if (length(samples) == 0) {
-    samples = NULL
-  }
-  if (print_fig == "TRUE"){
-    png(paste("enrichment/heatmaps/Heatmap_",subfamily,"_",state,"_",enrichment,".png",sep=""))
-  }
-  
-  plot_binary_heatmap_indv(subfamily_in_state,metric=metric,highlight_samples=samples)
-  
-  if (print_fig == "TRUE"){
-    dev.off()
-  }
-}
-
-enrichment_clusters = function(subfamily,state,metric,coverage_threshold=0,score_threshold=1,category_threshold=0.5,sample_threshold=1,TE_threshold=3){
-  print(subfamily)
-  
-  # Filter metadata
-  metadata_matrix = filter_metadata(metadata,metric)
-  metadata_table = ddply(melt(metadata_matrix[,c(1,4:9)],id.var="Sample"),.(variable,value),summarise,Num=length(Sample))
-  colnames(metadata_table) = c("Category","Grouping","Category_samples")
-  print("Filtered metadata")
-  
-  # Read in subfamily members ever in state
-  subfamily_in_state = get_subfamily_in_state(subfamily,state,metric)
-  print("Got individual TEs")
-  
-  # Add missing samples 
-  subfamily_matrix = dcast(subfamily_in_state,chromosome+start+stop+subfamily+family+class+strand~Sample,value.var="Coverage")
-  subfamily_matrix[,setdiff(metadata_matrix$Sample,colnames(subfamily_matrix))] = rep(NA,dim(subfamily_matrix)[1])
-  subfamily_matrix[is.na(subfamily_matrix)] = 0
-  subfamily_matrix = melt(subfamily_matrix,id.vars=c(TE_coordinates[c(1:4,6,5,7)]))
-  colnames(subfamily_matrix)[8:9] = c("Sample","Coverage")
-  print("Added missing samples")
-  
-  # Add metadata
-  subfamily_matrix = merge(subfamily_matrix,metadata_matrix[,c("Sample","Age","Anatomy","Cancer","Germline","Group","Type")])
-  subfamily_matrix = melt(subfamily_matrix,id.vars=c(TE_coordinates[c(1:4,6,5,7)],"Sample","Coverage"))
-  colnames(subfamily_matrix)[10:11] = c("Category","Grouping")
-  print("Added metadata")
-  
-  # Fraction of sample category each TE is in state
-  TE_category_matrix = ddply(subfamily_matrix,.(chromosome,start,stop,subfamily,family,class,strand,Category,Grouping),here(summarise),Samples=sum(Coverage > coverage_threshold))
-  print("Fraction of sample category each TE is in state")
-  
-  # Fraction of all samples each TE is in state
-  TE_matrix = ddply(unique(subfamily_matrix[,1:9]),.(chromosome,start,stop,subfamily,family,class,strand),here(summarise),All=sum(Coverage > coverage_threshold))
-  TE_category_matrix = merge(TE_category_matrix,TE_matrix,by=TE_coordinates[c(1:4,6,5,7)],all.x=TRUE)
-  print("Fraction of all samples each TE is in state")
-  
-  # Score specificity of TE to that grouping - percent of group samples TE is in state vs all other samples
-  TE_category_matrix = merge(TE_category_matrix,metadata_table,by=c("Category","Grouping"),all.x=TRUE)
-  TE_category_matrix$Proportion = TE_category_matrix$Samples/TE_category_matrix$Category_samples
-  TE_category_matrix$Score = TE_category_matrix$Proportion/((TE_category_matrix$All-TE_category_matrix$Samples)/(dim(metadata_matrix)[1]-TE_category_matrix$Category_samples))
-  print("Calculating TE score")
-  
-  # Find categories with at least xx TEs with score xx
-  category_matrix = ddply(TE_category_matrix,.(Category,Grouping,Category_samples),here(summarise),TEs=length(Category[which(Score > score_threshold & Proportion > category_threshold & Samples > sample_threshold)]))
-  print("Finding categories over threshold")
-  
-  return(category_matrix[which(category_matrix$TEs >= TE_threshold),])
-}
-
 permute_by_sample = function(matrix,metric,direction,threshold=0,filtering,threshold2=0){ # Should be by_sample_all, split by State
   print(head(matrix,n=1))
   
@@ -460,47 +264,7 @@ permute_by_sample = function(matrix,metric,direction,threshold=0,filtering,thres
   return(over)
 }
 
-run_tsne = function(matrix, perplex=30, the = 0){
-  tsne = Rtsne(matrix,perplexity = perplex,theta= the,max_iter = 5000,pca_scale=TRUE)
-  tsne_plot = as.data.frame(tsne$Y)
-  tsne_plot$object = rownames(matrix)
-  return(tsne_plot)
-}
-
-plot_biplot = function(pca,axes=c(1,2),metric,category,colors,variables=NULL,guide=TRUE){
-  # Filter metadata
-  metadata_matrix = filter_metadata(metadata,metric)
-
-  # Get loadings 
-  loadings = as.data.frame(pca$rotation %*% diag(pca$sdev))
-  loadings$variable = rownames(loadings)
-  
-  # Get scores scaled to unit variance
-  scores = as.data.frame(pca$x %*% diag(1/pca$sdev))
-  scores$observations = rownames(scores)
-  
-  # Get variance
-  variance = 100*pca$sdev^2/sum(pca$sdev^2)
-  
-  # Calculate scaling factor (from biplot)
-  unsigned.range = function(x) c(-abs(min(x)),abs(max(x)))
-  scale = 1/(max(unsigned.range(loadings[,axes[1]])/unsigned.range(scores[,axes[1]]),
-              unsigned.range(loadings[,axes[2]])/unsigned.range(scores[,axes[2]])))
-  print(scale)
-  
-  # Filter loadings to variables of interest
-  loadings_filter = loadings[which(loadings$variable %in% variables),]
-  
-  # Plot biplot 
-  ggplot(scores,aes(x=scores[,axes[1]],y=scores[,axes[2]],color = metadata_matrix[,category]),environment = environment()) +
-    geom_point() + theme(text=element_text(face="bold"),aspect.ratio = 1) +
-    labs(x=paste("PC",axes[1]," (",round(variance[axes[1]],1),"%)",sep=""),
-         y=paste("PC",axes[2]," (",round(variance[axes[2]],1),"%)",sep="")) +
-    scale_colour_manual(name=category,values=colors) + 
-    geom_segment(data=loadings_filter,aes(x=0,y=0,xend=loadings_filter[,axes[1]]*scale*0.95,yend=loadings_filter[,axes[2]]*scale*0.95),color="red",arrow = arrow(length = unit(0.01, "npc"))) + 
-    geom_text(data=loadings_filter,aes(x=loadings_filter[,axes[1]]*scale,y=loadings_filter[,axes[2]]*scale,label=variable),color="red",size=3)
-}
-
+# Mouse
 tissue_matrix = function(x,matrix){
   c(All = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2),])[1],
     Specific = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples < 5 & matrix[[paste(x,".y",sep="")]] == 2),])[1],
