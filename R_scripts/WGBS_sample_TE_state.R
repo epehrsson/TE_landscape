@@ -1,6 +1,14 @@
 # Methylation state of TEs by sample
 # See 6/1/2016, 7/10/2016, 9/16/2016, 9/17/2016, 12/15/2016, 12/16/2016, 1/24/2017, 2/6/2017, 2/9/2017, 3/8/2017, 5/11/2017, 5/12/2017, 6/14/2017, 7/22/2017, 8/1/2017
 
+wilcox_to_all = function(all,metadata){ #all and metadata are vectors, e.g., columns of data frames
+  groups = levels(metadata)
+  tests = p.adjust(as.numeric(unlist(lapply(groups,function(x) unlist(wilcox.test(all[which(metadata == x)],all[which(metadata != x)]))["p.value"]))),method="bonferroni")
+  names(tests) = groups
+  tests = ldply(tests)
+  return(tests)
+}
+
 # Proportion of TEs hypomethylated by sample metadata
 TE_meth_average_state_long = melt(as.matrix(TE_meth_average_state))
 colnames(TE_meth_average_state_long) = c("Sample","State","Proportion")
