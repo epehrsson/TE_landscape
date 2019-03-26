@@ -5,14 +5,6 @@
 #TE_landscape/chromHMM/shuffled_TEs/rmsk_TE_shuffle_#_max.txt [10 files]
 for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_intra_max.py rmsk_TE_shuffle_$i\_sorted.txt rmsk_TE_shuffle_$i\_max.txt 7; done
 
-#TE_landscape/features/shuffled_TEs/run_intersect.sh
-
-#TE_landscape/DNase/shuffled/rmsk_TE_shuffle_#_DNase_peaks.txt [10 files]
-for i in {1..10}; do python ~/bin/TE_landscape/DNase_peaks.py rmsk_TE_shuffle_$i\.txt ~/TE_landscape/sample_lists/DNase_samples.txt DNase/rmsk_TE_shuffle_$i\_ DNase/rmsk_TE_shuffle_$i\_DNase_peaks.txt; done
-
-#TE_landscape/H3K27ac/shuffled/rmsk_TE_shuffle_#_H3K27ac_peaks.txt [10 files]
-for i in {1..10}; do cat rmsk_TE_shuffle_$i\_E*-H3K27ac.narrowPeak | cut -f1-7 | sort | uniq > test; python ~/bin/TE_landscape/H3K27ac_peaks.py test ~/TE_landscape/sample_lists/H3K27ac_samples.txt rmsk_TE_shuffle_$i\_ rmsk_TE_shuffle_$i\_H3K27ac_peaks.txt; done
-
 # Intersection of shuffled TEs and mappability
 split -l 5000000 ~/TE_landscape/mappability/wgEncodeCrgMapabilityAlign36mer.bedGraph
 #TE_landscape/features/shuffled_TEs/run_intersect.sh
