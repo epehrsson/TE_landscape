@@ -1,56 +1,37 @@
-load_state = function(state){
-  # Load matrix
-  print("Load matrix")
-  state_sample = read.table(paste("chromHMM/chromHMM_",state,".txt",sep=""),sep='\t')[,c(1:8)]
-  colnames(state_sample) = c(TE_coordinates[c(1:4,6,5,7)],"Sample")
-  
-  # Add state total 
-  print("Adding state total")
-  state_sample = merge(state_sample,chromHMM_TE_state[,c(TE_coordinates,state)],by=TE_coordinates)
-  colnames(state_sample)[9] = "Total"
-  
-  return(state_sample)
-}
+# Identify replicates
+## Load matrices
+print("Load correlation matrices")
 
-load_state_group = function(state){
-  # Make metadata table
-  print("Create metadata table")
-  metadata_table = ldply(apply(metadata[,sample_categories],2,as.data.frame(table)))
-  colnames(metadata_table) = c("Category","Grouping","Samples")
-  
-  # Load matrix
-  print("Load matrix")
-  state_sample = read.table(paste("chromHMM/chromHMM_",state,".txt",sep=""),sep='\t')[,c(1:8)]
-  colnames(state_sample) = c(TE_coordinates[c(1:4,6,5,7)],"Sample")
-  
-  # Add metadata
-  print("Add metadata")
-  state_sample = merge(state_sample,metadata[,c("Sample",sample_categories)],by="Sample")
-  state_sample = melt(state_sample,id.vars=c(TE_coordinates[c(1:4,6,5,7)],"Sample"))
-  colnames(state_sample)[9:10] = c("Category","Grouping")
-  
-  # Count samples in Group
-  print("Count by group")
-  state_group = ddply(state_sample,.(chromosome,start,stop,subfamily,family,class,strand,Category,Grouping),
-                      summarise,Count=length(Grouping))
-  
-  # Add state total 
-  print("Adding state total")
-  state_group = merge(state_group,chromHMM_TE_state[,c(TE_coordinates,state)],by=TE_coordinates)
-  colnames(state_group)[11] = "Total"
-  
-  # Add Group totals
-  print("Add group totals")
-  state_group = merge(state_group,metadata_table,by=c("Category","Grouping"))
-  colnames(state_group)[12] = "Category.Total"
-  
-  # Save data
-  save(state_group,file=paste("chromHMM/chromHMM_",state,".RData",sep=""))
-  
-  return(state_group)
-}
+load("raw_data/correlation_matrices/cor_H3K27me3_13.RData")
+h3k27me3 = markcor
+
+load("raw_data/correlation_matrices/cor_H3K36me3_4.RData")
+h3k36me3 = markcor
+
+load("raw_data/correlation_matrices/cor_H3K4me1_7.RData")
+h3k4me1 = markcor
+
+load("raw_data/correlation_matrices/cor_H3K4me3_1.RData")
+h3k4me3 = markcor
+
+load("raw_data/correlation_matrices/cor_H3K9me3_9.RData")
+h3k9me3 = markcor
+
+print("Rank correlation")
+marks = ls(pattern="h3")
+mark_cor = lapply(marks,function(x) transform_matrix(get(x)))
+names(mark_cor) = marks
+mark_cor = ldply(mark_cor)
+colnames(mark_cor)[1] = "Mark"
+
+mark_cor_ranked = ddply(mark_cor,.(`Sample 1`,`Sample 2`),summarise,Rank=mean(Rank))
+mark_cor_ranked = mark_cor_ranked[order(mark_cor_ranked$Rank),]
+
+replicates = mark_cor_ranked[c(1:2,5:7,13:15,17,19,21,23:24,31,33,38,40,46:47,59),]
+rm(list=c("mark_cor_ranked","mark_cor","markcor","h3k27me3","h3k36me3","h3k4me1","h3k4me3","h3k9me3","marks","transform_matrix"))
 
 # Replicate analysis
+print("Add metadata to replicates")
 replicates$Pair = paste(replicates$`Sample 1`,replicates$`Sample 2`,sep="/")
 replicates = merge(replicates,metadata[,c("Sample","Group")],by.x="Sample 1",by.y="Sample")
 replicates = merge(replicates,metadata[,c("Sample","Group")],by.x="Sample 2",by.y="Sample")
@@ -58,12 +39,14 @@ colnames(replicates)[5:6] = c("Group 1","Group 2")
 replicates = replicates[order(replicates$Rank),]
 
 ## Load TE x sample x state
+print("Load state matrices")
 chromHMM_active_matrix = lapply(states[c(1:3,6:7)],function(x) load_state(x))
 names(chromHMM_active_matrix) = states[c(1:3,6:7)]
 chromHMM_active_matrix = ldply(chromHMM_active_matrix)
 colnames(chromHMM_active_matrix)[1] = "State"
 
 ## Apply over replicates, number of samples per TE x state
+print("Apply over replicates")
 chromHMM_replicates = apply(replicates,1,function(z) ddply(chromHMM_active_matrix[which(chromHMM_active_matrix$Sample %in% as.vector(z[1:2])),],
                                                                  .(State,chromosome,start,stop,subfamily,family,class,strand,Total),summarise,Samples=length(Sample)))
 rm(chromHMM_active_matrix)
@@ -75,6 +58,7 @@ colnames(chromHMM_replicates)[1] = "Pair"
 chromHMM_replicates = merge(chromHMM_replicates,replicates[,c("Pair","Group 1","Group 2")],by="Pair")
 
 ### Generate matrices of TE x samples in category by state
+print("Load group matrices")
 #load_state_group("1_TssA")
 #load_state_group("2_TssAFlnk")
 #load_state_group("3_TxFlnk")
@@ -103,6 +87,7 @@ chromHMM_replicates$Group.Count = ifelse(chromHMM_replicates$`Group 1` == chromH
 rm(chromHMM_active)
 
 ## Fraction of TEs in either sample found in both
+print("Apply thresholds")
 ### Removing TEs that are found outside the pair (reviewer suggestion)
 chromHMM_replicates_pair = ddply(chromHMM_replicates[which(chromHMM_replicates$Total == chromHMM_replicates$Samples),],
                               .(State,Pair,Samples),summarise,Count=length(Samples))
@@ -123,19 +108,12 @@ chromHMM_replicates_all = ddply(chromHMM_replicates,.(State,Pair,Samples),summar
 chromHMM_replicates_all$Threshold = rep("All",dim(chromHMM_replicates_all)[1])
 
 ## Combine all
+print("Combine")
 chromHMM_replicates_count = rbind(chromHMM_replicates_pair,chromHMM_replicates_5,chromHMM_replicates_group,chromHMM_replicates_all)
 chromHMM_replicates_count = dcast(chromHMM_replicates_count,Pair+State+Threshold~Samples,value.var="Count")
 chromHMM_replicates_count[is.na(chromHMM_replicates_count)] = 0
 chromHMM_replicates_count$Fraction = chromHMM_replicates_count$`2`/(chromHMM_replicates_count$`1`+chromHMM_replicates_count$`2`)
 chromHMM_replicates_count$Threshold = factor(chromHMM_replicates_count$Threshold,levels=c("Exclusive","<5 samples","Group exclusive","All"))
-
-## Plot
-ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
-  scale_fill_manual(values=chromHMM_colors,guide=FALSE) + scale_x_discrete(limits=as.vector(replicates$Pair)) +
-  xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
-  theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,24,25)) + facet_wrap(~State,nrow=5)
-
-dcast(ddply(chromHMM_replicates_count,.(Threshold,State),summarise,Median=median(Fraction)),Threshold~State,value.var="Median")
 
 # Analysis 2
 ## For TEs in 2+ samples, how often is it the same category?
