@@ -130,7 +130,7 @@ RNA_RPKM_sample$State = rep("Expressed_samples",sample_counts["All","RNA"])
 ## TEs in state per sample
 combine_boxplot = rbind(state_sample_count,WGBS_sample_state,TE_DNase_peaks_sample,TE_H3K27ac_peaks_sample,RNA_RPKM_sample)
 combine_boxplot_noCancer_IMR90 = droplevels(combine_boxplot[which(metadata[match(combine_boxplot$Sample,metadata$Sample),]$Exclude == "Include"),])
-rm(list=c("state_sample_count","WGBS_sample_state","TE_DNase_peaks_sample","TE_H3K27ac_peaks_sample","RNA_RPKM_sample"))
+rm(list=c("WGBS_sample_state","TE_DNase_peaks_sample","TE_H3K27ac_peaks_sample","RNA_RPKM_sample"))
 
 ## Combined samples in state
 combine_potential = rbind(melt(chromHMM_TE_state_dist,id.vars="Samples"),melt(TE_meth_average_category,id.vars="Samples"),melt(TE_DNase_potential,id.var="Samples"),
