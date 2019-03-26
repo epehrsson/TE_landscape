@@ -271,3 +271,66 @@ tissue_matrix = function(x,matrix){
     On = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples > 8),])[1],
     Off = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples < 2),])[1])
 }
+
+# Replicates
+transform_matrix = function(matrix){
+  matrix[lower.tri(matrix)] = NA
+  matrix = melt(as.matrix(matrix))
+  colnames(matrix) = c("Sample 1","Sample 2","Correlation")
+  matrix = matrix[which(matrix$`Sample 1` != matrix$`Sample 2` & !is.na(matrix$Correlation)),]
+  matrix = matrix[order(matrix$Correlation,decreasing = TRUE),]
+  matrix$Rank = 1:nrow(matrix)
+  return(matrix)
+}
+
+load_state = function(state){
+  # Load matrix
+  print("Load matrix")
+  state_sample = read.table(paste("chromHMM/chromHMM_",state,".txt",sep=""),sep='\t')[,c(1:8)]
+  colnames(state_sample) = c(TE_coordinates[c(1:4,6,5,7)],"Sample")
+  
+  # Add state total 
+  print("Adding state total")
+  state_sample = merge(state_sample,chromHMM_TE_state[,c(TE_coordinates,state)],by=TE_coordinates)
+  colnames(state_sample)[9] = "Total"
+  
+  return(state_sample)
+}
+
+load_state_group = function(state){
+  # Make metadata table
+  print("Create metadata table")
+  metadata_table = ldply(apply(metadata[,sample_categories],2,as.data.frame(table)))
+  colnames(metadata_table) = c("Category","Grouping","Samples")
+  
+  # Load matrix
+  print("Load matrix")
+  state_sample = read.table(paste("chromHMM/chromHMM_",state,".txt",sep=""),sep='\t')[,c(1:8)]
+  colnames(state_sample) = c(TE_coordinates[c(1:4,6,5,7)],"Sample")
+  
+  # Add metadata
+  print("Add metadata")
+  state_sample = merge(state_sample,metadata[,c("Sample",sample_categories)],by="Sample")
+  state_sample = melt(state_sample,id.vars=c(TE_coordinates[c(1:4,6,5,7)],"Sample"))
+  colnames(state_sample)[9:10] = c("Category","Grouping")
+  
+  # Count samples in Group
+  print("Count by group")
+  state_group = ddply(state_sample,.(chromosome,start,stop,subfamily,family,class,strand,Category,Grouping),
+                      summarise,Count=length(Grouping))
+  
+  # Add state total 
+  print("Adding state total")
+  state_group = merge(state_group,chromHMM_TE_state[,c(TE_coordinates,state)],by=TE_coordinates)
+  colnames(state_group)[11] = "Total"
+  
+  # Add Group totals
+  print("Add group totals")
+  state_group = merge(state_group,metadata_table,by=c("Category","Grouping"))
+  colnames(state_group)[12] = "Category.Total"
+  
+  # Save data
+  save(state_group,file=paste("chromHMM/chromHMM_",state,".RData",sep=""))
+  
+  return(state_group)
+}
