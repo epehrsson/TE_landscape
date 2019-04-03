@@ -1,7 +1,6 @@
 # Feature overlap
-# 6/13/2017, 6/14/2017, 6/15/2017
-
 #TE_landscape/features/intersect_features/feature_overlap.txt
+
 while read feature
 do 
   if [ $feature = "intergenic" ]; then
@@ -25,3 +24,5 @@ do
     done
   fi
 done < features/features.txt > features/intersect_features/feature_overlap.txt
+
+# Where features is a list of 7 genic features
