@@ -1,17 +1,17 @@
 # Metadata
 # See 9/18/2016, 9/19/2016, 11/9/2016, 2/15/2017
 
-# Metadata for human samples
+# Metadata for human samples (from Roadmap website)
 metadata = read.table("metadata/EID_metadata.txt",header=TRUE,sep='\t',comment.char = "")[,c(1,3:5,7:8)]
 colnames(metadata)[1] = "Sample"
 
-# Plus additional categories
+# Plus Age and Cancer 
 EID_add = read.table("metadata/EID_metadata_addl.txt",header=TRUE,sep="\t")
 colnames(EID_add)[1] = "Sample"
 metadata = merge(metadata,EID_add,by=c("Sample"))
 rm(EID_add)
 
-# Plus germlayer
+# Plus Germlayer
 EID_germ = read.table("metadata/EID_germ.txt",sep='\t')
 colnames(EID_germ) = c("Sample","Germline")
 metadata = merge(metadata,EID_germ,by=c("Sample"))
