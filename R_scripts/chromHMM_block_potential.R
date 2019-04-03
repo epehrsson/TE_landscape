@@ -39,8 +39,6 @@ test = melt(test[,c("State","Sample","Count","Block","Summit")],id.vars=c("State
 colnames(test)[4:5] = c("Category","Count.Filter")
 test$Ratio = test$Count.Filter/test$Count
 
-test2 = ddply(test,.(State,Category),summarise,Median=median(na.omit(Ratio)))
-
 ## Ever
 print("Combine ever")
 potential_ever = merge(merge(chromHMM_TE_state_dist_stats[,c("Proportion_ever","State")],block_potential_ever,by="State"),
