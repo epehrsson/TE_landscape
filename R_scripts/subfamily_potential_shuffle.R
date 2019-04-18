@@ -2,9 +2,8 @@
 
 # chromHMM
 print("chromHMM shuffled")
-subfamily_chromHMM_shuffle = lapply(list.files(path="chromHMM/shuffled_TEs/subfamily/",pattern=".txt",full.names=TRUE)[c(1,3:10,2)],
-                                    function(x) read.table(x,sep='\t'))
-subfamily_chromHMM_shuffle = lapply(subfamily_chromHMM_shuffle,setNames,nm=c("subfamily","State","Sample","Length_ijk"))
+subfamily_chromHMM_shuffle = lapply(seq(1,10,1),function(x) read.table(paste("chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_",x,".txt",sep=""),sep='\t',
+                                                                       col.names=c("subfamily","State","Sample","Length_ijk")))
 
 subfamily_chromHMM_sample_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = metadata$Sample,State = chromHMM_states)
 for (i in 1:10){
@@ -21,9 +20,8 @@ subfamily_chromHMM_shuffle_potential = ddply(subfamily_chromHMM_shuffle,.(Iterat
 
 # DNase
 print("DNase shuffled")
-subfamily_DNase_shuffle = lapply(list.files(path="DNase/shuffled/subfamily/",pattern="subfamily_DNase_sample_summit_",full.names=TRUE)[c(1,3:10,2)],
-                                 function(x) read.table(x,sep='\t'))
-subfamily_DNase_shuffle = lapply(subfamily_DNase_shuffle,setNames,nm=c("subfamily","Sample","Length_ijk"))
+subfamily_DNase_shuffle = lapply(seq(1,10,1),function(x) read.table(paste("DNase/shuffled/subfamily/subfamily_DNase_sample_summit_",x,".txt",sep=""),sep='\t',
+                                                                    col.names=c("subfamily","Sample","Length_ijk")))
 
 subfamily_DNase_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = as.vector(metadata[which(!is.na(metadata$DNase)),]$Sample))
 for (i in 1:10){
@@ -41,9 +39,8 @@ subfamily_DNase_shuffle_potential$State = rep("DNase",dim(subfamily_DNase_shuffl
 
 # H3K27ac
 print("H3K27ac shuffled")
-subfamily_H3K27ac_shuffle = lapply(list.files(path="H3K27ac/shuffled/subfamily/",pattern="subfamily_H3K27ac_sample_summit_",full.names=TRUE)[c(1,3:10,2)],
-                                   function(x) read.table(x,sep='\t'))
-subfamily_H3K27ac_shuffle = lapply(subfamily_H3K27ac_shuffle,setNames,nm=c("subfamily","Sample","Length_ijk"))
+subfamily_H3K27ac_shuffle = lapply(seq(1,10,1),function(x) read.table(paste("H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_",x,".txt",sep=""),sep='\t',
+                                                                      col.names=c("subfamily","Sample","Length_ijk")))
 
 subfamily_H3K27ac_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = as.vector(metadata[which(!is.na(metadata$H3K27ac)),]$Sample))
 for (i in 1:10){
@@ -61,9 +58,8 @@ subfamily_H3K27ac_shuffle_potential$State = rep("H3K27ac",dim(subfamily_H3K27ac_
 
 # WGBS (CpGs)
 print("WGBS shuffled")
-subfamily_CpG_shuffle = lapply(list.files(path="WGBS/shuffled/subfamily/",pattern="subfamily_CpG_Meth_states",full.names=TRUE)[c(1,3:10,2)],
-                               function(x) read.table(x,sep='\t'))
-subfamily_CpG_shuffle = lapply(subfamily_CpG_shuffle,setNames,nm=c("Sample",meth_states,"subfamily"))
+subfamily_CpG_shuffle = lapply(seq(1,10,1),function(x) read.table(paste("WGBS/shuffled/subfamily/subfamily_CpG_Meth_states_",x,".txt",sep=""),sep='\t',
+                                                                  col.names=c("Sample",meth_states,"subfamily")))
 names(subfamily_CpG_shuffle) = seq(1,10,1)
 subfamily_CpG_shuffle = ldply(subfamily_CpG_shuffle)
 colnames(subfamily_CpG_shuffle)[1] = "Iteration"
