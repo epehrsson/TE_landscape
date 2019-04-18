@@ -1,12 +1,11 @@
 # Load shuffled TE potential matrices, WGBS
 
 # Methylation level for shuffled TEs
-shuffled_WGBS_average = lapply(list.files(path="WGBS/shuffled/",pattern="_Meth_average.txt",full.names = TRUE),function(x) read.table(x,sep='\t',header=TRUE))
+shuffled_WGBS_average = lapply(seq(1,10,1),function(x) read.table(paste("WGBS/shuffled/rmsk_TE_shuffle_",x,"_Meth_average.txt",sep=""),sep='\t',header=TRUE))
 print("Loaded WGBS matrices")
 
 # Number of CpGs per TE
-shuffled_WGBS_CpG = lapply(list.files(path="WGBS/shuffled/",pattern="TE_CpG_count_",full.names = TRUE),function(x) read.table(x,sep='\t'))
-shuffled_WGBS_CpG = lapply(shuffled_WGBS_CpG, setNames, nm =c(TE_coordinates[c(1:4,6,5,7)],"CpGs"))
+shuffled_WGBS_CpG = lapply(seq(1,10,1),function(x) read.table(paste("WGBS/shuffled/TE_CpG_count_",x,".txt",sep=""),sep='\t', col.names=c(TE_coordinates[c(1:4,6,5,7)],"CpGs")))
 print("Loaded CpG matrices")
 
 # Methylation level for TEs with at least one CpG
