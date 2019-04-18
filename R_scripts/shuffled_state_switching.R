@@ -20,7 +20,7 @@ shuffled_chromHMM_ever = melt(shuffled_chromHMM_ever,id.vars="Iteration")
 colnames(shuffled_chromHMM_ever)[2:3] = c("State","Count")
 
 ## Inter state switching
-shuffled_chromHMM_inter = lapply(list.files(path="chromHMM/shuffled_TEs",pattern="_inter.txt",full.names=TRUE),function(x) read.table(x,sep='\t',header=TRUE,row.names=1))[c(1,3:10,2)]
+shuffled_chromHMM_inter = lapply(seq(1,10,1),function(x) read.table(paste("chromHMM/shuffled_TEs/rmsk_TE_shuffle_",x,"_chromHMM_inter.txt",sep=""),sep='\t',header=TRUE,row.names=1))
 shuffled_chromHMM_inter = ldply(shuffled_chromHMM_inter,function(x) melt(as.matrix(x)))
 colnames(shuffled_chromHMM_inter) = c("State1","State2","Count")
 shuffled_chromHMM_inter$Iteration = rep(seq(1,10,1),each=225)
@@ -30,7 +30,7 @@ shuffled_chromHMM_inter = merge(shuffled_chromHMM_inter,shuffled_chromHMM_ever,b
 shuffled_chromHMM_inter$Mean_samples = shuffled_chromHMM_inter$Count.x/shuffled_chromHMM_inter$Count.y
 
 ## Inter state switching, WGBS
-shuffled_meth_inter = lapply(list.files(path="WGBS/shuffled",pattern="_inter.txt",full.names=TRUE),function(x) read.table(x,sep='\t',header=TRUE,row.names=1))[c(1,3:10,2)]
+shuffled_meth_inter = lapply(seq(1,10,1),function(x) read.table(paste("WGBS/shuffled/TE_shuffle_",x,"_inter.txt",sep=""),sep='\t',header=TRUE,row.names=1))
 shuffled_meth_inter = lapply(shuffled_meth_inter,function(x) transform(x,State1=rownames(x)))
 shuffled_meth_inter = ldply(shuffled_meth_inter,function(x) melt(x,id.vars=c("State1","Total")))
 colnames(shuffled_meth_inter)[3:4] = c("State2","Count")
