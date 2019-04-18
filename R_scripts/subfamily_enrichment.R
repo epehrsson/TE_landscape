@@ -31,7 +31,7 @@ subfamily_H3K27ac_sample$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample)[1])
 subfamily_state_sample = rbind(subfamily_chromHMM_sample,subfamily_DNase_sample,subfamily_H3K27ac_sample)
 rm(list=c("subfamily_chromHMM_sample","subfamily_DNase_sample","subfamily_H3K27ac_sample"))
 
-## Number of unique chromHMM blocks/peaks per sample
+## Number of unique chromHMM bp/peaks per sample
 
 # chromHMM (total length)
 chromHMM_state_sample = mnemonics_states_genome[,1:3]
@@ -123,8 +123,11 @@ colnames(subfamily_CpG_meth)[7] = "CpG_ik"
 # Proportion of all CpGs in methylation state by sample
 subfamily_CpG_meth$CpG_jk = apply(subfamily_CpG_meth,1,function(x) all_CpG_meth[x[2],x[3]])
 
+# Add CpGs in genome
+subfamily_CpG_meth$CpG_k = rep(ALL_CPGS,dim(subfamily_CpG_meth)[1])
+
 # Enrichment of state CpGs in sample x subfamily
-subfamily_CpG_meth$Enrichment = log2(1e-20+((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/ALL_CPGS)))
+subfamily_CpG_meth$Enrichment = log2(1e-20+((subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_ik)/(subfamily_CpG_meth$CpG_jk/subfamily_CpG_meth$CpG_k)))
 
 # Proportion of all state CpGs in subfamily
 subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$CpG_jk
@@ -140,9 +143,10 @@ subfamily_CpG_meth$Count = rmsk_TE_subfamily[match(subfamily_CpG_meth$subfamily,
 subfamily_CpG_meth$Percent = subfamily_CpG_meth$Members/subfamily_CpG_meth$Count
 
 # Combine matrices (no filtering)
-columns = c("subfamily","family","class_update","State","Sample",sample_categories,enrichment_names[c(1:2,5:9)])
+columns = c("subfamily","family","class_update","State","Sample",sample_categories,enrichment_names)
 subfamily_state_sample_combined = rbind(subfamily_state_sample[,columns],
-                                        rename(subfamily_CpG_meth,c("CpG_ijk"="Length_ijk","CpG_ik"="Length_ik","CpG_ijk_jk"="Length_percent_jk"))[,columns])
+                                        rename(subfamily_CpG_meth,c("CpG_ijk"="Length_ijk","CpG_ik"="Length_ik","CpG_jk"="Length_jk","CpG_k"="Length_k",
+                                                                    "CpG_ijk_jk"="Length_percent_jk"))[,columns])
 
 # Combine filtered matrices
 subfamily_state_sample_filter = subfamily_state_sample_combined[which(subfamily_state_sample_combined$Members > THRESHOLD_IJK_MEMBER & subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER),]
