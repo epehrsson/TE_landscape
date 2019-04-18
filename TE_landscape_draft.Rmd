@@ -676,6 +676,17 @@ for i in {1..10}; do sort -k1,1 -k2,2n features/shuffled_TEs/rmsk_TE_shuffle_$i\
 for i in {1..10}; do mv features/shuffled_TEs/rmsk_TE_shuffle_$i\_sorted.txt features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt; done
 ```
 
+```{bash shuffled feature overlap, eval=FALSE}
+# Intersection between shuffled TEs, Refseq features
+#TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_cpgIsland.txt [10 files]
+#TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_refseq_intergenic.txt [10 files]
+#TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_refseq_[feature]_merge.txt [70 files]
+#TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_refseq_[feature]_nc_merge.txt [60 files]
+#TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_refseq_[feature]_pc_merge.txt [70 files]
+
+for j in {1..10}; do for file in ~/genic_features/RefSeq/*_merge.txt; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b $file | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_$(basename "$file" .txt)\.txt; done; bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b ~/genic_features/RefSeq/refseq_intergenic.txt | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_refseq_intergenic.txt; bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b ~/genic_features/cpgIslandExtUnmasked_merge.txt | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_cpgIsland.txt; done
+```
+
 ```{bash shuffled chromHMM matrix, eval=FALSE}
 # Summit
 ## Identify summit TEs by intersecting with 200bp windows
@@ -752,8 +763,11 @@ for i in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1,
 ```
 
 ```{r create shuffled matrices, eval=FALSE}
+source("R_scripts/shuffled_matrix.R")
 source("R_scripts/shuffled_matrix_chromHMM.R")
 source("R_scripts/shuffled_matrix_WGBS.R")
+source("R_scripts/shuffled_matrix_DNase.R")
+source("R_scripts/shuffled_matrix_H3K27ac.R")
 ```
 
 ## Load essential matrices
@@ -1739,16 +1753,7 @@ for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromH
 
 ### Supplementary Figure NEW (replicates)
 
-Identifying pairs of samples that are so similar they could be considered replicates. Instead of relying entirely on metadata, I downloaded the epigenetic correlation matrices from the Roadmap website. For each of the 5 correlation matrices, I ranked each sample pair by correlation; then, I found the mean rank for each sample pair across all marks. I then selected the top 20 ranked unique sample pairs. Since many of the pairs form highly ranked clusters (e.g., ESCs/iPSCs, primary T-cells, and brain), once a sample was included in the list, I excluded any lower ranked sample pairs containing that sample. Several of the pairs identified based on metadata are not in the top 100 ranked pairs.
-
-```{bash correlation matrices, eval=FALSE}
-# Download epigenetic correlation matrices
-wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K4me1_7.RData
-wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K4me3_1.RData 
-wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K9me3_9.RData 
-wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K27me3_13.RData 
-wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K36me3_4.RData
-```
+Identifying pairs of samples that are so similar they could be considered replicates. Relied on Table S1 from the Roadmap publication. 
 
 Files of all TE x sample in the state by state and subfamily, for each active regulatory state (see Figure 5). For each TE, each state, each category and grouping (e.g., Group: Brain), I found the number of samples the TE is in the state, the number of samples the TE is in the state total, and the number of samples in the category.
 
@@ -1770,22 +1775,27 @@ For each replicate sample pair, I found the fraction of TEs that are in both sam
 
 However, with the exception of no threshold, these only marginally improve the results.  
 
+```{r load replicate matrices, cache=TRUE, cache.lazy=FALSE}
+source("R_scripts/replicate_matrices.R")
+```
+
 ```{r run replicates, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/potential_replicates.R")
 ```
 
 ```{r replicates, echo=FALSE}
 ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
-  scale_fill_manual(values=chromHMM_colors,guide=FALSE) + scale_x_discrete(limits=as.vector(replicates$Pair)) +
-  xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
-  theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,24,25)) + facet_wrap(~State,nrow=5)
+  scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
+  theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,24,25)) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Not replicates"),c("Replicate","Tissue"))))
 ```
 
 ```{r replicate analysis}
-chromHMM_replicates_count
+dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
 
-dcast(ddply(chromHMM_replicates_count,.(Threshold,State),summarise,Median=median(Fraction)),Threshold~State,value.var="Median")
+dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
 ```
+
+### Supplementary Figure NEW (orthogonal)
 
 ### Supplementary Figure NEW (block)
 
@@ -1838,12 +1848,12 @@ source("R_scripts/chromHMM_block_potential.R")
 a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
   theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
   ylab("TEs in state in sample\n(proportion of paper TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82)
+  geom_hline(yintercept = 0.82,linetype="dashed")
 
 b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
   theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
   ylab("TEs ever in state\n(proportion of paper TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82)
+  geom_hline(yintercept = 0.82,linetype="dashed")
 
 grid.arrange(a,b)
 ```
@@ -1906,7 +1916,7 @@ python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_18state_sorted.txt 
 awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_18state_sorted.txt > chromHMM/state_sample_counts_18state.txt
 ```
 
-```{r 18 state potential}
+```{r 18 state potential load}
 # Load matrix
 chromHMM_18state = read.table("chromHMM/potential/rmsk_TEother_18state_potential.txt",sep='\t',header=TRUE,quote="")
 colnames(chromHMM_18state)[8:25] = names(chromHMM_states_18)
@@ -1979,7 +1989,7 @@ awk '{print>$1}' rmsk_TEother_imputed.txt
 while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_imputed_sorted.txt; rm $line; done < chromosomes.txt
 ```
 
-```{bash imputed potential, eval=FALSe}
+```{bash imputed potential, eval=FALSE}
 # List of states in 25-state model
 sample_lists/chromHMM_imputed_states.txt
 
@@ -1990,7 +2000,7 @@ python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_imputed_sorted.txt 
 awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_imputed_sorted.txt > chromHMM/state_sample_counts_imputed.txt
 ```
 
-```{r imputed potential}
+```{r imputed potential load}
 # Load matrix
 chromHMM_imputed = read.table("chromHMM/potential/rmsk_TEother_imputed_potential.txt",sep='\t',header=TRUE,quote="")
 colnames(chromHMM_imputed)[8:32] = names(imputed_states)
@@ -2010,7 +2020,7 @@ chromHMM_imputed_stats$State = factor(rownames(chromHMM_imputed_stats),levels=na
 state_sample_imputed = read.table("chromHMM/state_sample_counts_imputed.txt",sep='\t',quote="")
 colnames(state_sample_imputed) = c("State","Sample","Count")
 state_sample_imputed$Count = as.numeric(state_sample_imputed$Count)
-state_sample_imputed$Proportion = ifelse(metadata[match(state_sample_imputed$Sample,metadata$Sample),]$chrY == "Yes",state_sample_imputed$Count/NUM_TE,state_sample_imputed$Count/NUM_TE_noY)
+state_sample_imputed$Proportion = state_sample_imputed$Count/NUM_TE_noY
 state_sample_imputed$State = factor(state_sample_imputed$State,levels=names(imputed_states))
 ```
 
@@ -2043,7 +2053,7 @@ c = ggplot(state_sample_imputed,aes(x=State,y=Proportion,fill=State)) + geom_box
 
 d = ggplot(chromHMM_imputed_potential[which(chromHMM_imputed_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=imputed_states,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(imputed_states))) + geom_boxplot(width=0.2,outlier.size = 0.1)
 
-grid.arrange(a,b,c,d,nrow=2,heights=c(0.43,0.57))
+grid.arrange(a,b,c,d,nrow=2,heights=c(0.45,0.55))
 ```
 
 '''Compare models'''
