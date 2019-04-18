@@ -341,7 +341,7 @@ https://enhancer.lbl.gov/cgi-bin/imagedb3.pl?form=search&show=1&search.form=no&s
 grep '^>Human' features/vista_enhancers/vista_enhancers.txt
 
 # All human VISTA enhancers in bed format
-awk -v FS=':|-|\t' -v OFS='\t' '{print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15}' features/vista_enhancers/vista_enhancers_human.txt > features/vista_enhancers/vista_enhancers_human_all.bed
+awk -v FS=':|-|\t' -v OFS='\t' '{print $1, $2, $3, $4, $5}' features/vista_enhancers/vista_enhancers_human.txt > features/vista_enhancers/vista_enhancers_human_all.bed
 
 # Human, positively validated VISTA enhancers in bed format
 #TE_landscape/features/vista_enhancers/vista_enhancers_human.bed	
@@ -751,7 +751,7 @@ for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuf
 
 for file in DNase/shuffled/rmsk_TE_E*-DNase.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 DNase/shuffled/$( basename $file -DNase.narrowPeak)_DNase_summit.txt DNase; done
 
-for i in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/rmsk_TE_$line\_$i\_DNase_summit.txt >> DNase/shuffled/rmsk_TE_$i\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done
+for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/rmsk_TE_$line\_$j\_DNase_summit.txt >> DNase/shuffled/rmsk_TE_$j\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done &
 ```
 
 ```{bash shuffled H3K27ac, eval=FALSE}
@@ -759,7 +759,7 @@ for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuf
 
 for file in H3K27ac/shuffled/rmsk_TE_E*-H3K27ac.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 H3K27ac/shuffled/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt H3K27ac; done
 
-for i in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/shuffled/rmsk_TE_$line\_$i\_H3K27ac_summit.txt >> H3K27ac/shuffled/rmsk_TE_$i\_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt; done
+for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/shuffled/rmsk_TE_$line\_$j\_H3K27ac_summit.txt >> H3K27ac/shuffled/rmsk_TE_$j\_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt; done
 ```
 
 ```{r create shuffled matrices, eval=FALSE}
@@ -1795,7 +1795,37 @@ dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Re
 dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
 ```
 
+Shuffled replicate analysis, currently with iteration 1 only. 
+
+```{bash shuffled replicate, eval=FALSE}
+awk '{if(($8 == "1_TssA") || ($8 == "2_TssAFlnk") || ($8 == "3_TxFlnk") || ($8 == "6_EnhG") || ($8 == "7_Enh")) print $0}' chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_chromHMM_sorted.txt > chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_active_reg.txt
+```
+
+```{r shuffled replicate analysis}
+source("R_scripts/replicate_matrices_shuffled.R")
+```
+
 ### Supplementary Figure NEW (orthogonal)
+
+```{r create orthogonal sets}
+source("R_scripts/orthogonal_sets.R")
+```
+
+```{bash orthogonal vista, eval=FALSE}
+for file in orthogonal/*.txt; do bedtools intersect -wo -a $file -b features/vista_enhancers/vista_enhancers_human_all.bed > orthogonal/vista/$(basename $file .txt)_vista.txt; done
+```
+
+```{r orthogonal vista analysis}
+source("R_scripts/orthogonal_vista.R")
+```
+
+```{bash orthogonal homer, eval=FALSE}
+for file in orthogonal/*.txt; do echo $file; findMotifsGenome.pl $file hg19 orthogonal/homer/$(basename $file .txt) -size given -nomotif 2>> orthogonal/homer/output.txt; done
+```
+
+```{r orthogonal homer analysis}
+source("R_scripts/orthogonal_homer.R")
+```
 
 ### Supplementary Figure NEW (block)
 
@@ -2719,15 +2749,21 @@ for i in {1..10}; do sort -k1,1 -k2,2n features/shuffled_TEs/subfamily/subfamily
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/subfamily/subfamily_merge_$i\.txt -b raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed | awk -v OFS='\t' -v sample=$line '{print $0, sample}' - >> chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_$i\.bed; done < sample_lists/mnemonics.txt; done
 
 # Number of bp per subfamily x sample
-for i in {1..10}; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_$i\.bed > chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_$i\.txt; done
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_$j\.bed > chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_$j\.txt; done
+
+# Number of subfamily members in state per sample
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' chromHMM/shuffled_TEs/rmsk_TE_shuffle_$j\_chromHMM_sorted.txt > chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_summit_$j\.txt; done
 
 ## WGBS
 # Intersect with epigenetic data
 split -l 1000000 ~/TE_landscape/WGBS/all_CpG_Meth.bed
 for i in {1..10}; do for file in x*; do echo $file; bedtools intersect -wo -a ~/TE_landscape/features/shuffled_TEs/subfamily/subfamily_merge_$i\.txt -b $file >>  subfam_CpG_Meth_$i\.bed ; done; done
 
-# Number of CpGs per subfamily x sample
-for i in {1..10}; do awk '{print>$4}' subfam_CpG_Meth_$i\.bed; while read line; do awk -v OFS='\t' -v subfam=$line '{for (i=8;i<=44;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i=8;i<=44;i++){print i, hypo[i], inter[i], hyper[i], miss[i], subfam;}}' $line; done < ~/TE_landscape/features/TEs/subfamily/subfamilies.txt >> subfamily_CpG_Meth_states_$i\.txt; done
+# Number of CpGs in state per subfamily x sample
+for j in {1..10}; do awk '{print>"indv/"$4}' subfam_CpG_Meth_$j\.bed; while read line; do awk -v OFS='\t' -v subfam=$line '{for (i=8;i<=44;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}END{for (i=8;i<=44;i++){print i, hypo[i], inter[i], hyper[i], miss[i], subfam}}' indv/$line; rm indv/$line; done < ~/TE_landscape/sample_lists/subfamilies.txt >> subfamily_CpG_Meth_states_$j\.txt; done &
+
+# Number of CpGs per subfamily (Length_ik)
+for j in {1..10}; do awk -v OFS='\t' '{a[$4]+=1}END{for(i in a){print i, a[i]}}' /scratch/ecp/TE_landscape/WGBS/subfam_CpG_Meth_$j\.bed > ~/TE_landscape/WGBS/shuffled/subfamily/subfamily_CpG_count_$j\.txt; done
 
 ## DHS
 # Intersect with epigenetic data
@@ -2737,7 +2773,7 @@ for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuf
 for i in {1..10}; do python ~/bin/TE_landscape/filter_summit.py DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\.txt 1 5 DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\_summit.txt DNase; done
 
 # Number of peaks per subfamily x sample
-for i in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\_summit.txt > DNase/shuffled/subfamily/subfamily_DNase_sample_summit_$i\.txt; done
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$j\_summit.txt > DNase/shuffled/subfamily/subfamily_DNase_sample_summit_$j\.txt; done
 
 ## H3K27ac
 # Intersect with epigenetic data
@@ -2747,7 +2783,7 @@ for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuf
 for i in {1..10}; do python ~/bin/TE_landscape/filter_summit.py H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\.txt 1 5 H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\_summit.txt H3K27ac; done
 
 # Number of peaks per subfamily x sample
-for i in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\_summit.txt > H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_$i\.txt; done
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$j\_summit.txt > H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_$j\.txt; done
 ```
 
 ''enrichment_list.txt'' generated from results of analysis in this section (subfamilies of interest).
@@ -2762,6 +2798,7 @@ source("R_scripts/subfamily_enrichment.R") #Requires proportion.R
 source("R_scripts/subfamily_potential.R")
 source("R_scripts/subfamily_PCA.R")
 source("R_scripts/subfamily_potential_shuffle.R")
+source("R_scripts/shuffled_subfamily_enrichment.R")
 ```
 
 ```{r Figure 5, echo=FALSE}
