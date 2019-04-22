@@ -296,3 +296,11 @@ load_state = function(state){
   
   return(state_sample)
 }
+
+profile_set = function(matrix_list){
+  profiled = ldply(matrix_list,function(x) c(dim(x)[1],
+                                             median(x$stop-x$start),
+                                             table(x$class)/dim(x)[1],
+                                             apply(x[,cohorts[c(1:2,5,8,10,13,16,19)]],2,function(y) sum(!is.na(y))/dim(x)[1])))
+  return(profiled)
+}
