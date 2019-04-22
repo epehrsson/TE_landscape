@@ -129,16 +129,3 @@ shuffled_enrichment_counts$Sample.Proportion = ifelse(shuffled_enrichment_counts
 shuffled_enrichment_counts$Sample.Proportion = as.numeric(shuffled_enrichment_counts$Sample.Proportion)
 
 shuffled_enrichment_counts_combine = ddply(shuffled_enrichment_counts,.(Iteration,State),summarise,Subfamilies=sum(V1 > 0),Enrichments=sum(V1))
-
-# Plot number of enrichments per state for true TEs vs. shuffled TEs
-a = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + 
-  geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments in state") +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
-
-b = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() + 
-  geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of subfamilies enriched in state") +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
-
-grid.arrange(a,b)
-
-ddply(shuffled_enrichment_counts_combine,.(State),summarise,Enrichments=median(Enrichments),Subfamilies=median(Subfamilies))

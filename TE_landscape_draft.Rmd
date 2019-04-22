@@ -330,6 +330,8 @@ bedtools intersect -wao -a rmsk_TE.txt -b ../../genomes/hg19/blacklist.bed > TE_
 bedtools intersect -wao -a rmsk_other.txt -b ../../genomes/hg19/blacklist.bed > other_blacklist.bed
 ```
 
+There are 1,790 human VISTA enhancers, 934 of which positively validated.
+
 ```{bash TE VISTA, eval=FALSE}
 # VISTA enhancers	
 #TE_landscape/features/vista_enhancers/vista_enhancers.txt	
@@ -1801,30 +1803,240 @@ Shuffled replicate analysis, currently with iteration 1 only.
 awk '{if(($8 == "1_TssA") || ($8 == "2_TssAFlnk") || ($8 == "3_TxFlnk") || ($8 == "6_EnhG") || ($8 == "7_Enh")) print $0}' chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_chromHMM_sorted.txt > chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_active_reg.txt
 ```
 
-```{r shuffled replicate analysis}
+```{r shuffled replicate analysis, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/replicate_matrices_shuffled.R")
+```
+
+```{r plot shuffled replicate analysis}
+# Plot
+ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
+scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
+theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,25)) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Not replicates"),c("Replicate","Tissue"))))
+
+# Analysis
+dcast(ddply(replicates_shuffled_count[which(replicates_shuffled_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
+
+dcast(ddply(replicates_shuffled_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
 ```
 
 ### Supplementary Figure NEW (orthogonal)
 
-```{r create orthogonal sets}
-source("R_scripts/orthogonal_sets.R")
+Creates sets for analysis of TEs with restricted active regulatory activity versus constitutively active, non-TE bases. First, I identified TEs that are in each of the active regulatory states in 1-5 samples total ("highly restricted"). For my positive control, I could use promoters, but they are much longer than the average TE. Instead, I will use shuffled TEs that are in each state in >50 samples. With all 10 iterations of shuffled TEs, this is about the same number of TEs as in the first set. Finally, I got those that are not in the active regulatory states in any sample. As a bonus, although the reviewer asked for non-TE, non-restricted regions, I also found the TEs in each active regulatory state in >50 samples.
+
+```{r create orthogonal sets, cache=TRUE, cache.lazy=FALSE}
+# Restricted TEs
+restricted = lapply(states[c(1:3,6:7)],function(x) merge(chromHMM_TE_state[which(chromHMM_TE_state[[x]] > 0 & chromHMM_TE_state[[x]] <= 5),TE_coordinates],rmsk_TE,by=TE_coordinates))
+names(restricted) = states[c(1:3,6:7)]
+
+# Positive control, shuffled TEs
+load("R_datasets/shuffled_TEs.RData")
+load("R_datasets/shuffled_chromHMM.RData")
+shuffled_pos = lapply(seq(1,10,1),
+                      function(y) {a = lapply(states[c(1:3,6:7)],function(x) merge(shuffled_chromHMM_potential[[y]][which(shuffled_chromHMM_potential[[y]][[paste("X",x,sep="")]] > 50),TE_coordinates],
+                                                                                   rmsk_TE_shuffled[[y]],by=TE_coordinates));
+                        names(a) = states[c(1:3,6:7)]; return(a)})
+rm(list=c("shuffled_chromHMM_potential","rmsk_TE_shuffled"))
+
+# Positive control, TEs
+TE_pos = lapply(states[c(1:3,6:7)],function(x) merge(chromHMM_TE_state[which(chromHMM_TE_state[[x]] > 50),c(TE_coordinates)],rmsk_TE,by=TE_coordinates))
+names(TE_pos) = states[c(1:3,6:7)]
+
+# Negative control
+TE_neg = merge(chromHMM_TE_state[which(apply(chromHMM_TE_state[,states[c(1:3,6:7)]],1,function(x) sum(x) == 0)),c(TE_coordinates)],rmsk_TE,by=TE_coordinates)
 ```
+
+```{r write orthogonal sets, eval=FALSE}
+lapply(states[c(1:3,6:7)],function(x) write.table(restricted[[x]][,TE_coordinates[c(1:4,6,7,5)]],file=paste("orthogonal/restricted_",x,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t'))
+
+lapply(seq(1,10,1),function(y) lapply(states[c(1:3,6:7)],function(x) write.table(shuffled_pos[[y]][[x]][,TE_coordinates[c(1:4,6,7,5)]],file=paste("orthogonal/shuffle_",y,"_constitutive_",x,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')))
+
+lapply(states[c(1:3,6:7)],function(x) write.table(TE_pos[[x]][,TE_coordinates[c(1:4,6,7,5)]],file=paste("orthogonal/constitutive_",x,".txt",sep=""),row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t'))
+
+write.table(TE_neg[,TE_coordinates[c(1:4,6,7,5)]],file="orthogonal/not_active.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')
+```
+
+```{r orthogonal metadata}
+orthogonal_sets = data.frame(cbind(State=c(rep(states[c(1:3,6:7)],3),NA),
+                                   Set=c(rep("constitutive",5),rep("restricted",5),rep("shuffle_constitutive",5),"not_active")))
+orthogonal_sets$File = paste(orthogonal_sets$Set,orthogonal_sets$State,sep="_")
+orthogonal_sets$File[16] = "not_active"
+
+orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutively active","Constitutively active","Inactive"),c("restricted","shuffle_constitutive","constitutive","not_active"))
+```
+
+Characteristics of each of the orthogonal evidence sets. Both the constitutively active and restricted true TEs are shorter than the shuffled constitutively active TEs, although TEs with restricted activity are slightly longer, particularly for the promoter states. Inactive TEs are intermediate in length. Constitutively active true TEs also have a higher proportion of SINE elements at the expense of LINE/LTR elements compared to restricted ones, likely due to exclusion of those TEs from canonical promoters. Finally, true TEs with constitutive promoter active are far more likely to overlap promoters, while those with restricted 7_Enh activity are more likely to be intergenic vs. intronic than TEs constitutively in the state.
+
+```{r orthogonal characteristics}
+# Combine profiles
+profile_set = function(matrix_list){
+  profiled = ldply(matrix_list,function(x) c(dim(x)[1],
+                                             median(x$stop-x$start),
+                                             table(x$class)/dim(x)[1],
+                                             apply(x[,cohorts[c(1:2,5,8,10,13,16,19)]],2,function(y) sum(!is.na(y))/dim(x)[1])))
+  return(profiled)
+}
+
+orthogonal_profile = rbind(ldply(shuffled_pos,function(y) profile_set(y)),profile_set(restricted),profile_set(TE_pos))
+test = profile_set(list(TE_neg))
+test$`.id` = NA
+orthogonal_profile = rbind(orthogonal_profile,test)
+rm(test)
+
+colnames(orthogonal_profile)[1:3] = c("State","Number","Length")
+orthogonal_profile$SVA = orthogonal_profile$Other
+orthogonal_profile$Other = orthogonal_profile$`DNA?`+orthogonal_profile$`LINE?` + orthogonal_profile$`LTR?` + orthogonal_profile$RC + orthogonal_profile$`SINE?` + orthogonal_profile$Unknown + orthogonal_profile$`Unknown?`
+orthogonal_profile$Set = factor(c(rep("shuffle_constitutive",50),rep("restricted",5),rep("constitutive",5),"not_active"),levels=c("constitutive","shuffle_constitutive","restricted","not_active"))
+
+ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
+
+ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
+
+ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
+```
+
+'''VISTA'''
+
+Intersected the VISTA enhancers with each set of TEs. 9/10 shuffled 3_TxFlnk constitutive sets do not overlap any VISTA enhancers, as do the real TE 1_TssA and 3_TxFlnk constitutive sets.  
 
 ```{bash orthogonal vista, eval=FALSE}
 for file in orthogonal/*.txt; do bedtools intersect -wo -a $file -b features/vista_enhancers/vista_enhancers_human_all.bed > orthogonal/vista/$(basename $file .txt)_vista.txt; done
 ```
 
+Across all of the sets, there are 7,630 TEs that overlap VISTA enhancers, and in only 42 of the cases does the TE overlaps more than one VISTA enhancer (2 or 3). However, many TEs can overlap the same element. 
+
+I found, for each set, the total number of VISTA enhancers overlapping TEs and the fraction that positively validated. The rate of validation for enhancers overlapping TEs with restricted activity is not lower than it is for the shuffled positive control, except for the 7_Enh state. The validation rate is lower for TEs that are never active. 
+
 ```{r orthogonal vista analysis}
-source("R_scripts/orthogonal_vista.R")
+vista_val = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/vista/",x,"_vista.txt",sep=""),sep="\t",
+                                          col.names=c(TE_coordinates[c(1:4,6,7,5)],"chr_vista","start_vista","stop_vista","element","Validation","Overlap")))
+names(vista_val) = as.vector(orthogonal_sets$File)
+vista_val = vista_val[sapply(vista_val, function(x) dim(x)[1]) > 0]
+vista_val = ldply(vista_val,.id = "File")
+vista_val = merge(vista_val,orthogonal_sets,by="File")
+vista_val$Set = factor(vista_val$Set,levels=names(orthogonal_labels))
+  
+# Unique VISTA enhancers overlapping TEs in that set
+vista_val_fraction = ddply(vista_val,.(Set,State),summarise,Total=length(unique(element)),
+      Pos=length(unique(element[which(Validation == "positive")])),
+      Neg=length(unique(element[which(Validation == "negative")])),
+      Fraction=Pos/Total)
+
+# Fisher's exact test
+lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")]))
+lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")]))
+lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State %in% c(x,NA) & vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")]))
+
+# Plot
+ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of enhancers positively validated") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_shape_discrete(labels=orthogonal_labels)
 ```
+
+'''HOMER'''
+
+Ran HOMER (known motifs only) on each of the orthogonal sets. 
 
 ```{bash orthogonal homer, eval=FALSE}
 for file in orthogonal/*.txt; do echo $file; findMotifsGenome.pl $file hg19 orthogonal/homer/$(basename $file .txt) -size given -nomotif 2>> orthogonal/homer/output.txt; done
 ```
 
+HOMER gives more detail about the motifs [http://homer.ucsd.edu/homer/motif/motifDatabase.html| here].
+
+```{r load homer results}
+# Load results
+homer_files = list.files(path="orthogonal/homer/",pattern="knownResults.txt",recursive=TRUE,full.names=TRUE)
+
+homer = lapply(homer_files,function(x) read.table(x,sep='\t',header=TRUE,comment.char=""))
+names(homer) = homer_files
+homer = lapply(homer,setNames,nm=c("Motif Name","Consensus","P-value","Log P-value","q-value (Benjamini)",
+                                               "Target Seqs with Motif","% of Target Sequences with Motif",
+                                               "Background Seqs with Motif","% of Background Sequences with Motif"))
+
+# Members with motif (no background)
+homer_indv = homer[grep("/individual/",names(homer),value=TRUE)]
+
+## Use inactive set for each state
+homer_indv = homer_indv[c(1:5,7:11,rep(6,5))]
+
+homer_indv = ldply(homer_indv,.id = "File")
+homer_indv$File = gsub("/knownResults.txt","",gsub("orthogonal/homer//individual/","",homer_indv$File))
+homer_indv$State = rep(rep(states[c(1:3,6:7)],each=364),3)
+homer_indv$Set = c(rep("constitutive",1820),rep("restricted",1820),rep("not_active",1820))
+homer_indv$`% of Target Sequences with Motif` = as.numeric(gsub("%","",homer_indv$`% of Target Sequences with Motif`))
+homer_indv$`% of Background Sequences with Motif` = as.numeric(gsub("%","",homer_indv$`% of Background Sequences with Motif`))
+homer_indv$Set = factor(homer_indv$Set,levels=names(orthogonal_labels))
+
+# Comparisons
+homer_known = homer[grep("/individual/",names(homer),invert = TRUE,value=TRUE)]
+
+homer_known = ldply(homer_known,.id = "File")
+homer_known$File = gsub("/knownResults.txt","",gsub("orthogonal/homer//","",homer_known$File))
+homer_known$State = rep(rep(states[c(1:3,6:7)],each=364),2)
+homer_known$Set1 = c(rep("constitutive",1820),rep("restricted",1820))
+homer_known$Set2 = c(rep("shuffle_constitutive",3640))
+homer_known$`% of Target Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Target Sequences with Motif`))
+homer_known$`% of Background Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Background Sequences with Motif`))
+```
+
 ```{r orthogonal homer analysis}
-source("R_scripts/orthogonal_homer.R")
+# Promoter motifs
+ggplot(homer_indv[which(homer_indv$`Motif Name` %in% grep("Promoter",unique(homer_indv$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`,shape=Set)) + geom_point() + ylab("% of seqs with motif") + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State,ncol=1) 
+
+homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE) & homer_known$`q-value (Benjamini)` < 0.05),]
+
+# Number of significant comparisons
+table(droplevels(homer_known[which(homer_known$`q-value (Benjamini)` < 0.05),c("Set1","Set2","State")]))
+
+# Other significant comparisons
+sort(table(droplevels(homer_known[which(homer_known$`q-value (Benjamini)` < 0.05 & homer_known$State %in% c("3_TxFlnk","6_EnhG","7_Enh")),]$"Motif Name")))
+
+# Unique TFs
+unique(sapply(homer_known$`Motif Name`,function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1]))
+```
+
+'''Population'''
+
+```{r phastCons GERP}
+phastcons = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/pop/",x,"_phastCons_total.txt",sep=""),sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"Overlap")))
+names(phastcons) = as.vector(orthogonal_sets$File)
+phastcons = ldply(phastcons,.id = "File")
+phastcons$Database = rep("PhastCons",dim(phastcons)[1])
+
+gerp = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/pop/",x,"_gerp_total.txt",sep=""),sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"Overlap")))
+names(gerp) = as.vector(orthogonal_sets$File)
+gerp = ldply(gerp,.id = "File")
+gerp$Database = rep("GERP",dim(gerp)[1])
+
+cons = rbind(phastcons,gerp)
+rm(list=c("phastcons","gerp"))
+
+cons = merge(cons,orthogonal_sets,by="File")
+cons$Proportion = cons$Overlap/(cons$stop-cons$start)
+cons$Set = factor(cons$Set,levels=names(orthogonal_labels))
+
+# Plot
+ggplot(cons,aes(x=Set,y=Proportion,fill=State)) + geom_violin() + ylab("Proportion of overlap with phastCons/GERP elements") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~Database) + scale_fill_manual(values=all_state_colors,guide=FALSE)
+
+ddply(cons,.(Set,State,Database),summarise,Mean=mean(Proportion),Overlapping=sum(Overlap > 10)/length(Overlap))
+
+# Tests
+## Proportion of element covered by conserved block (Wilcox)
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("restricted","shuffle_constitutive") & cons$Database == "PhastCons"),],Proportion~Set))
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("constitutive","shuffle_constitutive") & cons$Database == "PhastCons"),],Proportion~Set))
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State %in% c(x,NA) & cons$Set %in% c("restricted","not_active") & cons$Database == "PhastCons"),],Proportion~Set))
+
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("restricted","shuffle_constitutive") & cons$Database == "GERP"),],Proportion~Set))
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("constitutive","shuffle_constitutive") & cons$Database == "GERP"),],Proportion~Set))
+lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State %in% c(x,NA) & cons$Set %in% c("restricted","not_active") & cons$Database == "GERP"),],Proportion~Set))
+
+## Proportion of elements with >10bp of conserved block (Chi-squared)
+cons_10bp = ddply(cons,.(Set,State,Database),summarise,Overlapping=sum(Overlap > 10),Total=length(Overlap),Not=Total-Overlapping)
+
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State %in% c(x,NA) & cons_10bp$Set %in% c("restricted","not_active") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
+
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State %in% c(x,NA) & cons_10bp$Set %in% c("restricted","not_active") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 ```
 
 ### Supplementary Figure NEW (block)
@@ -1913,6 +2125,8 @@ sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 The Roadmap project has 98 samples annotated with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model) (which includes H3K27ac), as well as all samples annotated with a 25-state model generated using imputed data. The 25-state model uses "imputed data for 12 marks, H3K4me1, H3K4me2, H3K4me3, H3K9ac, H3K27ac, H4K20me1, H3K79me2, H3K36me3, H3K9me3, H3K27me3, H2A.Z, and DNase". 
 
 '''18-state model'''
+
+For the 18-state model, 15,478,375 windows have annotations for most samples (the same as for the 15-state model), 15181508 for the samples without chrY. The annotations do not go to the end of the chromosomes.
 
 ```{bash 18 state, eval=FALSE}
 # Intersect 200bp windows with chromHMM, 18-state model
@@ -2981,6 +3195,23 @@ table(rmsk_TE_subfamily$family)/968
 test_log = as.data.frame(apply(test[,2:22],2,function(x) log2((x/sum(x))/(table(rmsk_TE_subfamily$family)/968))))
 test_log$Subfamilies = as.numeric(table(rmsk_TE_subfamily$family)[rownames(test_log)])
 lapply(colnames(test_log)[1:21],function(x) test_log[which(test_log[,x] > 0 & test_log$Subfamilies > 0),c(x,"Subfamilies")])
+```
+
+### Shuffled subfamily enrichment
+
+```{r shuffled subfamily enrichment}
+# Plot number of enrichments per state for true TEs vs. shuffled TEs
+a = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + 
+  geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments in state") +
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
+
+b = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() + 
+  geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of subfamilies enriched in state") +
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
+
+grid.arrange(a,b)
+
+ddply(shuffled_enrichment_counts_combine,.(State),summarise,Enrichments=median(Enrichments),Subfamilies=median(Subfamilies))
 ```
 
 ### Supplementary Figure 11

@@ -66,13 +66,3 @@ replicates_shuffled_count[is.na(replicates_shuffled_count)] = 0
 replicates_shuffled_count$Fraction = replicates_shuffled_count$`2`/(replicates_shuffled_count$`1`+replicates_shuffled_count$`2`)
 replicates_shuffled_count$Threshold = factor(replicates_shuffled_count$Threshold,levels=c("Exclusive","<5 samples","All"))
 rm(list=c("replicates_shuffled_pair","replicates_shuffled_5","replicates_shuffled"))
-
-# Plot
-ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
-  +     scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
-  +     theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,25)) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Not replicates"),c("Replicate","Tissue"))))
-
-# Analysis
-dcast(ddply(replicates_shuffled_count[which(replicates_shuffled_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
-
-dcast(ddply(replicates_shuffled_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
