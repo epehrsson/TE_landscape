@@ -1855,6 +1855,23 @@ lapply(states[c(1:3,6:7)],function(x) write.table(TE_pos[[x]][,TE_coordinates[c(
 write.table(TE_neg[,TE_coordinates[c(1:4,6,7,5)]],file="orthogonal/not_active.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')
 ```
 
+Combined the shuffled files together. 
+
+How many of the shuffled constitutive TEs are redundant? I found the total number of shuffled TEs per state, then compared it to the unique number. There are almost no redundancies, just one in the 2_TssAFlnk state, although many are clearly close together. This is likely because it is very unlikely for the exact shuffled TE to land at the same location in different iterations. Also looked at the overlapping bp within the sets. This is a large fraction of the total bp in each state, particularly for the 1_TssA state. 
+
+```{bash combined shuffle, eval=FALSE}
+while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt > orthogonal/shuffle_constitutive_$line\.txt; done < sample_lists/chromHMM_states.txt
+
+# Shuffled constitutive QC
+## Redundant TEs
+while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | wc -l; done < sample_lists/chromHMM_states.txt
+while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | sort | uniq | wc -l; done < sample_lists/chromHMM_states.txt
+
+## Overlapping bp
+for state in 1_TssA 2_TssAFlnk 3_TxFlnk 6_EnhG 7_Enh; do cat orthogonal/shuffle_*_constitutive_$state\.txt | awk '{sum+=$3-$2}END{print sum}'; done
+for state in 1_TssA 2_TssAFlnk 3_TxFlnk 6_EnhG 7_Enh; do cat orthogonal/shuffle_*_constitutive_$state\.txt | cut -f1-3| sort -k1,1 -k2,2n | bedtools merge -i - | awk '{sum+=$3-$2}END{print sum}' -; done
+```
+
 ```{r orthogonal metadata}
 orthogonal_sets = data.frame(cbind(State=c(rep(states[c(1:3,6:7)],3),NA),
                                    Set=c(rep("constitutive",5),rep("restricted",5),rep("shuffle_constitutive",5),"not_active")))
@@ -1867,15 +1884,6 @@ orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutively ac
 Characteristics of each of the orthogonal evidence sets. Both the constitutively active and restricted true TEs are shorter than the shuffled constitutively active TEs, although TEs with restricted activity are slightly longer, particularly for the promoter states. Inactive TEs are intermediate in length. Constitutively active true TEs also have a higher proportion of SINE elements at the expense of LINE/LTR elements compared to restricted ones, likely due to exclusion of those TEs from canonical promoters. Finally, true TEs with constitutive promoter active are far more likely to overlap promoters, while those with restricted 7_Enh activity are more likely to be intergenic vs. intronic than TEs constitutively in the state.
 
 ```{r orthogonal characteristics}
-# Combine profiles
-profile_set = function(matrix_list){
-  profiled = ldply(matrix_list,function(x) c(dim(x)[1],
-                                             median(x$stop-x$start),
-                                             table(x$class)/dim(x)[1],
-                                             apply(x[,cohorts[c(1:2,5,8,10,13,16,19)]],2,function(y) sum(!is.na(y))/dim(x)[1])))
-  return(profiled)
-}
-
 orthogonal_profile = rbind(ldply(shuffled_pos,function(y) profile_set(y)),profile_set(restricted),profile_set(TE_pos))
 test = profile_set(list(TE_neg))
 test$`.id` = NA
@@ -1900,6 +1908,9 @@ Intersected the VISTA enhancers with each set of TEs. 9/10 shuffled 3_TxFlnk con
 
 ```{bash orthogonal vista, eval=FALSE}
 for file in orthogonal/*.txt; do bedtools intersect -wo -a $file -b features/vista_enhancers/vista_enhancers_human_all.bed > orthogonal/vista/$(basename $file .txt)_vista.txt; done
+
+# Combined shuffled
+for file in orthogonal/shuffle_constitutive_*.txt; do bedtools intersect -wo -a $file -b features/vista_enhancers/vista_enhancers_human_all.bed > orthogonal/vista/$(basename $file .txt)_vista.txt; done
 ```
 
 Across all of the sets, there are 7,630 TEs that overlap VISTA enhancers, and in only 42 of the cases does the TE overlaps more than one VISTA enhancer (2 or 3). However, many TEs can overlap the same element. 
@@ -1936,63 +1947,90 @@ Ran HOMER (known motifs only) on each of the orthogonal sets.
 
 ```{bash orthogonal homer, eval=FALSE}
 for file in orthogonal/*.txt; do echo $file; findMotifsGenome.pl $file hg19 orthogonal/homer/$(basename $file .txt) -size given -nomotif 2>> orthogonal/homer/output.txt; done
+
+## Combined shuffled
+for file in orthogonal/shuffle_constitutive_*.txt; do echo $file; findMotifsGenome.pl $file hg19 orthogonal/homer/$(basename $file .txt) -size given -nomotif 2>> orthogonal/homer/output.txt; done
 ```
 
 HOMER gives more detail about the motifs [http://homer.ucsd.edu/homer/motif/motifDatabase.html| here].
 
 ```{r load homer results}
-# Load results
-homer_files = list.files(path="orthogonal/homer/",pattern="knownResults.txt",recursive=TRUE,full.names=TRUE)
+# Load members with motif (no background)
+homer_files = list.files(path="orthogonal/homer/individual/",pattern="knownResults.txt",recursive=TRUE,full.names=TRUE)
 
-homer = lapply(homer_files,function(x) read.table(x,sep='\t',header=TRUE,comment.char=""))
-names(homer) = homer_files
-homer = lapply(homer,setNames,nm=c("Motif Name","Consensus","P-value","Log P-value","q-value (Benjamini)",
+homer_known = lapply(homer_files,function(x) read.table(x,sep='\t',header=TRUE,comment.char=""))
+names(homer_known) = homer_files
+homer_known = lapply(homer_known,setNames,nm=c("Motif Name","Consensus","P-value","Log P-value","q-value (Benjamini)",
                                                "Target Seqs with Motif","% of Target Sequences with Motif",
                                                "Background Seqs with Motif","% of Background Sequences with Motif"))
-
-# Members with motif (no background)
-homer_indv = homer[grep("/individual/",names(homer),value=TRUE)]
-
-## Use inactive set for each state
-homer_indv = homer_indv[c(1:5,7:11,rep(6,5))]
-
-homer_indv = ldply(homer_indv,.id = "File")
-homer_indv$File = gsub("/knownResults.txt","",gsub("orthogonal/homer//individual/","",homer_indv$File))
-homer_indv$State = rep(rep(states[c(1:3,6:7)],each=364),3)
-homer_indv$Set = c(rep("constitutive",1820),rep("restricted",1820),rep("not_active",1820))
-homer_indv$`% of Target Sequences with Motif` = as.numeric(gsub("%","",homer_indv$`% of Target Sequences with Motif`))
-homer_indv$`% of Background Sequences with Motif` = as.numeric(gsub("%","",homer_indv$`% of Background Sequences with Motif`))
-homer_indv$Set = factor(homer_indv$Set,levels=names(orthogonal_labels))
-
-# Comparisons
-homer_known = homer[grep("/individual/",names(homer),invert = TRUE,value=TRUE)]
+# Repeat inactive results for each state
+homer_known = homer_known[c(1:5,7:11,rep(6,5))]
 
 homer_known = ldply(homer_known,.id = "File")
-homer_known$File = gsub("/knownResults.txt","",gsub("orthogonal/homer//","",homer_known$File))
-homer_known$State = rep(rep(states[c(1:3,6:7)],each=364),2)
-homer_known$Set1 = c(rep("constitutive",1820),rep("restricted",1820))
-homer_known$Set2 = c(rep("shuffle_constitutive",3640))
+homer_known$File = gsub("/knownResults.txt","",gsub("orthogonal/homer/individual//","",homer_known$File))
+homer_known$State = rep(rep(states[c(1:3,6:7)],each=364),3)
+homer_known$Set = factor(rep(c("constitutive","restricted","not_active"),each=1820),levels=names(orthogonal_labels))
 homer_known$`% of Target Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Target Sequences with Motif`))
 homer_known$`% of Background Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Background Sequences with Motif`))
+
+# Add number of TEs per set
+homer_known = merge(homer_known,orthogonal_profile[,c("Set","State","Number")],by=c("State","Set"),all.x=TRUE)
+homer_known[which(homer_known$Set == "not_active"),]$Number = orthogonal_profile[which(orthogonal_profile$Set == "not_active"),]$Number
+```
+
+```{r homer statistics}
+a = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","restricted")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+a$Comparison = rep("constitutive_restricted",dim(a)[1])
+
+b = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","not_active")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+b$Comparison = rep("restricted_inactive",dim(b)[1])
+
+homer_stats = rbind(a,b)
+homer_stats$Padj = p.adjust(homer_stats$p.value,method = "fdr")
 ```
 
 ```{r orthogonal homer analysis}
-# Promoter motifs
-ggplot(homer_indv[which(homer_indv$`Motif Name` %in% grep("Promoter",unique(homer_indv$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`,shape=Set)) + geom_point() + ylab("% of seqs with motif") + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State,ncol=1) 
-
-homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE) & homer_known$`q-value (Benjamini)` < 0.05),]
-
 # Number of significant comparisons
-table(droplevels(homer_known[which(homer_known$`q-value (Benjamini)` < 0.05),c("Set1","Set2","State")]))
+table(droplevels(homer_stats[which(homer_stats$Padj < 0.05),c("Comparison","State")]))
 
-# Other significant comparisons
-sort(table(droplevels(homer_known[which(homer_known$`q-value (Benjamini)` < 0.05 & homer_known$State %in% c("3_TxFlnk","6_EnhG","7_Enh")),]$"Motif Name")))
+# Promoter motifs
+ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`,shape=Set)) + geom_point() + ylab("% of seqs with motif") + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State,ncol=1) 
+
+homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$Padj < 0.05),]
 
 # Unique TFs
 unique(sapply(homer_known$`Motif Name`,function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1]))
 ```
 
 '''Population'''
+
+Conserved elements generated by phastCons, based on the primate alignment only, from UCSC. Removed the bin field to turn it into a bed file. 
+
+```{bash phastCons, eval=FALSE}
+wget http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/phastConsElements46wayPrimates.txt.gz
+awk -v OFS='\t' '{print $2, $3, $4, $5, $6}' orthogonal/pop/phastConsElements46wayPrimates.txt > orthogonal/pop/phastCons.txt
+```
+
+Downloaded the hg19 GERP elements and combined into one file. There are 1,044,996 elements. 
+
+```{bash GERP, eval=FALSE}
+wget http://mendel.stanford.edu/SidowLab/downloads/gerp/hg19.GERP_elements.tar.gz
+tar -xvzf hg19.GERP_elements.tar.gz
+for file in GERP/*; do awk -v OFS='\t' -v chr=$file '{print chr, $1, $2, $3, $4, $5}' $file >> GERP_hg19_elems.txt; done
+sed 's/GERP\/hg19_//' GERP_hg19_elems.txt | sed 's/_elems\.txt//' | sort -k1,1 -k2,2n > GERP_hg19_elems_sorted.txt
+```
+
+Intersection with all sets, found the length of overlap per element. 
+
+```{bash phastCons intersection, eval=FALSE}
+for file in orthogonal/*.txt; do bedtools intersect -wao -a $file -b orthogonal/pop/phastCons.txt > orthogonal/pop/$(basename $file .txt)_phastCons.txt; done
+for file in orthogonal/pop/*phastCons.txt; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $7, $6]+=$13}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i]}}' $file > orthogonal/pop/$(basename $file .txt)_total.txt; done
+```
+
+```{bash GERP intersection, eval=FALSE}
+for file in orthogonal/*.txt; do sort -k1,1 -k2,2n $file | bedtools intersect -wao -a - -b orthogonal/pop/GERP_hg19_elems_sorted.txt -sorted > orthogonal/pop/$(basename $file .txt )_gerp.txt; done
+for file in orthogonal/pop/*gerp.txt; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $7, $6]+=$14}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i]}}' $file > orthogonal/pop/$(basename $file .txt)_total.txt; done
+```
 
 ```{r phastCons GERP}
 phastcons = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/pop/",x,"_phastCons_total.txt",sep=""),sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"Overlap")))
@@ -2286,7 +2324,7 @@ ddply(chromHMM_imputed_potential,.(State),summarise,Count=sum(Count[which(Sample
 chromHMM_imputed_stats
 ```
 
-Potential analysis (Fig 2A/C) using other chromHMM models. 
+Potential analysis (Fig 2A/C) using other chromHMM models. I got the corresponding colors for the imputed states from the [https://egg2.wustl.edu/roadmap/web_portal/imputed.html#chr_imp| Roadmap website], but many states share the same color. 
 
 ```{r 18 imputed state potential figure, echo=FALSE}
 a = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2)
@@ -2298,35 +2336,6 @@ c = ggplot(state_sample_imputed,aes(x=State,y=Proportion,fill=State)) + geom_box
 d = ggplot(chromHMM_imputed_potential[which(chromHMM_imputed_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=imputed_states,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(imputed_states))) + geom_boxplot(width=0.2,outlier.size = 0.1)
 
 grid.arrange(a,b,c,d,nrow=2,heights=c(0.45,0.55))
-```
-
-'''Compare models'''
-
-To compare the 15-state to the 25-state model, I split both files by sample. Then, intersected the TEs to get identical TEs. Confirmed that all had 4,399,208 TEs, as expected. There are two locations where two TEs overlap each other exactly, but they were removed from the files. Then, I found the number of TEs per state for each annotation.  
-
-```{bash compare 15 25 chromHMM, eval=FALSE}
-# Split by sample
-awk '{print>$10}' rmsk_TEother_imputed_sorted.txt 
-awk '{print>"chromHMM/"$8}' ~/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt
-
-# Intersect and filter to same TE
-while read line; do bedtools intersect -f 1 -r -sorted -wo -a imputed/$line -b chromHMM/$line > $line; done < ~/TE_landscape/sample_lists/mnemonics.txt
-while read line; do awk -v OFS='\t' '{if(($1 == $12) && ($2 == $13) && ($3 == $14) && ($4 == $15) && ($5 == $16) && ($6 == $17) && ($7 == $18)) print $1, $2, $3, $4, $5, $6, $7, $10, $21, $8; else print $0 >> "mismatches.txt"}' $line > $line\.bed; done < ~/TE_landscape/sample_lists/mnemonics.txt
-
-# Number of TEs per state pair
-for file in *.bed; do awk -v OFS='\t' '{a[$9, $10]+=1}END{for(i in a){split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' $file >> counts.txt; done
-awk -v OFS='\t' '{a[$1, $2]+=$3}END{for(i in a){split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' counts.txt > counts_imputed.txt
-```
-
-I got the corresponding colors for the imputed states from the [https://egg2.wustl.edu/roadmap/web_portal/imputed.html#chr_imp| Roadmap website], but many states share the same color. 
-
-```{r imputed analysis, echo=FALSE}
-imputed = read.table("/scratch/ecp/TE_landscape/imputed/counts_imputed.txt",sep="\t",quote="")
-colnames(imputed) = c("State","Imputed.State","Count")
-imputed$State = factor(imputed$State,levels=chromHMM_states)
-imputed$Imputed.State = factor(imputed$Imputed.State,levels=names(imputed_states))
-
-ggplot(imputed,aes(x=State,y=Count,fill=Imputed.State)) + geom_bar(position="fill",stat="identity") + xlab("State (15-state model)") + ylab("Proportion of instances in state") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=imputed_states,name="State (25-state model)")
 ```
 
 ### Figure 3
