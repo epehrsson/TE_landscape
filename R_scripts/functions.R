@@ -273,16 +273,6 @@ tissue_matrix = function(x,matrix){
 }
 
 # Replicates
-transform_matrix = function(matrix){
-  matrix[lower.tri(matrix)] = NA
-  matrix = melt(as.matrix(matrix))
-  colnames(matrix) = c("Sample 1","Sample 2","Correlation")
-  matrix = matrix[which(matrix$`Sample 1` != matrix$`Sample 2` & !is.na(matrix$Correlation)),]
-  matrix = matrix[order(matrix$Correlation,decreasing = TRUE),]
-  matrix$Rank = 1:nrow(matrix)
-  return(matrix)
-}
-
 load_state = function(state){
   # Load matrix
   print("Load matrix")
