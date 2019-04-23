@@ -1964,34 +1964,44 @@ homer_known = lapply(homer_known,setNames,nm=c("Motif Name","Consensus","P-value
                                                "Target Seqs with Motif","% of Target Sequences with Motif",
                                                "Background Seqs with Motif","% of Background Sequences with Motif"))
 # Repeat inactive results for each state
-homer_known = homer_known[c(1:5,7:11,rep(6,5))]
+homer_known = homer_known[c(1:5,7:16,rep(6,5))]
 
 homer_known = ldply(homer_known,.id = "File")
 homer_known$File = gsub("/knownResults.txt","",gsub("orthogonal/homer/individual//","",homer_known$File))
-homer_known$State = rep(rep(states[c(1:3,6:7)],each=364),3)
-homer_known$Set = factor(rep(c("constitutive","restricted","not_active"),each=1820),levels=names(orthogonal_labels))
+homer_known$State = rep(rep(states[c(1:3,6:7)],each=364),4)
+homer_known$Set = factor(rep(c("constitutive","restricted","shuffle_constitutive","not_active"),each=1820),levels=names(orthogonal_labels))
 homer_known$`% of Target Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Target Sequences with Motif`))
 homer_known$`% of Background Sequences with Motif` = as.numeric(gsub("%","",homer_known$`% of Background Sequences with Motif`))
 
 # Add number of TEs per set
-homer_known = merge(homer_known,orthogonal_profile[,c("Set","State","Number")],by=c("State","Set"),all.x=TRUE)
+homer_known = merge(homer_known,ddply(orthogonal_profile,.(State,Set),summarise,Number=sum(Number)),by=c("State","Set"),all.x=TRUE)
 homer_known[which(homer_known$Set == "not_active"),]$Number = orthogonal_profile[which(orthogonal_profile$Set == "not_active"),]$Number
 ```
 
 ```{r homer statistics}
-a = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","restricted")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
-a$Comparison = rep("constitutive_restricted",dim(a)[1])
+a = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+a$Comparison = rep("restricted_shuffle",dim(a)[1])
 
-b = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","not_active")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
-b$Comparison = rep("restricted_inactive",dim(b)[1])
+b = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+b$Comparison = rep("constitutive_shuffle",dim(a)[1])
 
-homer_stats = rbind(a,b)
+c = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","not_active")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+c$Comparison = rep("restricted_inactive",dim(b)[1])
+
+homer_stats = rbind(a,b,c)
 homer_stats$Padj = p.adjust(homer_stats$p.value,method = "fdr")
 ```
 
 ```{r orthogonal homer analysis}
 # Number of significant comparisons
 table(droplevels(homer_stats[which(homer_stats$Padj < 0.05),c("Comparison","State")]))
+
+# Number of significant comparisons at each p-value threshold
+test = lapply(seq(0,350,1),function(x) melt(as.matrix(table(homer_stats[which(as.numeric(homer_stats$p.value) < 10^-x),c("Comparison","State")]))))
+names(test) = lapply(seq(0,350,1),function(x) 10^-x)
+test = ldply(test,.id="Cutoff")
+test$Cutoff = as.numeric(test$Cutoff)
+ggplot(test,aes(x=Cutoff,y=value,fill=Comparison)) + geom_bar(position="stack",stat="identity") + facet_wrap(~State)
 
 # Promoter motifs
 ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`,shape=Set)) + geom_point() + ylab("% of seqs with motif") + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State,ncol=1) 
