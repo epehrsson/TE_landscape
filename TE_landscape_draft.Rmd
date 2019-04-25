@@ -113,6 +113,7 @@ class_colors = setNames(c("#4A72E8","#FF6600","#006600","#cc0000","lightseagreen
 
 # Sample classification
 sample_categories = c("Group","Anatomy","Type","Age","Cancer","Germline")
+category_labels = setNames(c("Group","Anatomy","Type","Age","Cancer","Germlayer"),sample_categories)
 
 group_colors = setNames(c("#924965","#4178AE","#E41A1C","#69608A","#B65C73","#FF9D0C","#678C69","#55A354","#E67326","#FFD924","#AF5B39","#D56F80","#999999","#C5912B","#C58DAA","#F182BC","#C2655D","#DAB92E","#000000"),c("ESC","ES-deriv","IMR90","iPSC","Mesench","Epithelial","HSC & B-cell","Blood & T-cell","Myosat","Neurosph","Adipose","Heart","Other","Brain","Digestive","Sm. Muscle","Muscle","Thymus","ENCODE2012"))
 anatomy_colors = setNames(c("#B2DF8A","#33A02C","#FB9A99","#FFED6F","#80B1D3","#666666","#924965","#4178AE","#FDBF6F","#CAB2D6","#6A3D9A","#BEBADA","#FCCDE5","#BC80BD","#E7298A","#FF7F00","#69608A","#B3DE69","#CCEBC5","#000000","#FB8072","#FDB462","#8DD3C7","#D9D9D9","#E31A1C","#A6CEE3","#D95F02","#E6AB02","#66A61E","#B15928","#E31A1C","#8DD3C7","#E7298A","#A6761D","#666666"),c("ADRENAL","BLOOD","BONE","BRAIN","BREAST","CERVIX","ESC","ESC_DERIVED","FAT","GI_COLON","GI_DUODENUM","GI_ESOPHAGUS","GI_INTESTINE","GI_RECTUM","GI_STOMACH","HEART","IPSC","KIDNEY","LIVER","LUNG","MUSCLE","MUSCLE_LEG","OVARY","PANCREAS","PLACENTA","SKIN","SPLEEN","STROMAL_CONNECTIVE","THYMUS","VASCULAR",NA,NA,NA,NA,NA))
@@ -122,6 +123,8 @@ cancer_colors = setNames(c("lightgrey","red"),c("No","Yes"))
 germline_colors = setNames(brewer.pal(6,"Dark2"),c("Pluripotent","Mesoderm","Ectoderm","Endoderm","Mixed","Other"))
 
 group_order = c("ESC","iPSC","ES-deriv","Blood & T-cell","HSC & B-cell","Thymus","Brain","Neurosph","Digestive","Epithelial","Adipose","Mesench","Myosat","Muscle","Sm. Muscle","Heart","Other","IMR90","ENCODE2012")
+
+age_labels = setNames(c("Cell line","Fetal","Non-fetal","Unknown"),c("Cell_line","Unknown","Non_fetal","Fetal"))
 
 # Genic features
 features = c("cpgIsland","promoters","5UTR","CDS","3UTR","exons","introns","intergenic")
@@ -193,6 +196,8 @@ mark_labels = c(paste("chromHMM (n=",sample_counts["All","chromHMM"],")",sep="")
                 paste("DHS (n=",sample_counts["All","DNase"],")",sep=""),
                 paste("H3K27ac (n=",sample_counts["All","H3K27ac"],")",sep=""))
 names(mark_labels) = c("chromHMM","WGBS","DNase","H3K27ac")
+
+mark_labels_simple = setNames(c("chromHMM","WGBS","DHS","H3K27ac","RPKM > 1"),c("chromHMM","WGBS","DNase","H3K27ac","RNA"))
 ```
 
 ## Create essential matrices
@@ -1175,13 +1180,13 @@ a = ggplot(combined_proportion[which(combined_proportion$Coding == "All"),],aes(
 
 b = ggplot(combine_class_proportion,aes(x=class,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("TE class") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-12),legend.key.size = unit(3,'mm')) + facet_wrap(~Cohort,nrow=1,labeller=labeller(Cohort = mark_labels)) + guides(fill = guide_legend(ncol = 8,title.position = "top"))
 
-c = ggplot(contribution,aes(x=State,y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse(limits=c(1,0)) + xlab("State") + ylab("Proportion of state overlapping TEs") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels,limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + geom_text(aes(label=round(Proportion,2)),hjust=1.01,size=3) + theme(axis.title.y = element_text(margin = margin(r = -10))) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
+c = ggplot(contribution,aes(x=State,y=Proportion,fill=State)) + geom_bar(stat="identity") + coord_flip() + scale_y_reverse(limits=c(1,0),expand=c(0.01,0.01)) + xlab("State") + ylab("Proportion of state overlapping TEs") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels,limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + geom_text(aes(label=round(Proportion,2)),hjust=1.01,size=3) + theme(axis.title.y = element_text(margin = margin(r = -10))) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
 
-d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=forcats::fct_rev(class))) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y = element_blank()) + scale_x_discrete(limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + scale_fill_manual(values=class_colors,guide=FALSE) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") 
+d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=forcats::fct_rev(class))) + geom_bar(stat="identity") + coord_flip() + ylab("Proportion in each TE class") + theme(axis.title.y=element_blank(),axis.text.y=element_blank(),axis.ticks.y = element_blank()) + scale_x_discrete(limits=c(rev(states[16:19]),"CpGs",rev(states[c(1:15,20:21)]),"Bases")) + scale_fill_manual(values=class_colors,guide=FALSE) + geom_vline(xintercept=5.5) + geom_vline(xintercept=4.5,linetype="dashed",color="black") + geom_vline(xintercept=6.5,linetype="dashed",color="grey") + geom_vline(xintercept=7.5,linetype="dashed",color="grey") + geom_vline(xintercept=22.5,linetype="dashed",color="black") + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01)) 
 
 legend_class = get_legend(ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.text.y=element_blank(),legend.position="bottom",legend.direction = "horizontal",legend.key.size = unit(3,'mm')) + scale_fill_manual(values=class_colors,name="Class") + guides(fill = guide_legend(nrow = 2)))
 
-grid.arrange(a,b,c,d,legend_class, nrow = 4,layout_matrix = rbind(c(1),c(2),c(3,4),c(NA,5)),heights=c(0.2,0.3,0.45,0.05),widths=c(0.55,0.45))
+grid.arrange(a,b,c,d,legend_class, nrow = 4,layout_matrix = rbind(c(1),c(2),c(3,4),c(NA,5)),heights=c(0.25,0.3,0.4,0.05),widths=c(0.55,0.45))
 ```
 
 ### Proportion/contribution analysis
@@ -1284,9 +1289,9 @@ source("R_scripts/histone_modification.R")
 all_state_proportion_matrix = dcast(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],State+Sample+Group~Cohort,value.var="Bases")
 all_state_proportion_corr = ddply(all_state_proportion_matrix,.(State),summarise,Cor=as.numeric(unlist(cor.test(Genome,TE,method="spearman"))["estimate.rho"]),Pvalue=as.numeric(unlist(cor.test(Genome,TE,method="spearman"))["p.value"]))
 
-a = ggplot(all_state_proportion_matrix,aes(x=log10(Genome),y=log10(TE))) + geom_point(aes(color=Group)) + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",ncol=6) + xlab("Bases/CpGs in genome (log10)") + ylab("Bases/CpGs in TEs (log10)") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_state_proportion_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
+a = ggplot(all_state_proportion_matrix,aes(x=log10(Genome),y=log10(TE))) + geom_point(aes(color=Group)) + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",ncol=6,labeller=labeller(State=all_state_labels)) + xlab("Bases/CpGs in genome (log10)") + ylab("Bases/CpGs in TEs (log10)") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_state_proportion_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 
-b = ggplot(histones,aes(x=Bin,y=Level,color=Mark,group=Mark)) + geom_line(size=1.5,alpha=0.7) + theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),panel.grid=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Genomic position (+/-5kb around TE)")+ylim(0,12) + facet_wrap(~ State,nrow=3) + scale_y_continuous(sec.axis = sec_axis(~./12.5, name = "DNA methylation level"))
+b = ggplot(histones,aes(x=Position/1000,y=Level,color=Mark,group=Mark)) + geom_line(size=1.5,alpha=0.7) + theme(panel.grid=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Distance from TE center (kbp)")+ylim(0,12) + facet_wrap(~ State,nrow=3) + scale_y_continuous(sec.axis = sec_axis(~./12.5, name = "DNA methylation level"))
 
 grid.arrange(a,b,heights=c(0.55,0.45))
 ```
@@ -1323,9 +1328,9 @@ a = ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"
 b = ggplot(combined_proportion[which(combined_proportion$Feature %in% c("promoters","5UTR","3UTR","exons","introns")),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("Feature") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-12),legend.key.size = unit(3,'mm')) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_grid(Coding~Mark,labeller=labeller(Coding=coding_labels,Mark=mark_labels)) + guides(fill = guide_legend(ncol = 8,title.position = "top"))
 
 # Feature overlap
-c = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=genic_labels) + scale_fill_discrete(labels=coding_labels,name="Feature") + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=overlap_labels)) + xlab("Feature") + ylab("Proportion")
+c = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),legend.key.size = unit(2,'mm')) + scale_x_discrete(labels=genic_labels) + scale_fill_discrete(labels=coding_labels,name="Feature") + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=overlap_labels)) + xlab("Feature") + ylab("Proportion")
 
-grid.arrange(a,b,c,nrow=3,heights=c(0.25,0.5,0.25))
+grid.arrange(a,b,c,nrow=3,heights=c(0.22,0.53,0.25))
 ```
 
 ### RefSeq feature analysis
@@ -1341,11 +1346,11 @@ combined_proportion
 ### Supplementary Figure 3
 
 ```{r Figure S3, echo=FALSE}
-a = ggplot(rmsk_TE_class,aes(x=factor(1),y=Total_length,fill=class_update,label=paste(round(Total_length/1000000,1)," (",round(Total_length/sum(Total_length)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank()) + geom_text(position = position_fill(vjust = 0.5),size=3) + ggtitle("Total length (Mb)")
+a = ggplot(rmsk_TE_class,aes(x=factor(1),y=Total_length,fill=class_update,label=paste(round(Total_length/1000000,1)," (",round(Total_length/sum(Total_length)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + geom_text(position = position_fill(vjust = 0.5),size=2) + ggtitle("Total length (Mb)") + scale_y_continuous()
 
-b = ggplot(rmsk_TE_class,aes(x=factor(1),y=Count,fill=class_update,label=paste(format(Count, big.mark=",", scientific=FALSE)," (",round(Count/sum(Count)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank()) + geom_text(position = position_fill(vjust = 0.5),size=3) + ggtitle("TEs")
+b = ggplot(rmsk_TE_class,aes(x=factor(1),y=Count,fill=class_update,label=paste(format(Count, big.mark=",", scientific=FALSE)," (",round(Count/sum(Count)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + geom_text(position = position_fill(vjust = 0.5),size=2) + ggtitle("TEs")
 
-c = ggplot(rmsk_TE_class,aes(x=factor(1),y=Subfamilies,fill=class_update,label=paste(format(Subfamilies, big.mark=",", scientific=FALSE)," (",round(Subfamilies/sum(Subfamilies)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank()) + geom_text(position = position_fill(vjust = 0.5),size=3) + ggtitle("Subfamilies")
+c = ggplot(rmsk_TE_class,aes(x=factor(1),y=Subfamilies,fill=class_update,label=paste(format(Subfamilies, big.mark=",", scientific=FALSE)," (",round(Subfamilies/sum(Subfamilies)*100,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(name="Class",values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + geom_text(position = position_fill(vjust = 0.5),size=2) + ggtitle("Subfamilies")
 
 d = ggplot(rmsk_TE,aes(x=Length/1000,y=..scaled..,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Length (kbp)") + ylab("Density") + facet_wrap(~class_update,nrow=1) + scale_y_continuous(breaks=c(0,0.5,1))
 
@@ -1362,7 +1367,7 @@ grid.arrange(a,b,c,legend_class,d,e,f,g,h,nrow=7,layout_matrix=rbind(c(1,2,3),c(
 
 ### TE metric stats
 
-```{r metrics analysis}
+```{r metrics analysis, cache=TRUE}
 # Median TE metrics by overall and by class, with p-values
 p.adjust(apply(rmsk_TE[,measure_metrics],2,function(x) unlist(kruskal.test(x~rmsk_TE$class_update))["p.value"]),method="bonf")
 
@@ -1399,19 +1404,19 @@ source("R_scripts/potential_class.R")
 ### Figure 2
 
 ```{r Figure 2, echo=FALSE}
-a = ggplot(combine_boxplot,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_point(data=combine_stats,aes(x=State,y=Proportion_ever),color="red",size=2)
+a = ggplot(combine_boxplot,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_point(data=combine_stats,aes(x=State,y=Proportion_ever),color="red",size=2) 
 
-b = ggplot(combine_class_ever,aes(x=State,y=Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="TEs ever in state by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels))
+b = ggplot(combine_class_ever,aes(x=State,y=Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="TEs ever in state by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
 
-c = ggplot(combine_potential[which(combine_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1)
+c = ggplot(combine_potential[which(combine_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
-d = ggplot(combine_potential[which(combine_potential$Sample.Proportion == 1),],aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=1.01,size=2.5) + scale_y_reverse(limits=c(8,0)) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + ylab("TEs in state in\n100% of samples (log10)")
+d = ggplot(combine_potential[which(combine_potential$Sample.Proportion == 1),],aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=1.01,size=2.5) + scale_y_reverse(limits=c(8,0)) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + ylab("TEs in state in\n100% of samples (log10)")
 
 e = ggplot(ddply(combine_potential[which(combine_potential$Sample.Proportion >= 0.9),],.(State),summarise,Count=sum(Count)),aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=0,size=2.5) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("TEs in state in\n90% of samples (log10)") + scale_y_continuous(limits=c(0,8))
 
-f = ggplot(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),aes(x=State,y=TEs.Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion in\neach class (90%)") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels))
+f = ggplot(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),aes(x=State,y=TEs.Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion in\neach class (90%)") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
 
-grid.arrange(a,b,c,d,e,f,legend_class, nrow = 3, layout_matrix=rbind(c(1,2,3),c(4,5,6),c(NA,NA,7)),widths=c(0.4,0.3,0.3),heights=c(0.475,0.475,0.05))
+grid.arrange(a,b,c,d,e,f,legend_class, nrow = 3, layout_matrix=rbind(c(1,2,3),c(4,5,6),c(NA,NA,7)),widths=c(0.42,0.29,0.29),heights=c(0.475,0.475,0.05))
 ```
 
 ### Potential analysis
@@ -1552,7 +1557,7 @@ awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_genes
 ### Supplementary Figure 4
 
 ```{r Figure S4, echo=FALSE}
-a = ggplot(combine_boxplot_class,aes(x=State,y=Proportion,fill=Class)) + geom_boxplot() + scale_fill_manual(values=class_colors,guide=FALSE) + coord_flip() + ylab("Proportion of TEs in state") + scale_x_discrete(labels=rev(all_state_labels),limits=rev(levels(combine_boxplot_class$State))) + geom_point(data=combine_stats_class,aes(x=State,y=Proportion_ever,color=Class),position=position_dodge(width=0.5)) + scale_color_manual(values=class_colors) + theme(legend.position="bottom",axis.title.y = element_text(margin = margin(r = -5)),legend.key.size = unit(1,'mm'),legend.box.margin = margin(t=-10)) + guides(color = guide_legend(nrow = 2))
+a = ggplot(combine_boxplot_class,aes(x=State,y=Proportion,fill=Class)) + geom_boxplot() + scale_fill_manual(values=class_colors,guide=FALSE) + coord_flip() + ylab("Proportion of TEs in state") + scale_x_discrete(labels=rev(all_state_labels),limits=rev(levels(combine_boxplot_class$State))) + geom_point(data=combine_stats_class,aes(x=State,y=Proportion_ever,color=Class),position=position_dodge(width=0.5)) + scale_color_manual(values=class_colors) + theme(legend.position="bottom",axis.title.y = element_text(margin = margin(r = -5)),legend.key.size = unit(1,'mm'),legend.box.margin = margin(t=-10)) + guides(color = guide_legend(nrow = 2)) 
 
 state_order = ddply(combine_stats_class,"State",summarise,CV=sd(Samples_avg_all)/mean(Samples_avg_all), Range=max(Samples_avg_all)-min(Samples_avg_all))
 
@@ -1562,9 +1567,9 @@ rmsk_TE_class_feature = split_coding(rmsk_TE_class_feature)
 
 b = ggplot(rmsk_TE_class_feature,aes(x=Class,y=Proportion,fill=Feature)) + geom_bar(stat="identity") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + xlab("TE class") + ylab("Proportion of TEs overlapping feature") + scale_fill_manual(values=c(brewer.pal(8,"Spectral")),labels=genic_labels[c(8,1:7)],name="Feature") + facet_wrap(~Coding,ncol=1,labeller=labeller(Coding=coding_labels),scales="free_y") + guides(fill=guide_legend(title.position = "top"))
 
-c = ggplot(combine_potential_class[which(combine_potential_class$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("State") + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states)) + facet_wrap(~Class,nrow=1) + geom_boxplot(width=0.2,outlier.size = 0.1)  + theme(axis.title.y = element_text(margin = margin(r = -10))) + scale_y_continuous(breaks=pretty_breaks(n=3))
+c = ggplot(combine_potential_class[which(combine_potential_class$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("State") + ylab("Proportion of samples in state") + scale_x_discrete(labels=rev(all_state_labels),limits = rev(states)) + facet_wrap(~Class,nrow=1) + geom_boxplot(width=0.2,outlier.size = 0.1)  + theme(axis.title.y = element_text(margin = margin(r = -10))) + scale_y_continuous(breaks=pretty_breaks(n=3),expand=c(0.01,0.01)) 
 
-grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.55,0.45))
+grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.6,0.4),widths=c(0.58,0.42))
 ```
 
 ### Class potential analysis
@@ -1576,7 +1581,7 @@ state_order
 
 ### Feature overlap and CpGs per class
 
-```{r analysis Fig S9a}
+```{r analysis Fig S4}
 # Any TEs not in a feature? Number of features each TE overlaps
 table(apply(rmsk_TE[,cohorts[2:19]],1,function(x) sum(!is.na(x))))
 table(apply(rmsk_TE[,c(features[2:3],"coding_exon",features[5:8])],1,function(x) sum(!is.na(x))))
@@ -1608,19 +1613,19 @@ source("R_scripts/potential_exon.R")
 
 ```{r Figure S5, echo=FALSE}
 # Promoters
-a = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of promoters in state") + coord_flip() + scale_x_discrete(limits=rev(states[1:21]),labels=all_state_labels[1:21]) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2)
+a = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of promoters in state") + coord_flip() + scale_x_discrete(limits=rev(states[1:21]),labels=all_state_labels[1:21]) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.05,0.05))
 
-b = ggplot(combine_potential_prom[which(combine_potential_prom$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states[1:21]),labels=all_state_labels[1:21]) + geom_boxplot(width=0.2,outlier.size = 0.1)
+b = ggplot(combine_potential_prom[which(combine_potential_prom$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states[1:21]),labels=all_state_labels[1:21]) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 # Exons
-c = ggplot(RNA_exon_sample,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values="black",guide=FALSE) + theme(axis.ticks.y=element_blank()) + labs(y="Proportion of exons in state") + coord_flip() + scale_x_discrete(labels="RPKM > 1") + geom_point(data=RNA_potential_exon_stats,aes(x=State,y=Proportion_ever),color="red",size=3) + scale_y_continuous(limits=c(0,1))
+c = ggplot(RNA_exon_sample,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values="black",guide=FALSE) + labs(y="Proportion of exons in state") + coord_flip() + scale_x_discrete(labels="       RPKM > 1") + geom_point(data=RNA_potential_exon_stats,aes(x=State,y=Proportion_ever),color="red",size=3) + scale_y_continuous(limits=c(0,1),expand=c(0.05,0.05))
 
-d = ggplot(RNA_potential_exon_long[which(RNA_potential_exon_long$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values="black",guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples RPKM > 1") + scale_x_discrete(labels=all_state_labels[22]) + geom_boxplot(width=0.2,outlier.size = 0.1)
+d = ggplot(RNA_potential_exon_long[which(RNA_potential_exon_long$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values="black",guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples RPKM > 1") + scale_x_discrete(labels=all_state_labels[22]) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 # No cancer/IMR90
-e = ggplot(combine_boxplot_noCancer_IMR90,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot_noCancer_IMR90$State)),labels=rev(all_state_labels)) + geom_point(data=combine_stats_noCancer_IMR90,aes(x=State,y=Proportion_ever),color="red",size=2)
+e = ggplot(combine_boxplot_noCancer_IMR90,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(levels(combine_boxplot_noCancer_IMR90$State)),labels=rev(all_state_labels)) + geom_point(data=combine_stats_noCancer_IMR90,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.05,0.05))
 
-f = ggplot(combine_potential_noCancer[which(combine_potential_noCancer$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1)
+f = ggplot(combine_potential_noCancer[which(combine_potential_noCancer$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 grid.arrange(a,b,c,d,e,f,nrow = 3,layout_matrix=rbind(c(1,2),c(3,4),c(5,6)),heights=c(0.45,0.1,0.45),widths=c(0.6,0.4))
 ```
@@ -1732,7 +1737,7 @@ ddply(combine_boxplot[which(combine_boxplot$Sample != "E017"),],.(State),summari
 combine_boxplot[which(combine_boxplot$Sample == "E017"),]
 ```
 
-### Supplementary Figure NEW (shuffled control)
+### Background proportion of genome in active regulatory state
 
 Proportion of the genome that is in an active regulatory state in any Roadmap sample. 
 
@@ -1753,7 +1758,7 @@ Because these windows are smaller than TEs, I will confirm the results using the
 for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromHMM_potential.txt | awk '{if(($8 > 0) || ($9 > 0) || ($10 > 0) || ($13 > 0) || ($14 > 0)) print $0}' | wc -l; done
 ```
 
-### Supplementary Figure NEW (replicates)
+### Supplementary Figure 6 (replicates)
 
 Identifying pairs of samples that are so similar they could be considered replicates. Relied on Table S1 from the Roadmap publication. 
 
@@ -1785,12 +1790,6 @@ source("R_scripts/replicate_matrices.R")
 source("R_scripts/potential_replicates.R")
 ```
 
-```{r replicates, echo=FALSE}
-ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
-  scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
-  theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,24,25)) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Not replicates"),c("Replicate","Tissue"))))
-```
-
 ```{r replicate analysis}
 dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
 
@@ -1808,18 +1807,25 @@ source("R_scripts/replicate_matrices_shuffled.R")
 ```
 
 ```{r plot shuffled replicate analysis}
-# Plot
-ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",size=2,stroke=1) + 
-scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Replicate pair") + ylab("Fraction of TEs in both samples / either sample") + 
-theme(axis.text.x=element_text(angle=90,vjust=0.5)) + scale_shape_manual(values=c(21,22,25)) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Not replicates"),c("Replicate","Tissue"))))
-
 # Analysis
 dcast(ddply(replicates_shuffled_count[which(replicates_shuffled_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
 
 dcast(ddply(replicates_shuffled_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
 ```
 
-### Supplementary Figure NEW (orthogonal)
+```{r Figure S6, echo=FALSE}
+a = ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) +   scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Sample pair") + ylab("Fraction of TEs in both samples / either sample") +   theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),legend.position = "bottom",strip.text.y = element_text(size=5)) + scale_shape_manual(values=c(21,22,24,25),guide=FALSE) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))) + ylim(0,0.7)
+
+b = ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) + 
+scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Sample pair") + ylab("Fraction of TEs in both samples / either sample") + 
+theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),strip.text.y = element_text(size=5)) + scale_shape_manual(values=c(21,22,25),guide=FALSE) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))) + ylim(0,0.7)
+
+legend_replicate = get_legend(ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) +   scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),legend.position = "bottom",strip.text.y = element_text(size=6)) + scale_shape_manual(values=c(21,22,24,25),labels=c("Exclusive to pair","<5 samples","Exclusive to group","None")) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))))
+
+grid.arrange(a,b,legend_replicate,heights=c(0.47,0.47,0.06))
+```
+
+### Supplementary Figure 7 (orthogonal)
 
 Creates sets for analysis of TEs with restricted active regulatory activity versus constitutively active, non-TE bases. First, I identified TEs that are in each of the active regulatory states in 1-5 samples total ("highly restricted"). For my positive control, I could use promoters, but they are much longer than the average TE. Instead, I will use shuffled TEs that are in each state in >50 samples. With all 10 iterations of shuffled TEs, this is about the same number of TEs as in the first set. Finally, I got those that are not in the active regulatory states in any sample. As a bonus, although the reviewer asked for non-TE, non-restricted regions, I also found the TEs in each active regulatory state in >50 samples.
 
@@ -1878,7 +1884,7 @@ orthogonal_sets = data.frame(cbind(State=c(rep(states[c(1:3,6:7)],3),NA),
 orthogonal_sets$File = paste(orthogonal_sets$Set,orthogonal_sets$State,sep="_")
 orthogonal_sets$File[16] = "not_active"
 
-orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutively active","Constitutively active","Inactive"),c("restricted","shuffle_constitutive","constitutive","not_active"))
+orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutive","Constitutively active","Inactive"),c("restricted","shuffle_constitutive","constitutive","not_active"))
 ```
 
 Characteristics of each of the orthogonal evidence sets. Both the constitutively active and restricted true TEs are shorter than the shuffled constitutively active TEs, although TEs with restricted activity are slightly longer, particularly for the promoter states. Inactive TEs are intermediate in length. Constitutively active true TEs also have a higher proportion of SINE elements at the expense of LINE/LTR elements compared to restricted ones, likely due to exclusion of those TEs from canonical promoters. Finally, true TEs with constitutive promoter active are far more likely to overlap promoters, while those with restricted 7_Enh activity are more likely to be intergenic vs. intronic than TEs constitutively in the state.
@@ -1895,11 +1901,13 @@ orthogonal_profile$SVA = orthogonal_profile$Other
 orthogonal_profile$Other = orthogonal_profile$`DNA?`+orthogonal_profile$`LINE?` + orthogonal_profile$`LTR?` + orthogonal_profile$RC + orthogonal_profile$`SINE?` + orthogonal_profile$Unknown + orthogonal_profile$`Unknown?`
 orthogonal_profile$Set = factor(c(rep("shuffle_constitutive",50),rep("restricted",5),rep("constitutive",5),"not_active"),levels=c("constitutive","shuffle_constitutive","restricted","not_active"))
 
-ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
+a = ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
 
-ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
+b = ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
 
-ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
+c = ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
+
+grid.arrange(a,b,c)
 ```
 
 '''VISTA'''
@@ -1921,9 +1929,14 @@ I found, for each set, the total number of VISTA enhancers overlapping TEs and t
 vista_val = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/vista/",x,"_vista.txt",sep=""),sep="\t",
                                           col.names=c(TE_coordinates[c(1:4,6,7,5)],"chr_vista","start_vista","stop_vista","element","Validation","Overlap")))
 names(vista_val) = as.vector(orthogonal_sets$File)
+
+# Repeat inactive results for each state
+vista_val = vista_val[c(1:15,rep(16,5))]
+
 vista_val = vista_val[sapply(vista_val, function(x) dim(x)[1]) > 0]
 vista_val = ldply(vista_val,.id = "File")
-vista_val = merge(vista_val,orthogonal_sets,by="File")
+vista_val = merge(vista_val,orthogonal_sets,by="File",all.x=TRUE)
+vista_val[which(vista_val$File == "not_active"),]$State = rep(states[c(1:3,6:7)],each=dim(vista_val[which(vista_val$File == "not_active"),])[1]/5)
 vista_val$Set = factor(vista_val$Set,levels=names(orthogonal_labels))
   
 # Unique VISTA enhancers overlapping TEs in that set
@@ -1936,9 +1949,6 @@ vista_val_fraction = ddply(vista_val,.(Set,State),summarise,Total=length(unique(
 lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State %in% c(x,NA) & vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")]))
-
-# Plot
-ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of enhancers positively validated") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_shape_discrete(labels=orthogonal_labels)
 ```
 
 '''HOMER'''
@@ -2004,12 +2014,7 @@ test$Cutoff = as.numeric(test$Cutoff)
 ggplot(test,aes(x=Cutoff,y=value,fill=Comparison)) + geom_bar(position="stack",stat="identity") + facet_wrap(~State)
 
 # Promoter motifs
-ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`,shape=Set)) + geom_point() + ylab("% of seqs with motif") + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State,ncol=1) 
-
 homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$Padj < 0.05),]
-
-# Unique TFs
-unique(sapply(homer_known$`Motif Name`,function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1]))
 ```
 
 '''Population'''
@@ -2042,26 +2047,32 @@ for file in orthogonal/*.txt; do sort -k1,1 -k2,2n $file | bedtools intersect -w
 for file in orthogonal/pop/*gerp.txt; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $7, $6]+=$14}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i]}}' $file > orthogonal/pop/$(basename $file .txt)_total.txt; done
 ```
 
-```{r phastCons GERP}
+```{r phastCons GERP, cache=TRUE, cache.lazy=FALSE}
 phastcons = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/pop/",x,"_phastCons_total.txt",sep=""),sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"Overlap")))
 names(phastcons) = as.vector(orthogonal_sets$File)
+
+# Repeat inactive results for each state
+phastcons = phastcons[c(1:15,rep(16,5))]
+
 phastcons = ldply(phastcons,.id = "File")
 phastcons$Database = rep("PhastCons",dim(phastcons)[1])
 
 gerp = lapply(as.vector(orthogonal_sets$File),function(x) read.table(paste("orthogonal/pop/",x,"_gerp_total.txt",sep=""),sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"Overlap")))
 names(gerp) = as.vector(orthogonal_sets$File)
+
+# Repeat inactive results for each state
+gerp = gerp[c(1:15,rep(16,5))]
+
 gerp = ldply(gerp,.id = "File")
 gerp$Database = rep("GERP",dim(gerp)[1])
 
 cons = rbind(phastcons,gerp)
 rm(list=c("phastcons","gerp"))
 
-cons = merge(cons,orthogonal_sets,by="File")
+cons = merge(cons,orthogonal_sets,by="File",all.x=TRUE)
+cons[which(cons$File == "not_active"),]$State = rep(rep(states[c(1:3,6:7)],each=dim(cons[which(cons$File == "not_active"),])[1]/10),2)
 cons$Proportion = cons$Overlap/(cons$stop-cons$start)
 cons$Set = factor(cons$Set,levels=names(orthogonal_labels))
-
-# Plot
-ggplot(cons,aes(x=Set,y=Proportion,fill=State)) + geom_violin() + ylab("Proportion of overlap with phastCons/GERP elements") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~Database) + scale_fill_manual(values=all_state_colors,guide=FALSE)
 
 ddply(cons,.(Set,State,Database),summarise,Mean=mean(Proportion),Overlapping=sum(Overlap > 10)/length(Overlap))
 
@@ -2087,7 +2098,20 @@ lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State %in% c(x,NA) & cons_10bp$Set %in% c("restricted","not_active") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 ```
 
-### Supplementary Figure NEW (block)
+```{r Figure S7, echo=FALSE}
+# VISTA
+a = ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position = "bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_shape_discrete(labels=orthogonal_labels) + guides(shape=guide_legend(ncol=1))
+
+# HOMER (promoter motifs)
+b = ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`/100,shape=Set)) + geom_point() + xlab("Transcription factor") + ylab("Proportion of TEs with motif") + scale_shape_discrete(labels=orthogonal_labels,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State) + scale_x_discrete(labels=sapply(grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE),function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1])) 
+
+# Population
+c = ggplot(cons,aes(x=Set,y=Proportion,fill=State)) + geom_violin() + ylab("Proportion of TE overlapping\nphastCons/GERP elements") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(Database~State) + scale_fill_manual(values=all_state_colors,guide=FALSE)
+
+grid.arrange(a,b,c,layout_matrix = rbind(c(1,2),c(3)),widths=c(0.3,0.7),heights=c(0.45,0.55))
+```
+
+### Supplementary Figure 8 (block/summit)
 
 How many TEs are responsible for their chromHMM region? Found TEs that overlap the center of chromHMM blocks.
 
@@ -2131,21 +2155,21 @@ As an intermediate between the chromHMM overlap rules in the paper and block cen
 awk -v OFS='\t' '{if($11 == "summit") a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit_only.txt
 ```
 
-```{r block summit control, echo=FALSE}
+```{r Figure S8, echo=FALSE,fig.height=6}
 source("R_scripts/chromHMM_block_potential.R")
 
 # Plot (x-axis in increasing order of median block size)
 a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
-  theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
-  ylab("TEs in state in sample\n(proportion of paper TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed")
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
+  ylab("TEs in state per sample\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_fill_discrete(guide=FALSE)
 
 b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
-  theme(axis.title.x = element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
-  ylab("TEs ever in state\n(proportion of paper TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed")
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="top") + 
+  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),name="Overlap")
 
-grid.arrange(a,b)
+grid.arrange(a,b,heights=c(0.45,0.55))
 ```
 
 The number of TEs in each state per sample is much smaller, with a median of 17% for 1_TssA (up to 43% for 11_BivFlnk).
@@ -2168,7 +2192,7 @@ dim(unique(block_potential[which(block_potential$State %in% chromHMM_states[c(1:
 sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 ```
 
-### Supplementary Figure NEW (imputed)
+### Supplementary Figure 9 (imputed)
 
 The Roadmap project has 98 samples annotated with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model) (which includes H3K27ac), as well as all samples annotated with a 25-state model generated using imputed data. The 25-state model uses "imputed data for 12 marks, H3K4me1, H3K4me2, H3K4me3, H3K9ac, H3K27ac, H4K20me1, H3K79me2, H3K36me3, H3K9me3, H3K27me3, H2A.Z, and DNase". 
 
@@ -2234,7 +2258,7 @@ state_sample_18state$State = factor(state_sample_18state$State,levels=names(chro
 
 The number of TEs in the quiescent state is back down, to a median of 62% per sample. Additionally, the number of TEs ever in an active regulatory state is back up to 48%, despite losing ~30 samples! Specifically, 39% can be in the 11_EnhWk state (weak enhancer), 25% in 10_EnhA2 (active enhancer), and 17% in 9_EnhA1 (active enhancer), although only 2% are ever in the 1_TssA state. 73% can be transcribed - very similar to what we see with the 15-state model.
 
-```{r 18 state potential analysis}
+```{r 18 state potential analysis, cache=TRUE}
 ddply(state_sample_18state,.(State),summarise,Median=median(Proportion))
 
 ## Active regulatory states (states 1-4, 7-11)
@@ -2318,7 +2342,7 @@ state_sample_imputed$State = factor(state_sample_imputed$State,levels=names(impu
 
 The 25-state model splits the active regulatory states into much finer detail (15 vs. 5), splits the transcribed states into 4 (from 2), and removes the weakly Polycomb repressed state and the bivalent enhancer state. Using this model, the median number of TEs in the quiescent state per sample is actually greatly increased to 77%, although interestingly, on 89% of TEs are ever in the state. Only 30% of TEs can be in an active regulatory state (15 states), 33% in a transcribed state (4 states), 7% in a poised regulatory state (2 states), and 14% in a repressed state (2 states). 19% of TEs can be in the 17_EnhW2 state (Weak Enhancer 2), 12% in 18_EnhAc (Primary H3K27ac possible Enhancer), and 11% in 15_EnhAF (Active Enhancer Flank); they are less represented in the stronger enhancer states, although 9% are in 14_EnhA2 (Active Enhancer 2).
 
-```{r imputed potential analysis}
+```{r imputed potential analysis, cache=TRUE}
 ddply(state_sample_imputed,.(State),summarise,Median=median(Proportion))
 
 ## Active regulatory states (states 1-4, 9-19)
@@ -2336,16 +2360,16 @@ chromHMM_imputed_stats
 
 Potential analysis (Fig 2A/C) using other chromHMM models. I got the corresponding colors for the imputed states from the [https://egg2.wustl.edu/roadmap/web_portal/imputed.html#chr_imp| Roadmap website], but many states share the same color. 
 
-```{r 18 imputed state potential figure, echo=FALSE}
-a = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2)
+```{r Figure S9, echo=FALSE}
+a = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
 
-b = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1)
+b = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
-c = ggplot(state_sample_imputed,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=imputed_states,guide=FALSE) + scale_x_discrete(limits=rev(names(imputed_states))) + theme(axis.ticks.y=element_blank(),axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_imputed_stats,aes(x=State,y=Proportion_ever),color="red",size=2)
+c = ggplot(state_sample_imputed,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=imputed_states,guide=FALSE) + scale_x_discrete(limits=rev(names(imputed_states))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_imputed_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
 
-d = ggplot(chromHMM_imputed_potential[which(chromHMM_imputed_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=imputed_states,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(imputed_states))) + geom_boxplot(width=0.2,outlier.size = 0.1)
+d = ggplot(chromHMM_imputed_potential[which(chromHMM_imputed_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=imputed_states,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(imputed_states))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
-grid.arrange(a,b,c,d,nrow=2,heights=c(0.45,0.55))
+grid.arrange(a,b,c,d,nrow=2,heights=c(0.43,0.57),widths=c(0.55,0.45))
 ```
 
 ### Figure 3
@@ -2445,24 +2469,24 @@ meth_dynamics = melt(TE_meth_average[,c(meth_states,"States")],id.var="States")
 meth_dynamics = meth_dynamics[which(meth_dynamics$value > 0),]
 ```
 
-### Supplementary Figure 6
+### Supplementary Figure 10
 
-```{r Figure S6, echo=FALSE}
+```{r Figure S10, echo=FALSE}
 # State dynamics
-a = ggplot(chromHMM_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.5) + scale_fill_manual(values=chromHMM_colors,name="State",limits=chromHMM_states) + xlim(1,15) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
+a = ggplot(chromHMM_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.5) + scale_fill_manual(values=chromHMM_colors,name="State",limits=chromHMM_states) + xlim(0,15) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
 
-b = ggplot(meth_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.8) + scale_fill_manual(values=meth_colors,name="State",limits=meth_states) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
+b = ggplot(meth_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.8) + scale_fill_manual(values=meth_colors,name="State",limits=meth_states,labels=meth_labels) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
 
 # chromHMM states intra
 c = ggplot(chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),],aes(x=Max_states_intra,y = ..density..,fill=class_update)) + geom_histogram(binwidth=1,color="grey") + ylab("Proportion of TEs") + xlab("Number of chromHMM states") + facet_wrap(~class_update) + scale_fill_manual(values=class_colors,guide=FALSE) + theme(legend.position="bottom")
 
 # State switching intra, chromHMM
-d = ggplot(melt(as.matrix(state_switching_intra)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_intra))$Var1))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,1),name="Proportion of\nTE instances") + coord_equal() + xlab("State 2") + ylab("State 1")
+d = ggplot(melt(as.matrix(state_switching_intra)),aes(x=Var2,y=Var1,fill=value)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.y = element_text(margin = margin(t = -10))) + scale_x_discrete(labels=chromHMM_states) + scale_y_discrete(labels=rev(chromHMM_states),limits=rev(levels(melt(as.matrix(state_switching_intra))$Var1))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,1),name="Proportion of\nTE instances") + coord_equal() + xlab("State 2") + ylab("State 1")
 
 # State switching inter, WGBS, by class
 e = ggplot(melt(ss_inter_meth_class,id.vars=c("Class","State")),aes(x=variable,y=State,fill=value/sample_counts["All","WGBS"])) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_y_discrete(limits=rev(meth_states)) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + facet_wrap(~Class,nrow=1) + coord_equal() + xlab("State 2") + ylab("State 1")
 
-grid.arrange(a,b,c,d,e,scale_switching,nrow=4,layout_matrix=rbind(c(1,2),c(3,4),c(5),c(6)),heights=c(0.35,0.3,0.3,0.05))
+grid.arrange(a,b,c,d,e,scale_switching,nrow=4,layout_matrix=rbind(c(1,2),c(3,4),c(5),c(6)),heights=c(0.35,0.3,0.3,0.05),widths=c(0.55,0.45))
 ```
 
 ### State switching analysis
@@ -2476,7 +2500,7 @@ dim(chromHMM_TE_state[which(chromHMM_TE_state$`10_TssBiv` > 0 | chromHMM_TE_stat
 
 ### Number of states per TE, overall and by class, chromHMM and WGBS
 
-```{r analysis Fig S6a}
+```{r states overall}
 table(chromHMM_TE_state$States)
 ddply(chromHMM_TE_state,.(),summarise,Mean=mean(States),SD=sd(States),Median=median(States),IQR=IQR(States))
 ddply(chromHMM_TE_state,.(class_update),summarise,Mean=mean(States),SD=sd(States),Median=median(States),IQR=IQR(States))
@@ -2581,7 +2605,7 @@ e
 e[2]/sum(e[2:length(e)])
 ```
 
-### Supplementary Figure NEW (state switching)
+### Supplementary Figure 11 (shuffled state switching)
 
 ```{bash shuffled dynamics, eval=FALSE}
 # Inter state switching for shuffled TEs
@@ -2596,13 +2620,15 @@ for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_inter_meth.py WGBS/
 source("R_scripts/shuffled_state_switching.R")
 ```
 
-```{r shuffled dynamics control, echo=FALSE}
+```{r Figure S11, echo=FALSE}
+iteration_labels = unlist(setNames(lapply(seq(1,10,1),function(x) paste("Iteration ",x,sep="")),seq(1,10,1)))
+
 a = ggplot(shuffled_chromHMM_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_counts["All","chromHMM"])) + geom_tile() +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_x_discrete(labels=chromHMM_states) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2)
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_x_discrete(labels=chromHMM_states) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
 
 b = ggplot(shuffled_meth_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_counts["All","WGBS"])) + geom_tile() +
   theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(meth_states)) + 
-  scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2)
+  scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
 
 grid.arrange(a,b)
 ```
@@ -2633,7 +2659,7 @@ shuffled_meth_dynamics
 rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average"))
 ```
 
-### Supplementary Figure 7
+### Supplementary Figure 12
 
 Across all TEs x sample with DHS information, 2% overlap a peak summit; for H3K27ac, it is 0.7%. If they were independent, the expectation would be 0.02% of TEs overlapping both peaks. If I restrict the comparison to TEs x sample with both DHS and H3K27ac information (by default also chromHMM), the numbers become 2% and 0.8% (essentially the same), but the number of TEs x sample with both is 0.2%, 10X the expectation. So even without restricting to 1_TssA, there is already an enrichment between these two states, which we knew from the Chi-squared analyses.
 
@@ -2668,38 +2694,38 @@ python combine_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
 python aggregate_marks_pandas.py mnemonics.txt
 ```
 
-```{r Figure S7, echo=FALSE}
+```{r Figure S12, echo=FALSE}
 source("R_scripts/compare_marks.R")
 
 a = ggplot(by_chromHMM,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~chromHMM) + 
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),strip.text.x = element_text(size = 5), plot.title=element_text(size=8)) + ylab("Proportion of TE x sample") + 
+  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~chromHMM,labeller=labeller(Mark=mark_labels_simple,chromHMM=label_wrap_gen())) + 
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),strip.text.x = element_text(size = 7), plot.title=element_text(size=8)) + ylab("Proportion of TE x sample") + 
   scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),guide=FALSE) + ggtitle("chromHMM state")
 
 b = ggplot(by_WGBS,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~WGBS,labeller=labeller(WGBS=setNames(c("Hypo","Inter","Hyper","Missing"),meth_states))) + 
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), plot.title=element_text(size=8)) + ylab("Proportion of TE x sample") + 
+  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~WGBS,labeller=labeller(WGBS=setNames(c("Hypo","Inter","Hyper","Missing"),meth_states),Mark=mark_labels_simple)) + 
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), plot.title=element_text(size=8),strip.text.x = element_text(size = 7)) + ylab("Proportion of TE x sample") + 
   scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),guide=FALSE) + ggtitle("WGBS state")
 
 c = ggplot(by_DNase,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~DNase) + 
+  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~DNase,labeller=labeller(Mark=mark_labels_simple)) + 
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),axis.title.y=element_blank(), plot.title=element_text(size=8)) + 
   scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),guide=FALSE) + ggtitle("DHS peak overlap")
 
 d = ggplot(by_H3K27ac,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~H3K27ac) + 
+  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~H3K27ac,labeller=labeller(Mark=mark_labels_simple)) + 
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),axis.title.y=element_blank(), plot.title=element_text(size=8)) + 
   scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),guide=FALSE) + ggtitle("H3K27ac peak overlap")
 
 e = ggplot(by_RNA,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~RNA) + 
+  geom_text(aes(label = round(Proportion,2)), position = position_stack(vjust=0.5),size=2.5) + facet_grid(Mark~RNA,labeller=labeller(Mark=mark_labels_simple)) + 
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),axis.title.y=element_blank(), plot.title=element_text(size=8)) + 
   scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),guide=FALSE) + ggtitle("RPKM > 1")
 
 legend_states = get_legend(ggplot(by_DNase,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
-  theme(legend.position = "bottom",legend.key.size = unit(3,'mm')) + scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False")))) + guides(fill=guide_legend(ncol=7,title.position = "top")))
+  theme(legend.position = "bottom",legend.key.size = unit(3,'mm')) + scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),labels=c(all_state_labels,"True","False")) + guides(fill=guide_legend(ncol=7,title.position = "top")))
 
-grid.arrange(a,b,c,d,e,legend_states, nrow=3, layout_matrix=rbind(c(1),c(2,3,4,5),c(6)),widths=c(0.34,0.22,0.22,0.22),heights=c(0.45,0.45,0.1))
+grid.arrange(a,b,c,d,e,legend_states, nrow=3, layout_matrix=rbind(c(1),c(2,3,4,5),c(6)),widths=c(0.36,0.21,0.21,0.22),heights=c(0.45,0.45,0.1))
 ```
 
 ### Compare mark analysis (get p-values and residuals)
@@ -2823,17 +2849,16 @@ source("R_scripts/RNA_coverage.R")
 # add_stars(c(1:9,11:15,20:21,16,18),round(ddply(by_sample_all,.(State),summarise,Max=max(Proportion))$Max[c(1:9,11:15,20:21,16,18)]+0.05,2),size=6)
 by_sample_KW$Stars = ifelse(by_sample_KW$Pvalue < 0.05,"*","")
 
-a = ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.8),size=1) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank()) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + scale_y_continuous(limits=c(0,0.85)) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)],labels=all_state_labels) + geom_vline(xintercept=15.5,linetype="dashed",color="grey") +
-geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + geom_text(data=by_sample_KW[which(by_sample_KW$Category == "Group"),],aes(x=State,y=0.8,label=Stars),color="red",size=7) 
+a = ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.8),size=1) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank(),strip.background = element_rect(fill=NA,color=NA)) + ylab("Proportion of state in TEs") + scale_color_manual(values=group_colors,guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + scale_y_continuous(limits=c(0,0.85)) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)],labels=all_state_labels) + geom_vline(xintercept=15.5,linetype="dashed",color="grey") + geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + geom_text(data=by_sample_KW[which(by_sample_KW$Category == "Group"),],aes(x=State,y=0.8,label=Stars),color="red",size=7) + facet_grid(rows=vars(""))
 
-b = ggplot(by_sample_class,aes(x=State,y=Proportion_state,color=Group)) + geom_point(position = position_jitterdodge(dodge.width = 0.8),size=1) + theme(panel.grid=element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + ylab("Proportion of state in class") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)]) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + facet_grid(rows=vars(class),scales="free") + geom_hline(data=by_sample_class[which(by_sample_class$State == "1_TssA" & by_sample_class$Sample == "E001"),],aes(yintercept=Bases_class/GENOME_WIDTH),linetype="dashed") + geom_hline(data=by_sample_class[which(by_sample_class$State == "Hypomethylated" & by_sample_class$Sample == "E003"),],aes(yintercept=Bases_class/ALL_CPGS),linetype="dotdash") + geom_vline(xintercept=15.5,linetype="dashed",color="grey") + geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + scale_y_continuous(limits=c(0,0.6))
+b = ggplot(by_sample_class,aes(x=State,y=Proportion_state,color=Group)) + geom_point(position = position_jitterdodge(dodge.width = 0.8),size=1) + theme(panel.grid=element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + ylab("Proportion of state in class") + scale_color_manual(values=group_colors,guide=FALSE) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)],labels=all_state_labels) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + facet_grid(rows=vars(class),scales="free") + geom_hline(data=by_sample_class[which(by_sample_class$State == "1_TssA" & by_sample_class$Sample == "E001"),],aes(yintercept=Bases_class/GENOME_WIDTH),linetype="dashed") + geom_hline(data=by_sample_class[which(by_sample_class$State == "Hypomethylated" & by_sample_class$Sample == "E003"),],aes(yintercept=Bases_class/ALL_CPGS),linetype="dotdash") + geom_vline(xintercept=15.5,linetype="dashed",color="grey") + geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + scale_y_continuous(limits=c(0,0.6))
 
 # Average expression of TEs vs. genome
-c = ggplot(RNA_proportion,aes(x=1,y=Ratio,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.5),size=1) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank()) + scale_color_manual(values=group_colors,guide=FALSE) + ylab("TE:Genome\nexpression") + scale_y_continuous(limits=c(0,1)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black") 
+c = ggplot(RNA_proportion,aes(x=1,y=Ratio,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.5),size=1) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank(),strip.background = element_rect(fill=NA,color=NA)) + scale_color_manual(values=group_colors,guide=FALSE) + ylab("TE:Genome\nexpression") + scale_y_continuous(limits=c(0,1)) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black") + facet_grid(~"")
 
 d = ggplot(class_RNA,aes(x=1,y=Ratio,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.5),size=1) + theme(panel.grid=element_blank(),axis.title.x=element_blank(),axis.text.x = element_blank(),axis.ticks.x = element_blank()) + scale_color_manual(values=group_colors,guide=FALSE) + ylab("Class:Genome\nexpression") + ylim(0,1) + facet_wrap(~class_update,nrow=1) + stat_summary(fun.y = median, fun.ymin = median, fun.ymax = median, geom= "crossbar",color="black")
 
-legend = get_legend(ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3),size=2) + scale_color_manual(values=group_colors) + theme(legend.margin=margin(0,0,0,0)))
+legend = get_legend(ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) + geom_point(position = position_jitter(width = 0.3),size=2) + scale_color_manual(values=group_colors) + theme(legend.margin=margin(0,0,0,0),legend.key.size = unit(5,'mm')))
 
 grid.arrange(a,b,c,d,legend,nrow=3,ncol=3,layout_matrix=rbind(c(1,1,5),c(2,2,5),c(3,4,5)),heights=c(0.2,0.55,0.15),widths=c(0.2,0.65,0.15))
 ```
@@ -2902,20 +2927,20 @@ ddply(class_RNA,.(class_update),summarise,Median=median(Ratio))
 dcast(ddply(class_RNA,.(Group,class_update),summarise,Median=median(Ratio)),class_update~Group,value.var="Median")
 ```
 
-### Supplementary Figure 8
+### Supplementary Figure 13
 
-```{r Figure S8, echo=FALSE}
+```{r Figure S13, echo=FALSE}
 # Other sample classifications
 by_sample_all_long = melt(by_sample_all[,c("State","Sample","Proportion","Contribution",sample_categories[2:6])],id.vars=c("State","Sample","Proportion","Contribution"))
 colnames(by_sample_all_long)[5:6] = c("Category","Group")
 
-a = ggplot(by_sample_all_long,aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6),size=1) + theme(panel.grid=element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + ylab("Proportion of state in TEs") + scale_color_manual(values=c(anatomy_colors,type_colors,age_colors,cancer_colors,germline_colors),guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + scale_y_continuous(limits=c(0,0.85)) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)],labels=all_state_labels) + geom_vline(xintercept=15.5,linetype="dashed",color="grey") + geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + facet_wrap(~Category,nrow=5) + geom_text(data=by_sample_KW[which(by_sample_KW$Category != "Group"),],aes(x=State,y=0.8,label=Stars),color="red",size=7)
+a = ggplot(by_sample_all_long,aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6),size=1) + theme(panel.grid=element_blank(),axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + ylab("Proportion of state in TEs") + scale_color_manual(values=c(anatomy_colors,type_colors,age_colors,cancer_colors,germline_colors),guide=FALSE) + geom_errorbar(aes(ymax=Contribution,ymin=Contribution),position=position_dodge(),color="black") + geom_hline(yintercept = MERGED_TE_WIDTH/GENOME_WIDTH,linetype="dashed") + geom_hline(yintercept = TE_CPGS/ALL_CPGS,linetype="dotdash") + scale_y_continuous(limits=c(0,0.85)) + scale_x_discrete(limits=states[c(1:15,20:21,16:19)],labels=all_state_labels) + geom_vline(xintercept=15.5,linetype="dashed",color="grey") + geom_vline(xintercept=16.5,linetype="dashed",color="grey") + geom_vline(xintercept=17.5,linetype="dashed",color="grey") + facet_wrap(~Category,nrow=5,labeller=labeller(Category=category_labels)) + geom_text(data=by_sample_KW[which(by_sample_KW$Category != "Group"),],aes(x=State,y=0.8,label=Stars),color="red",size=7)
 
 legend_anatomy = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Anatomy"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(anatomy_colors),name="Anatomy")) 
 
 legend_type = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Type"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(type_colors),name="Type") + guides(color = guide_legend(nrow = 2)))
 
-legend_age = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Age"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(age_colors),name="Age") + guides(color = guide_legend(nrow = 2)))
+legend_age = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Age"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(age_colors),name="Age",labels=age_labels) + guides(color = guide_legend(nrow = 2)))
 
 legend_cancer = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Cancer"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(cancer_colors),name="Cancer"))
 
@@ -3036,10 +3061,10 @@ source("R_scripts/shuffled_subfamily_enrichment.R")
 
 ```{r Figure 5, echo=FALSE}
 # Potential
-a = ggplot(subfam_states[which(subfam_states$variable == "States"),],aes(x=value)) + geom_histogram(binwidth=1,fill="black") + ylab("Subfamilies") + xlab("States") + facet_wrap(~Metric,scales="free_x",nrow=1) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0)
+a = ggplot(subfam_states[which(subfam_states$variable == "States"),],aes(x=value)) + geom_histogram(binwidth=1,fill="black") + ylab("Subfamilies") + xlab("States") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0)
 
 # Clustering
-b = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown")) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep="")) + theme(aspect.ratio = 1,legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
+b = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep="")) + theme(aspect.ratio = 1,legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 
 family_shapes=setNames(c(17,rep(16,20),18,rep(16,23)),sort(as.vector(unique(rmsk_TE_subfamily$family))))
 subfamily_chromHMM_pca$eigenvectors$family_shape = ifelse(subfamily_chromHMM_pca$eigenvectors$family == "L1","L1",ifelse(subfamily_chromHMM_pca$eigenvectors$family == "Alu","Alu","Other"))
@@ -3055,22 +3080,58 @@ homer_top5 = head(homer[order(homer$q.value..Benjamini.),],n=5)
 homer_top5 = melt(homer_top5[,c(1,5,7,9)],id.vars=c("Motif.Name","q.value..Benjamini."))
 homer_top5$PC = as.numeric(gsub("%","",homer_top5$value))
 
-e = ggplot(homer_top5,aes(x=reorder(Motif.Name,`q.value..Benjamini.`,median),y=PC,fill=variable)) + geom_bar(stat="identity",position="dodge") + ylab("% TEs with motif") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_discrete(guide=FALSE) + scale_x_discrete(labels=c("Nkx2.1","Nkx2.2","Tcf3","Fli1","HNF4a")) + xlab("Transcription factor")
+e = ggplot(homer_top5,aes(x=reorder(Motif.Name,`q.value..Benjamini.`,median),y=PC,fill=variable)) + geom_bar(stat="identity",position="dodge") + ylab("% TEs with motif") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position=c(0.1,0.9),legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'),legend.title = element_blank()) + scale_x_discrete(labels=c("Nkx2.1","Nkx2.2","Tcf3","Fli1","HNF4a")) + xlab("Transcription factor") + scale_fill_discrete(labels=c("Active TEs","Inactive TEs"))
 
 legend_group = get_legend(ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group)) + geom_point() + scale_color_manual(values=group_colors) + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + guides(color=guide_legend(ncol=8)))
 
-grid.arrange(a,b,c,d,e,legend_group,legend_class,nrow=6,ncol=2,layout_matrix=rbind(c(1),c(6),c(2,4),c(3,4),c(5,4),c(5,7)),heights=c(0.2,0.05,0.25,0.25,0.2,0.05),widths=c(0.5,0.5))
+grid.arrange(a,b,c,d,e,legend_group,legend_class,nrow=6,ncol=2,layout_matrix=rbind(c(1),c(6),c(2,4),c(3,4),c(5,4),c(5,7)),heights=c(0.2,0.05,0.25,0.25,0.2,0.05),widths=c(0.4,0.6))
 ```
 
-### Supplementary Figure 9
+### Number of enrichments by state and number of enriched subfamilies by state, overall and by class
 
-```{r Figure S9, echo=FALSE}
+```{r enrichment table}
+enrichment_table = merge(as.data.frame(table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),]$State)),subfamily_state_sample_counts_combine,by.x="Var1",by.y="State")
+colnames(enrichment_table)[1:3] = c("State","Enrichments","Subfamilies")
+enrichment_table = enrichment_table[match(states[1:21],enrichment_table$State),]
+
+sum(enrichment_table$Enrichments)
+enrichment_table$Enrichments_pc = enrichment_table$Enrichments/sum(enrichment_table$Enrichments)
+enrichment_table
+
+# Number of subfamilies enriched at least once, overall and active states
+length(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),]$subfamily))
+length(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State %in% c(chromHMM_states[1:7],meth_states[1:2],"DNase","H3K27ac")),]$subfamily))
+
+# Enriched classes
+test = dcast(aggregate(data=subfamily_state_sample_counts,V1~State+class_update,function(x) sum(x > 0)),class_update~State,value.var = "V1")
+table(rmsk_TE_subfamily$class_update)/968
+ddply(enrichment_table,.(State),function(x) as.numeric(x[4:9])/sum(as.numeric(x[4:9])))
+apply(test[,2:22],2,function(x) log2((x/sum(x))/(table(rmsk_TE_subfamily$class_update)/968)))
+
+# Enriched families
+test = dcast(aggregate(data=subfamily_state_sample_counts,V1~State+family,function(x) sum(x > 0)),family~State,value.var = "V1")
+table(rmsk_TE_subfamily$family)/968
+test_log = as.data.frame(apply(test[,2:22],2,function(x) log2((x/sum(x))/(table(rmsk_TE_subfamily$family)/968))))
+test_log$Subfamilies = as.numeric(table(rmsk_TE_subfamily$family)[rownames(test_log)])
+lapply(colnames(test_log)[1:21],function(x) test_log[which(test_log[,x] > 0 & test_log$Subfamilies > 0),c(x,"Subfamilies")])
+```
+
+### Supplementary Figure 14
+
+```{r Figure S14, echo=FALSE}
 test = subfamily_state_potential
 test$Iteration = rep("Real",dim(subfamily_state_potential)[1])
 test = rbind(test,subfamily_state_potential_shuffle)
 test$Iteration = factor(test$Iteration,levels=c(seq(1,10,1),"Real"))
   
-ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State) + ylab("Subfamily density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom") + scale_x_continuous(breaks=pretty_breaks(seq(0,1,0.5)))
+a = ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State,labeller=labeller(State=all_state_labels)) + ylab("Density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom") + guides(fill=guide_legend(nrow=1))
+
+# Plot number of enrichments per state for true TEs vs. shuffled TEs
+b = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+
+c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of enriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+
+grid.arrange(a,b,c,layout_matrix=rbind(c(1),c(2,3)),nrow=2,heights=c(0.6,0.4))
 ```
 
 ### Subfamily potential
@@ -3112,17 +3173,21 @@ ddply(subfamily_potential_shuffle_ever,.(Metric,States),summarise,Mean=mean(Subf
 ddply(subfamily_state_potential_shuffle,.(Iteration,State),summarise,Subfamilies=sum(Sample.Proportion > 0.75))
 ```
 
-### Supplementary Figure 10
+```{r shuffled subfamily enrichment}
+ddply(shuffled_enrichment_counts_combine,.(State),summarise,Enrichments=median(Enrichments),Subfamilies=median(Subfamilies))
+```
 
-```{r Figure S10, echo=FALSE}
+### Supplementary Figure 15
+
+```{r Figure S15, echo=FALSE}
 ## Samples
-a = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_WGBS_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+a = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_WGBS_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels,guide=FALSE) + theme(aspect.ratio = 1)
 
-b = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC3,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC3 (",round(sample_WGBS_pca$eigenvalues[3],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+b = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC3,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC3 (",round(sample_WGBS_pca$eigenvalues[3],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels,guide=FALSE) + theme(aspect.ratio = 1)
 
-c = ggplot(sample_DNase_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_DNase_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_DNase_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+c = ggplot(sample_DNase_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_DNase_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_DNase_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels,guide=FALSE) + theme(aspect.ratio = 1)
 
-d = ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_H3K27ac_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_H3K27ac_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown"),guide=FALSE) + theme(aspect.ratio = 1)
+d = ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_H3K27ac_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_H3K27ac_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels,guide=FALSE) + theme(aspect.ratio = 1)
 
 ## chromHMM other groupings
 e = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Anatomy)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep=""))+ theme(aspect.ratio = 1)
@@ -3143,7 +3208,7 @@ k = ggplot(subfamily_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update
 # Legends
 legend_class_dot = get_legend(ggplot(subfamily_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family)) + geom_point() + scale_color_manual(values=class_colors,name="Class") + scale_shape_manual(values=family_shapes,guide=FALSE) + theme(aspect.ratio = 1,legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
-legend_shape_age = get_legend(ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=c("Cell line","Fetal","Non-fetal","Unknown")) + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
+legend_shape_age = get_legend(ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels) + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
 legend_family = get_legend(ggplot(subfamily_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family_shape)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,name="Family") + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
@@ -3187,66 +3252,6 @@ test
 sum(test)
 ```
 
-### Number of enrichments by state and number of enriched subfamilies by state, overall and by class
-
-```{r analysis Fig 5}
-enrichment_table = merge(as.data.frame(table(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),]$State)),subfamily_state_sample_counts_combine,by.x="Var1",by.y="State")
-colnames(enrichment_table)[1:3] = c("State","Enrichments","Subfamilies")
-enrichment_table = enrichment_table[match(states[1:21],enrichment_table$State),]
-
-sum(enrichment_table$Enrichments)
-enrichment_table$Enrichments_pc = enrichment_table$Enrichments/sum(enrichment_table$Enrichments)
-enrichment_table
-
-# Number of subfamilies enriched at least once, overall and active states
-length(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),]$subfamily))
-length(unique(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_state_sample_filter$State %in% c(chromHMM_states[1:7],meth_states[1:2],"DNase","H3K27ac")),]$subfamily))
-
-# Enriched classes
-test = dcast(aggregate(data=subfamily_state_sample_counts,V1~State+class_update,function(x) sum(x > 0)),class_update~State,value.var = "V1")
-table(rmsk_TE_subfamily$class_update)/968
-ddply(enrichment_table,.(State),function(x) as.numeric(x[4:9])/sum(as.numeric(x[4:9])))
-apply(test[,2:22],2,function(x) log2((x/sum(x))/(table(rmsk_TE_subfamily$class_update)/968)))
-
-# Enriched families
-test = dcast(aggregate(data=subfamily_state_sample_counts,V1~State+family,function(x) sum(x > 0)),family~State,value.var = "V1")
-table(rmsk_TE_subfamily$family)/968
-test_log = as.data.frame(apply(test[,2:22],2,function(x) log2((x/sum(x))/(table(rmsk_TE_subfamily$family)/968))))
-test_log$Subfamilies = as.numeric(table(rmsk_TE_subfamily$family)[rownames(test_log)])
-lapply(colnames(test_log)[1:21],function(x) test_log[which(test_log[,x] > 0 & test_log$Subfamilies > 0),c(x,"Subfamilies")])
-```
-
-### Shuffled subfamily enrichment
-
-```{r shuffled subfamily enrichment}
-# Plot number of enrichments per state for true TEs vs. shuffled TEs
-a = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + 
-  geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments in state") +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
-
-b = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() + 
-  geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of subfamilies enriched in state") +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE)
-
-grid.arrange(a,b)
-
-ddply(shuffled_enrichment_counts_combine,.(State),summarise,Enrichments=median(Enrichments),Subfamilies=median(Subfamilies))
-```
-
-### Supplementary Figure 11
-
-```{r Figure S11, echo=FALSE}
-a = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + scale_y_continuous(limits=c(0,1))
-
-b = ggplot(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + scale_y_continuous(limits=c(0,6))
-
-c = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=Percent,fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Proportion of members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + scale_y_continuous(limits=c(0,1))
-
-d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],aes(x=State,y=log10(Members),fill=State)) + geom_boxplot() + theme(panel.grid=element_blank(),axis.text.x=element_text(angle=45,hjust=1)) + ylab("Log10 number of members in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(limits=states[1:21]) + scale_y_continuous(limits=c(0,6))
-
-grid.arrange(a,c,b,d,nrow=2,layout_matrix=cbind(c(1,2),c(3,4)))
-```
-
 ### Average members in a state for subfamilies in a state
 
 ```{r bp members percent in state}
@@ -3266,7 +3271,7 @@ ddply(subfamily_state_sample_filter[which(subfamily_state_sample_filter$Enrichme
 
 ### WGBS subfamily state stats
 
-```{r analysis Fig S13c}
+```{r WGBS subfamily stats}
 TE_meth_subfamily_percent = subfamily_CpG_meth[,c("subfamily","family","class_update","State","Sample","Count","Percent")]
 
 # Average, max, and range of proportion of subfamily in methylation state plus all members in a state in a sample
@@ -3280,17 +3285,17 @@ merge(TE_meth_subfamily_stats[which(TE_meth_subfamily_stats$All_members > 0),],r
 ddply(TE_meth_subfamily_stats,.(State),summarise,Median=mean(Median),Range=mean(Range),Max=mean(Max))
 ```
 
-### Supplementary Figure 12
+### Supplementary Figure 16
 
 GO BP results downloaded in tsv format from GREAT. 
 
-```{r Figure S12, echo=FALSE}
+```{r Figure S16, echo=FALSE}
 source("R_scripts/TE_correlation_subfamily.R") # Requires subfamily_enrichment.R
 source("R_scripts/subfamily_correlate.R") # Requires TE_correlation_subfamily.R
 
-a = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% measure_metrics_subfam[c(1,3,5,8)] & correlate_subfamily$class_update == "LTR"),],aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7),axis.title.x = element_text(margin = margin(r = -10))) + scale_x_discrete(limits=rev(states[c(1:14,16:17,19:21)])) + ylab("Subfamily\ncharacteristic") + xlab("Samples enriched in state") +  scale_y_discrete(limits=rev(measure_metrics_subfam[c(1,3,5,8)]),labels=measure_labels) 
+a = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% measure_metrics_subfam[c(1,3,5,8)] & correlate_subfamily$class_update == "LTR"),],aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7),axis.title.x = element_text(margin = margin(r = -10)),axis.title.y=element_text(size=9)) + scale_x_discrete(limits=states[c(1:14,16:17,19:21)],labels=all_state_labels) + ylab("Subfamily\ncharacteristic") + xlab("Samples enriched in state") +  scale_y_discrete(limits=rev(measure_metrics_subfam[c(1,3,5,8)]),labels=measure_labels) 
   
-b = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(features[1:3],"coding_exon",features[5:8]) & correlate_subfamily$class_update == "LTR"),],aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",name="Spearman's\nrho") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7),axis.title.x = element_text(margin = margin(r = -10))) + scale_x_discrete(limits=rev(states[c(1:14,16:17,19:21)])) + ylab("% members\noverlapping feature") + xlab("Samples enriched in state") +  scale_y_discrete(limits=rev(c(features[1:3],"coding_exon",features[5:8])),labels=genic_labels) 
+b = ggplot(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(features[1:3],"coding_exon",features[5:8]) & correlate_subfamily$class_update == "LTR"),],aes(x=State,y=Metric,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",name="Spearman's\nrho") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.text=element_text(size=7),axis.title.x = element_text(margin = margin(r = -10)),axis.title.y=element_text(size=9)) + scale_x_discrete(limits=states[c(1:14,16:17,19:21)],labels=all_state_labels) + ylab("% members\noverlapping feature") + xlab("Samples enriched in state") +  scale_y_discrete(limits=rev(c(features[1:3],"coding_exon",features[5:8])),labels=genic_labels) 
 
 # GREAT GO BP
 great_names = gsub(".txt","",list.files("enrichment/great/"))
@@ -3300,13 +3305,13 @@ great = ldply(great)
 colnames(great) = c("set","Term Name","Binom Rank","Binom Raw P-Value","Binom FDR Q-Val","Binom Fold Enrichment","Binom Observed Region Hits","Binom Region Set Coverage",
                     "Hyper Rank","Hyper FDR Q-Val","Hyper Fold Enrichment","Hyper Observed Gene Hits","Hyper Total Genes","Hyper Gene Set Coverage")
 
-c = ggplot(great[which(great$set == "AmnSINE1_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE1, 7_Enh")
+c = ggplot(great[which(great$set == "AmnSINE1_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE1, 7_Enh")
 
-d = ggplot(great[which(great$set == "AmnSINE2_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE2, DHS")
+d = ggplot(great[which(great$set == "AmnSINE2_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE2, DHS")
 
-e = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER121, 7_Enh")
+e = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER121, 7_Enh")
 
-f = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
+f = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
 
 grid.arrange(a,b,c,d,e,f,nrow=5,layout_matrix=rbind(c(1,2),c(3),c(4),c(5),c(6)),heights=c(0.25,0.2,0.2,0.2,0.15),widths=c(0.45,0.55))
 ```
@@ -3315,7 +3320,7 @@ grid.arrange(a,b,c,d,e,f,nrow=5,layout_matrix=rbind(c(1,2),c(3),c(4),c(5),c(6)),
 
 Not MHC corrected
 
-```{r analysis Fig S15a}
+```{r subfamily enrichment correlation}
 # Metric vs. metric
 ## Metrics
 correlate_subfam_feature[which(abs(correlate_subfam_feature$estimate.rho) > 0.3 & correlate_subfam_feature$State %in% measure_metrics_subfam & correlate_subfam_feature$Metric %in% measure_metrics_subfam & correlate_subfam_feature$class_update == "All" & correlate_subfam_feature$p.value < 0.05),]
@@ -3597,31 +3602,31 @@ candidates_features_summary = ddply(candidates_features,.(subfamily,class_update
 write.table(candidates_features_summary,file="enrichment/candidates_features_summary.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
-### Supplementary Figure 13
+### Supplementary Figure 17
 
 Samples are ordered by group. Red lines split ESC/iPSC/ES-derived; Blood & T-cell/HSC & B-cell/Thymus; Brain/Neurosph; Digestive; Epithelial; Adipose/Mesench/Myosat/Muscle/Sm. Muscle/Heart/Other; IMR90/ENCODE2012
 
-```{r Figure S13, echo=FALSE}
+```{r Figure S17, echo=FALSE}
 # Subfamilies with at least one instance of >1% of state in an active state
 pc_subfamilies = as.vector(unique(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC & subfamily_state_sample_combined$State %in% c(chromHMM_states[1:7],meth_states[1:2],"DNase","H3K27ac")),]$subfamily))
 
 # Plot
-a = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_text(angle=90,vjust=0.5,size=5),axis.ticks.x=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,nrow=2) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=22.5,color="black") + geom_vline(xintercept=47.5,color="black") + geom_vline(xintercept=59.5,color="black") + geom_vline(xintercept=71.5,color="black") + geom_vline(xintercept=79.5,color="black") +  geom_vline(xintercept=111.5,color="black")
+a = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,nrow=2) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=22.5,color="black") + geom_vline(xintercept=47.5,color="black") + geom_vline(xintercept=59.5,color="black") + geom_vline(xintercept=71.5,color="black") + geom_vline(xintercept=79.5,color="black") +  geom_vline(xintercept=111.5,color="black")
 
-b = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "DNase"),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_text(angle=90,vjust=0.5,size=5),axis.ticks.x=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=8.5,color="black") + geom_vline(xintercept=16.5,color="black") + geom_vline(xintercept=18.5,color="black") + geom_vline(xintercept=23.5,color="black") + geom_vline(xintercept=28.5,color="black") +  geom_vline(xintercept=38.5,color="black")
+b = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "DNase"),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.title.y = element_text(margin = margin(r = -10))) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3,labeller=labeller(State=all_state_labels)) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=8.5,color="black") + geom_vline(xintercept=16.5,color="black") + geom_vline(xintercept=18.5,color="black") + geom_vline(xintercept=23.5,color="black") + geom_vline(xintercept=28.5,color="black") +  geom_vline(xintercept=38.5,color="black")
 
-c = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "H3K27ac"),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_text(angle=90,vjust=0.5,size=5),axis.ticks.x=element_blank(),axis.text.y = element_blank(),axis.ticks.y=element_blank(),axis.title.y=element_blank()) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=16.5,color="black") + geom_vline(xintercept=35.5,color="black") + geom_vline(xintercept=42.5,color="black") + geom_vline(xintercept=52.5,color="black") + geom_vline(xintercept=57.5,color="black") +  geom_vline(xintercept=81.5,color="black")
+c = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "H3K27ac"),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text.y = element_blank(),axis.ticks.y=element_blank(),axis.title.y=element_blank()) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=16.5,color="black") + geom_vline(xintercept=35.5,color="black") + geom_vline(xintercept=42.5,color="black") + geom_vline(xintercept=52.5,color="black") + geom_vline(xintercept=57.5,color="black") +  geom_vline(xintercept=81.5,color="black")
 
-d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% meth_states[1:2]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_text(angle=90,vjust=0.5,size=5),axis.ticks.x=element_blank(),axis.text.y = element_blank(),axis.ticks.y=element_blank(),axis.title.y=element_blank()) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=13.5,color="black") + geom_vline(xintercept=15.5,color="black") + geom_vline(xintercept=19.5,color="black") + geom_vline(xintercept=25.5,color="black") + geom_vline(xintercept=35.5,color="black") + geom_vline(xintercept=36.5,color="black")
+d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% meth_states[1:2]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + theme(axis.text.x = element_blank(),axis.ticks.x=element_blank(),axis.text.y = element_blank(),axis.ticks.y=element_blank(),axis.title.y=element_blank()) + scale_fill_gradient(low="white",high="darkblue",limits=c(0,0.12),guide=FALSE) +  facet_wrap(~State,ncol=3) + xlab("Sample") + ylab("Subfamily") + geom_vline(xintercept=13.5,color="black") + geom_vline(xintercept=15.5,color="black") + geom_vline(xintercept=19.5,color="black") + geom_vline(xintercept=25.5,color="black") + geom_vline(xintercept=35.5,color="black") + geom_vline(xintercept=36.5,color="black")
 
-scale_length_jk = get_legend(ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + scale_fill_gradient(name="Proportion of\nin subfamily",low="white",high="darkblue",limits=c(0,0.12)) + theme(legend.position = "bottom"))
+scale_length_jk = get_legend(ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + scale_fill_gradient(name="Proportion of state\nin subfamily",low="white",high="darkblue",limits=c(0,0.12)) + theme(legend.position = "bottom"))
 
-grid.arrange(a,b,c,d,scale_length_jk,layout_matrix=rbind(c(1,1,1),c(2,3,4),c(5)),heights=c(0.65,0.3,0.05),widths=c(0.35,0.35,0.3))
+grid.arrange(a,b,c,d,scale_length_jk,layout_matrix=rbind(c(1,1,1),c(2,3,4),c(5)),heights=c(0.6,0.35,0.05),widths=c(0.33,0.37,0.3))
 ```
 
 ### Subfamily stats, >1%
 
-```{r analysis Fig S13a}
+```{r pc table}
 # Max % in subfamily by state
 ddply(subfamily_state_sample_combined,~State,function(x) x[which.max(x$Length_percent_jk),])
 
@@ -3746,7 +3751,7 @@ ddply(rmsk_TE_measure[which(rmsk_TE_measure$class_update == "SINE"),],.(cpgIslan
 ddply(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),],.(cpgIsland_binary),summarise,Age=median(JC_distance))
 ```
 
-### Supplementary Figure 14
+### Supplementary Figure 18
 
 ```{bash chromosome epigenetics, eval=FALSE}
 # By chromosome
@@ -3763,20 +3768,13 @@ while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample,
 while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac/chr_H3K27ac.txt ; done < sample_lists/H3K27ac_samples.txt
 ```
 
-```{r Figure S14 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
+```{r Figure S18, echo=FALSE}
 source("R_scripts/chromosome_potential.R")
-source("R_scripts/feature_overlap_state.R") #Requires potential.R
-```
 
-Feature-state patterns roughly the same across class (not shown). Stronger for protein-coding than non-coding (not shown).
-
-Legends: a) Spearman's rho, f) Average % incrase
-
-```{r Figure S14, echo=FALSE}
 # Epigenetic state by chromosome
 a = ggplot(chrom_state_total,aes(x=chromosome,y=Bases,fill=State)) + geom_bar(stat="identity",position="fill") + scale_fill_manual(values = chromHMM_colors) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-10),legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + ylab("Proportion in state") + xlab("Chromosome") + guides(fill = guide_legend(nrow=4,title.position = "top"))
 
-b = ggplot(chr_state_WGBS_total,aes(x=chromosome,y=CpGs,fill=State)) + geom_bar(position="fill",stat="identity") + scale_fill_manual(values=meth_colors) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-10),legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + ylab("Proportion in state") + xlab("Chromosome") + guides(fill = guide_legend(nrow=4,title.position = "top"))
+b = ggplot(chr_state_WGBS_total,aes(x=chromosome,y=CpGs,fill=State)) + geom_bar(position="fill",stat="identity") + scale_fill_manual(values=meth_colors,labels=meth_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-10),legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + ylab("Proportion in state") + xlab("Chromosome") + guides(fill = guide_legend(nrow=4,title.position = "top"))
 
 c = ggplot(chr_state_DNase_total,aes(x=size/1000000,y=Peaks/1000000,label=chromosome)) + geom_text(size=3) + geom_smooth(method='lm',se=FALSE,color="black",linetype="dashed") + xlab("Chromosome size (Mbp)") + ylab("Peaks (millions)")  + scale_y_continuous(limits=c(0,1.5))
 
@@ -3785,35 +3783,32 @@ d = ggplot(chr_state_H3K27ac_total,aes(x=size/1000000,y=Peaks/1000000,label=chro
 # Chromosome vs. states
 e = ggplot(chromosome_potential,aes(x=State,y=Zscore,label=chromosome)) + geom_point() + geom_text(angle=45,hjust=0,vjust=0,size=3) + scale_x_discrete(limits=rev(states),labels=all_state_labels) + scale_y_continuous(limits=c(-5,5)) + theme(panel.grid.major.y=element_line(color="grey"),axis.title.y = element_text(margin = margin(r = -10))) + ylab("Z-score, % of samples in state") + geom_hline(yintercept = 1,color="grey") + geom_hline(yintercept = 2,color="grey") + geom_hline(yintercept = -1,color="grey") + geom_hline(yintercept = -2,color="grey") + geom_hline(yintercept = -3,color="grey") + geom_hline(yintercept = 3,color="grey") + geom_hline(yintercept = -4,color="grey") + geom_hline(yintercept = 4,color="grey") + coord_flip() + geom_hline(yintercept = -5,color="grey") + geom_hline(yintercept = 5,color="grey")
 
-# Feature vs. state
-f = ggplot(na.omit(feature_state_mean[which(feature_state_mean$Coding == "All"),]),aes(x=Feature,y=State,fill=Enrichment*100)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background = element_rect(fill="lightgrey"),axis.title.y = element_text(margin = margin(r = -10)),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_gradient2(name="% increase\nin sample\nproportion",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-100,4000)) + scale_x_discrete(labels=genic_labels) + scale_y_discrete(limits=rev(states),labels=all_state_labels)
-
-grid.arrange(a,b,c,d,e,f,layout_matrix=rbind(c(1,2),c(3,4),c(5,6)),heights=c(0.35,0.25,0.4))
+grid.arrange(a,b,c,d,e,layout_matrix=rbind(c(1,2),c(3,4),c(5)),heights=c(0.35,0.25,0.4))
 ```
 
-### Supplementary Figure NEW (intergenic potential)
+### Supplementary Figure 19 (intergenic potential)
+
+```{r Figure S19 scripts, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
+source("R_scripts/feature_overlap_state.R") #Requires potential.R
+source("R_scripts/intergenic_potential.R")
+```
 
 For each state and TE class, the proportion of TEs that are genic (including promoters) at each frequency of expression. The dashed lines give the proportion of all members of the class that are intergenic. I split the analysis between all genes and just protein-coding genes, because TEs have a huge contribution to lncRNA.  
 
 For 4_Tx, the proportion of TEs that are intergenic is higher than baseline for those that are never in the state, but it drops off precipitously as the number of samples in the state increases, declining much more slowly thereafter. This is true for all classes, although LTR always has a higher proportion of intergenic TEs for this state. Conclusion: TEs are much more likely to be transcribed when they overlap a gene, but this is true across all classes, not just SINEs. 
 
-```{r intergenic potential, echo=FALSE}
-source("R_scripts/intergenic_potential.R")
+Feature-state patterns roughly the same across class. Stronger for protein-coding than non-coding (not shown).
 
-a = ggplot(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),],
-       aes(x=Bin,y=Ratio,color=class_update)) + geom_line() + ylim(0,1) + 
-  scale_color_manual(values=class_colors,name="Class") + xlab("Proportion of samples in state") + ylab("Genic proportion") +
-  geom_hline(data=rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),],
-             aes(yintercept=Proportion,color=class_update),linetype="dotted") + 
-  facet_grid(State~Genes,labeller = labeller(Genes=setNames(c("All genes","Protein-coding genes"),c("All","PC"))))
+```{r Figure S19, echo=FALSE}
+a = ggplot(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),],aes(x=Bin,y=Ratio,color=class_update)) + geom_line() + ylim(0,1) + scale_color_manual(values=class_colors,name="Class") + xlab("Proportion of samples in state") + ylab("Proportion of TEs overlapping genes") +  geom_hline(data=rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),],aes(yintercept=Proportion,color=class_update),linetype="dotted") + facet_grid(State~Genes,labeller = labeller(Genes=setNames(c("All genes","Protein-coding genes"),c("All","PC")),State=all_state_labels))
 
 # Feature overlap vs. samples in state, by class
-b = ggplot(na.omit(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]),aes(x=State,y=Feature,fill=Enrichment*100)) + geom_tile() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background = element_rect(fill="lightgrey")) + scale_fill_gradient2(name="% increase",low="darkblue",high="darkred",mid="white",midpoint=0) + scale_y_discrete(limits=rev(levels(feature_state_mean_class$Feature)),labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class)
+b = ggplot(na.omit(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]),aes(x=State,y=forcats::fct_rev(Feature),fill=Enrichment*100)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background = element_rect(fill="lightgrey"),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_gradient2(name="% increase\nin sample\nproportion",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-100,5000),na.value="darkblue") + scale_y_discrete(labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class) + ylab("Feature")
 
 grid.arrange(a,b,nrow=2)
 ```
 
-### Supplementary Figure NEW (CpG density repression)
+### CpG density vs class repression mechanism
 
 Found the average number of samples a TE is in 9_Het or hypermethylated by class. For 9_Het, it is 0 for SINE and 0.79% for LTR (mean 1.8% and 5.3%). For hypermethylation, it is 97.3% for SINE and 91.9% for LTR (mean 89.5% and 80.2%).
 
@@ -3826,14 +3821,6 @@ With hypermethylation, including CpG density also significantly improves the mod
 ```{r repression modelling}
 source("R_scripts/CpG_density_class_represssion.R")
 
-ggplot(measure_het[which(measure_het$class_update %in% c("LTR","SINE")),],
-       aes(x=CpGs_per_length*1000,y=`9_Het`,color=class_update)) + geom_point() 
-
-ggplot(measure_hyper[which(measure_hyper$class_update %in% c("LTR","SINE")),],
-       aes(x=CpGs_per_length*1000,y=Hypermethylated,color=class_update)) + geom_point() 
-```
-
-```{r repression modelling analysis}
 # CpG density between SINE and LTR elements
 ddply(rmsk_TE,.(class_update),summarise,CpG_dens=median(CpGs_per_length)*1000,dens=IQR(CpGs_per_length)*1000)
 
@@ -3848,9 +3835,9 @@ anova(model_hyper1,model_hyper2,test="Chisq")
 anova(model_hyper2,model_hyper3,test="Chisq")
 ```
 
-### Supplementary Figure 15
+### Supplementary Figure 20
 
-```{r Figure S15, echo=FALSE}
+```{r Figure S20, echo=FALSE,fig.height=6}
 #source("R_scripts/state_metric_correlation.R")
 
 a = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background=element_rect(fill="lightgrey"),aspect.ratio = 1) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + xlab("TE characteristic") + ylab("TE characteristic")
@@ -3869,7 +3856,7 @@ grid.arrange(a,b,c,d,scale_legend,nrow=3,heights=c(0.45,0.45,0.1),widths=c(0.45,
 
 ### TE feature stats
 
-```{r analysis Fig S15, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts","Figure S15")}
+```{r TE feature stats, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
 # States
 apply(rmsk_TE_measure[,cohorts],2,function(y) colMeans(rmsk_TE_measure[which(y > 0),states],na.rm=TRUE)) - apply(rmsk_TE_measure[,cohorts],2,function(y) colMeans(rmsk_TE_measure[which(y == 0),states],na.rm=TRUE))
 
@@ -4074,46 +4061,48 @@ A) Axes are individual TE methylation level - all 13 samples pairs. Excludes TEs
 B) Y-axis is % of human TEs in each state in that state in mouse; colors as before - all 13 sample pairs
 C) Axes are subfamily % hypomethylated (of those with CpGs)
 
-```{r Figure 7, echo=FALSE}
-a = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_methylation,y=Mouse_methylation)) + stat_bin2d(bins=50) + scale_fill_gradient(low="white",high="darkblue",name="Number of TEs") + xlab("Methylation level (human)") + ylab("Methylation level\n(mouse)") + coord_equal() + theme(legend.position = "bottom",legend.direction="horizontal",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm'))
+```{r Figure 7, echo=FALSE, fig.height=5}
+a = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_methylation,y=Mouse_methylation)) + stat_bin2d(bins=50) + scale_fill_gradient(low="white",high="darkblue",name="Number\nof TEs") + xlab("Methylation level (human)") + ylab("Methylation level\n(mouse)") + coord_equal() + theme(legend.position = "bottom",legend.direction="horizontal",legend.box.margin = margin(t=-10))
 
 state_freq = ddply(human_mouse_orthologs_WGBS_paired,.(Human_state_WGBS),summarise,Entries=length(Human_state_WGBS)/dim(human_mouse_orthologs_WGBS_paired)[1])
 
-b = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_state_WGBS,fill=Mouse_state_WGBS)) + geom_bar(position="fill") + scale_fill_manual(values=meth_colors,name="State (mouse)") + xlab("State (human)") + ylab("Proportion in state\nin mouse") + scale_x_discrete(labels=as.vector(apply(state_freq,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2])*100,0),"%)",sep="")))) + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),legend.direction="horizontal",legend.position="bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=2,title.position="top"))
+b = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_state_WGBS,fill=Mouse_state_WGBS)) + geom_bar(position="fill") + scale_fill_manual(values=meth_colors,name="State (mouse)",labels=meth_labels) + xlab("State (human)") + ylab("Proportion in state\nin mouse") + scale_x_discrete(labels=as.vector(apply(state_freq,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2])*100,0),"%)",sep="")))) + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),legend.direction="horizontal",legend.position="bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=2,title.position="top"))
 
 state_freq_chromHMM = ddply(human_mouse_orthologs_chromHMM_paired,.(Human_state_chromHMM),summarise,Entries=length(Human_state_chromHMM)/dim(human_mouse_orthologs_chromHMM_paired)[1])
 
 c = ggplot(human_mouse_orthologs_chromHMM_paired,aes(x=Human_state_chromHMM,fill=Mouse_state_chromHMM)) + geom_bar(position="fill") + xlab("State (human)") + ylab("Proportion in state\nin mouse") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.direction="horizontal",legend.position="bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_x_discrete(labels=as.vector(apply(state_freq_chromHMM,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2])*100,1),"%)",sep="")))) + guides(fill = guide_legend(nrow=3,title.position = "top")) + scale_fill_manual(values=mouse_chromHMM_colors,name="State (mouse)")
 
-d = ggplot(hg19_orthologs_specific,aes(x=factor(1),y=Count,fill=Subset)) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),strip.text.x = element_text(size = 8)) + facet_grid(State~Tissue,labeller=labeller(Tissue = setNames(c("Brain","Instestine","Stomach","Heart","Lung"),unique(hg19_orthologs_specific$Tissue)))) + scale_fill_discrete(labels=c("<2 samples","Tissue-specific","2-8 samples","> 8 samples"),name="Category") + guides(fill = guide_legend(nrow = 4))
+hg19_orthologs_specific = ddply(hg19_orthologs_specific,.(Tissue,State),transform,Proportion=Count/sum(Count),Total=sum(Count))
 
-e = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human_hypo,y=Mouse_hypo,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+d = ggplot(hg19_orthologs_specific,aes(x=factor(1),y=Count,fill=Subset,label=paste(round(100*Proportion,0),"%",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),strip.text.x = element_text(size = 8),legend.key.size = unit(3,'mm'),legend.position="bottom") + facet_grid(State~Tissue,labeller=labeller(Tissue = setNames(c("Brain","Instestine","Stomach","Heart","Lung"),unique(hg19_orthologs_specific$Tissue)))) + scale_fill_discrete(labels=c("<2 samples","Tissue-specific","2-8 samples","> 8 samples"),name="Category") + guides(fill = guide_legend(nrow = 2)) + geom_text(position = position_fill(vjust = 0.5),size=2)
 
-f = ggplot(hg19_mm10_chromHMM_subfamily[which(hg19_mm10_chromHMM_subfamily$Human_state_chromHMM == "1_TssA" & hg19_mm10_chromHMM_subfamily$Mouse_state_chromHMM == "TssA"),],aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.05) + ylim(0,0.05) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
-
-g = ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
-
-legend = get_legend(ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors) + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlab("Human") + ylab("Mouse") + theme(legend.position = "bottom",legend.direction = "horizontal",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
-
-grid.arrange(a,b,c,d,e,f,g,legend,nrow=4,layout_matrix=rbind(c(1,4,4),c(2,3,3),c(5,6,7),c(8,8,8)),heights=c(0.3,0.35,0.3,0.05))
+grid.arrange(a,b,c,d,nrow=2,layout_matrix=rbind(c(1,4,4),c(2,3,3)),heights=c(0.45,0.55))
 ```
 
-### Supplementary Figure 16
+### Supplementary Figure 21
 
-```{r Figure S16, echo=FALSE,fig.height=3}
+```{r Figure S21, echo=FALSE,fig.height=6}
 ortholog_stats = melt(rmsk_TE_class[,c("class_update","Count","Mouse_orthologs")],id.var="class_update")
 colnames(ortholog_stats)[2:3] = c("Category","TEs")
 ortholog_stats = ddply(ortholog_stats,.(Category),transform,Percent=100*TEs/sum(TEs))
 
-a = ggplot(ortholog_stats,aes(x=Category,y=TEs,fill=class_update,label=paste(format(TEs, big.mark=",", scientific=FALSE)," (",round(Percent,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank()) + ggtitle("TEs") + geom_text(position = position_fill(vjust = 0.5),size=3)
+a = ggplot(ortholog_stats,aes(x=Category,y=TEs,fill=class_update,label=paste(format(TEs, big.mark=",", scientific=FALSE)," (",round(Percent,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + ggtitle("TEs") + geom_text(position = position_fill(vjust = 0.5),size=2)
 
 ortholog_stats_subfam = melt(rmsk_TE_class[,c("class_update","Subfamilies","Mouse_ortholog_subfamily")],id.var="class_update")
 colnames(ortholog_stats_subfam)[2:3] = c("Category","Count")
 ortholog_stats_subfam = ddply(ortholog_stats_subfam,.(Category),transform,Percent=100*Count/sum(Count))
   
-b = ggplot(ortholog_stats_subfam,aes(x=Category,y=Count,fill=class_update,label=paste(format(Count, big.mark=",", scientific=FALSE)," (",round(Percent,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank()) + ggtitle("Subfamilies") + geom_text(position = position_fill(vjust = 0.5),size=3)
+b = ggplot(ortholog_stats_subfam,aes(x=Category,y=Count,fill=class_update,label=paste(format(Count, big.mark=",", scientific=FALSE)," (",round(Percent,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + ggtitle("Subfamilies") + geom_text(position = position_fill(vjust = 0.5),size=2)
 
-grid.arrange(a,b,legend_class,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.95,0.05))
+c = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human_hypo,y=Mouse_hypo,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+
+d = ggplot(hg19_mm10_chromHMM_subfamily[which(hg19_mm10_chromHMM_subfamily$Human_state_chromHMM == "1_TssA" & hg19_mm10_chromHMM_subfamily$Mouse_state_chromHMM == "TssA"),],aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.05) + ylim(0,0.05) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+
+e = ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+
+legend = get_legend(ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors) + scale_shape_discrete(labels=age_labels) + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + scale_linetype_discrete(labels=age_labels) + xlab("Human") + ylab("Mouse") + theme(legend.position = "bottom",legend.direction = "horizontal",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
+
+grid.arrange(a,b,legend_class,c,d,e,legend,nrow=4,layout_matrix=rbind(c(1,NA,2),c(3),c(4,5,6),c(7)),heights=c(0.45,0.05,0.45,0.05))
 ```
 
 ### Human-mouse ortholog analysis
@@ -4493,9 +4482,9 @@ while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' ../r
 while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' $line\-H3K27ac.narrowPeak >> peak_widths.txt; done < ../../../sample_lists/H3K27ac_samples.txt
 ```
 
-### Supplementary Figure 18
+### Supplementary Figure 23
 
-```{r Figure S18 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+```{r Figure S23 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/state_lengths.R")
 
 # Number vs. length of blocks/peaks by sample
@@ -4505,13 +4494,13 @@ all_lengths_blocks = merge(all_lengths_blocks,metadata[,c("Sample",sample_catego
 all_lengths_blocks_corr = ddply(all_lengths_blocks,.(State),summarise,Cor=as.numeric(unlist(cor.test(Blocks,Median,method="spearman"))["estimate.rho"]),Pvalue=as.numeric(unlist(cor.test(Blocks,Median,method="spearman"))["p.value"]))
 ```
 
-```{r Figure S18, echo=FALSE}
-ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median))) + geom_point(aes(color=Group)) + xlab("Number of blocks/peaks (log10)") + ylab("Median length of blocks/peaks (log10(bp))") + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_lengths_blocks_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3))
+```{r Figure S23, echo=FALSE}
+ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median))) + geom_point(aes(color=Group)) + xlab("Number of blocks/peaks (log10)") + ylab("Median length of blocks/peaks (log10(bp))") + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",labeller=labeller(State=all_state_labels)) + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_lengths_blocks_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 ```
 
 ### State/peak lengths analysis
 
-```{r analysis Fig S1, cache=TRUE}
+```{r state peak lengths analysis, cache=TRUE}
 # Length of states
 ddply(all_lengths,.(State),summarise,Mean=mean(Length),SD=sd(Length),Median=median(Length))
 
