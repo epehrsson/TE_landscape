@@ -2100,15 +2100,17 @@ lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State
 
 ```{r Figure S7, echo=FALSE}
 # VISTA
-a = ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position = "bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_shape_discrete(labels=orthogonal_labels) + guides(shape=guide_legend(ncol=1))
-
-# HOMER (promoter motifs)
-b = ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`/100,shape=Set)) + geom_point() + xlab("Transcription factor") + ylab("Proportion of TEs with motif") + scale_shape_discrete(labels=orthogonal_labels,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State) + scale_x_discrete(labels=sapply(grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE),function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1])) 
+a = ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_shape_discrete(guide=FALSE)
 
 # Population
-c = ggplot(cons,aes(x=Set,y=Proportion,fill=State)) + geom_violin() + ylab("Proportion of TE overlapping\nphastCons/GERP elements") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(Database~State) + scale_fill_manual(values=all_state_colors,guide=FALSE)
+b = ggplot(cons_10bp,aes(x=State,y=Overlapping/Total,shape=Set)) + geom_point() + ylim(0,1) + facet_wrap(~Database) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion of TEs overlapping\nphastCons/GERP elements") + scale_shape_discrete(guide=FALSE)
 
-grid.arrange(a,b,c,layout_matrix = rbind(c(1,2),c(3)),widths=c(0.3,0.7),heights=c(0.45,0.55))
+# HOMER (promoter motifs)
+c = ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],aes(x=`Motif Name`,y=`% of Target Sequences with Motif`/100,shape=Set)) + geom_point() + xlab("Transcription factor") + ylab("Proportion of TEs with motif") + scale_shape_discrete(labels=orthogonal_labels,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + facet_wrap(~State) + scale_x_discrete(labels=sapply(grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE),function(x) unlist(strsplit(as.character(x),split='[(]'))[[1]][1])) 
+
+set_legend = get_legend(ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + theme(legend.position = "bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_shape_discrete(labels=orthogonal_labels))
+
+grid.arrange(a,b,c,set_legend,layout_matrix = rbind(c(1,2),c(3),c(4)),widths=c(0.3,0.7),heights=c(0.3,0.65,0.05))
 ```
 
 ### Supplementary Figure 8 (block/summit)
@@ -2628,7 +2630,7 @@ a = ggplot(shuffled_chromHMM_inter,aes(x=State2,y=State1,fill=Mean_samples/sampl
 
 b = ggplot(shuffled_meth_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_counts["All","WGBS"])) + geom_tile() +
   theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(meth_states)) + 
-  scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
+  scale_fill_gradient(name="Average proportion\nof samples in state",low="white",high="darkmagenta",limits=c(0,1)) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
 
 grid.arrange(a,b)
 ```
@@ -4053,6 +4055,7 @@ hg19_orthologs_specific_promoter$State = rep("Promoter",dim(hg19_orthologs_speci
 
 hg19_orthologs_specific = rbind(hg19_orthologs_specific_active,hg19_orthologs_specific_promoter)
 hg19_orthologs_specific$Subset = factor(hg19_orthologs_specific$Subset,levels=c("Off","Specific","Other","On"))
+hg19_orthologs_specific = ddply(hg19_orthologs_specific,.(Tissue,State),transform,Proportion=Count/sum(Count),Total=sum(Count))
 ```
 
 ### Figure 7
@@ -4071,8 +4074,6 @@ b = ggplot(human_mouse_orthologs_WGBS_paired,aes(x=Human_state_WGBS,fill=Mouse_s
 state_freq_chromHMM = ddply(human_mouse_orthologs_chromHMM_paired,.(Human_state_chromHMM),summarise,Entries=length(Human_state_chromHMM)/dim(human_mouse_orthologs_chromHMM_paired)[1])
 
 c = ggplot(human_mouse_orthologs_chromHMM_paired,aes(x=Human_state_chromHMM,fill=Mouse_state_chromHMM)) + geom_bar(position="fill") + xlab("State (human)") + ylab("Proportion in state\nin mouse") + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.direction="horizontal",legend.position="bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_x_discrete(labels=as.vector(apply(state_freq_chromHMM,1,function(x) paste(x[1],"\n(",round(as.numeric(x[2])*100,1),"%)",sep="")))) + guides(fill = guide_legend(nrow=3,title.position = "top")) + scale_fill_manual(values=mouse_chromHMM_colors,name="State (mouse)")
-
-hg19_orthologs_specific = ddply(hg19_orthologs_specific,.(Tissue,State),transform,Proportion=Count/sum(Count),Total=sum(Count))
 
 d = ggplot(hg19_orthologs_specific,aes(x=factor(1),y=Count,fill=Subset,label=paste(round(100*Proportion,0),"%",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),strip.text.x = element_text(size = 8),legend.key.size = unit(3,'mm'),legend.position="bottom") + facet_grid(State~Tissue,labeller=labeller(Tissue = setNames(c("Brain","Instestine","Stomach","Heart","Lung"),unique(hg19_orthologs_specific$Tissue)))) + scale_fill_discrete(labels=c("<2 samples","Tissue-specific","2-8 samples","> 8 samples"),name="Category") + guides(fill = guide_legend(nrow = 2)) + geom_text(position = position_fill(vjust = 0.5),size=2)
 
