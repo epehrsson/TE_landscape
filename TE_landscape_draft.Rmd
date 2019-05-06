@@ -594,6 +594,22 @@ cut -f1-4 refseq_exons_unique.txt.sorted_E003_average.txt > refseq_exons_average
 while read line; do cut -f7 refseq_exons_unique.txt.sorted_$line\_average.txt | paste refseq_exons_average.txt - > refseq_exons_average; mv refseq_exons_average refseq_exons_average.txt ; done < RNA_samples_agnostic.txt
 ```
 
+Split into subfamily x state - TEs ever in state
+
+```{bash by subfamily state, eval=FALSE}
+# TEs by subfamily and state
+awk '{if($10 != "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_"$10".txt"; else print > "chromHMM/subfamily/by_state/"$4"_8_ZNF.Rpts.txt"}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt
+
+# WGBS
+awk '{print > "WGBS/subfamily/by_state/"$4"_"$10".txt"}' WGBS/TE_WGBS_state_sorted.txt
+
+# TEs by subfamily and state
+awk '{print $0 > "DNase/subfamily/"$4"_DNase.txt"}' DNase/rmsk_TEother_DNase_summit.txt
+
+# TEs by subfamily and state
+awk '{print $0 > "H3K27ac/subfamily/"$4"_H3K27ac.txt"}' H3K27ac/rmsk_TEother_H3K27ac_summit.txt
+```
+
 ```{r create TE epigenetics, eval=FALSE}
 source("R_scripts/chromHMM_matrix.R")
 source("R_scripts/WGBS_TE_avg_methylation.R")
@@ -1793,7 +1809,9 @@ source("R_scripts/potential_replicates.R")
 ```{r replicate analysis}
 dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
 
-dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
+replicates_median = dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
+replicates_median$Ratio = replicates_median$Replicate/replicates_median$Tissue
+replicates_median
 ```
 
 Shuffled replicate analysis, currently with iteration 1 only. 
@@ -2110,7 +2128,7 @@ c = ggplot(homer_known[which(homer_known$`Motif Name` %in% grep("Promoter",uniqu
 
 set_legend = get_legend(ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=Set)) + geom_point() + theme(legend.position = "bottom",legend.box.margin = margin(t=-10),legend.key.size = unit(3,'mm')) + scale_shape_discrete(labels=orthogonal_labels))
 
-grid.arrange(a,b,c,set_legend,layout_matrix = rbind(c(1,2),c(3),c(4)),widths=c(0.3,0.7),heights=c(0.3,0.65,0.05))
+grid.arrange(a,b,c,set_legend,layout_matrix = rbind(c(1,2),c(3),c(4)),widths=c(0.35,0.65),heights=c(0.35,0.6,0.05))
 ```
 
 ### Supplementary Figure 8 (block/summit)
@@ -2207,8 +2225,7 @@ For the 18-state model, 15,478,375 windows have annotations for most samples (th
 while read line; do bedtools intersect -wo -a raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - > chromHMM/genome/windows/windows_18state_$line\.bed; done < sample_lists/H3K27ac_samples.txt
 
 # Summit TEs
-while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < <(head -n 51 sample_lists/H3K27ac_samples.txt)
-while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < <(tail -n +52 sample_lists/H3K27ac_samples.txt) 
+while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < sample_lists/H3K27ac_samples.txt
 for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
 for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
 
@@ -2629,7 +2646,7 @@ a = ggplot(shuffled_chromHMM_inter,aes(x=State2,y=State1,fill=Mean_samples/sampl
   theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(chromHMM_states)) + scale_x_discrete(labels=chromHMM_states) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
 
 b = ggplot(shuffled_meth_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_counts["All","WGBS"])) + geom_tile() +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.title = element_blank()) + scale_y_discrete(limits=rev(meth_states)) + 
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom") + scale_y_discrete(limits=rev(meth_states)) + 
   scale_fill_gradient(name="Average proportion\nof samples in state",low="white",high="darkmagenta",limits=c(0,1)) + coord_equal() + facet_wrap(~Iteration,nrow=2,labeller=labeller(Iteration=iteration_labels)) + xlab("State 2") + ylab("State 1")
 
 grid.arrange(a,b)
@@ -3551,20 +3568,6 @@ write.table(permute_subfam_pc_wide,file="enrichment/state_subfamily_clusters_pc.
 
 ### Print bedfiles for candidates (enriched and never)
 
-```{bash by subfamily state, eval=FALSE}
-# TEs by subfamily and state
-awk '{if($10 != "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_"$10".txt"; else print > "chromHMM/subfamily/by_state/"$4"_8_ZNF.Rpts.txt"}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt
-
-# WGBS
-awk '{print > "WGBS/subfamily/by_state/"$4"_"$10".txt"}' WGBS/TE_WGBS_state_sorted.txt
-
-# TEs by subfamily and state
-awk '{print $0 > "DNase/subfamily/"$4"_DNase.txt"}' DNase/rmsk_TEother_DNase_summit.txt
-
-# TEs by subfamily and state
-awk '{print $0 > "H3K27ac/subfamily/"$4"_H3K27ac.txt"}' H3K27ac/rmsk_TEother_H3K27ac_summit.txt
-```
-
 ''enrichment_candidates.txt'' is a list of subfamilies of interst, generated from above analysis.
 
 ```{r print bedfiles, eval=FALSE}
@@ -3830,11 +3833,11 @@ ddply(rmsk_TE,.(class_update),summarise,CpG_dens=median(CpGs_per_length)*1000,de
 ddply(rmsk_TE_measure,.(class_update),summarise,Het=median(`9_Het`),Hyper=median(na.omit(Hypermethylated)))
 ddply(rmsk_TE_measure,.(class_update),summarise,Het=mean(`9_Het`),Hyper=mean(na.omit(Hypermethylated)))
 
-anova(model_het1,model_het2,test="Chisq")
-anova(model_het2,model_het3,test="Chisq")
+anova(model_het1,model_het2,test="F")
+anova(model_het2,model_het3,test="F")
 
-anova(model_hyper1,model_hyper2,test="Chisq")
-anova(model_hyper2,model_hyper3,test="Chisq")
+anova(model_hyper1,model_hyper2,test="F")
+anova(model_hyper2,model_hyper3,test="F")
 ```
 
 ### Supplementary Figure 20
