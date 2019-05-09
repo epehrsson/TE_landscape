@@ -1954,7 +1954,7 @@ colnames(chromHMM_replicates)[1] = "Pair"
 chromHMM_replicates = merge(chromHMM_replicates,replicates[,c("Pair","Set")],by="Pair")
 ```
 
-```{r run replicates window, cache=TRUE, cache.lazy=FALSE, eval=FALSE}
+```{r run replicates window, cache=TRUE, cache.lazy=FALSE}
 ## Number of samples per window x state
 window_replicates = apply(replicates,1,function(z) ddply(windows_active[which(windows_active$Sample %in% as.vector(z[1:2])),],.(State,chr,start,stop),summarise,Samples=length(Sample)))
 names(window_replicates) = replicates$Pair
@@ -1963,14 +1963,12 @@ colnames(window_replicates)[1] = "Pair"
 window_replicates = merge(window_replicates,replicates[,c("Pair","Set")],by="Pair")
 ```
 
-```{r filter replictes, eval=FALSE}
+```{r filter replicates, cache=TRUE, cache.lazy=FALSE}
 # Combine all active regulatory states
 chromHMM_replicates_active = ddply(chromHMM_replicates,.(Pair,Set,chromosome,start,stop,subfamily,family,class,strand),summarise,Samples=max(Samples))
 
 # Fraction of TEs in either sample found in both
-chromHMM_replicates_all = ddply(chromHMM_replicates_active,.(Pair,Set,Samples),summarise,Count=length(Samples))
-
-## Combine all
+chromHMM_replicates_count = ddply(chromHMM_replicates_active,.(Pair,Set,Samples),summarise,Count=length(Samples))
 chromHMM_replicates_count = dcast(chromHMM_replicates_all,Pair+Set~Samples,value.var="Count")
 chromHMM_replicates_count[is.na(chromHMM_replicates_count)] = 0
 chromHMM_replicates_count$Fraction = chromHMM_replicates_count$`2`/(chromHMM_replicates_count$`1`+chromHMM_replicates_count$`2`)
@@ -2517,7 +2515,7 @@ e[2]/sum(e[2:length(e)])
 
 ### Supplementary Figure 9 (shuffled state switching)
 
-```{bash shuffled dynamics}
+```{bash shuffled dynamics, eval=FALSE}
 # Inter state switching for shuffled TEs
 ## chromHMM
 for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_inter.py rmsk_TE_shuffle_$i\_chromHMM_sorted.txt chromHMM_states.txt rmsk_TE_shuffle_$i\_chromHMM_inter.txt 9 7; done &
@@ -3032,21 +3030,21 @@ lapply(colnames(test_log)[1:21],function(x) test_log[which(test_log[,x] > 0 & te
 # Potential
 shuffle_state_potential = ddply(subfamily_state_potential_shuffle,.(Iteration,Metric,subfamily),summarise,States=sum(Samples > 0))
 
-a = ggplot(shuffle_state_potential,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,position="dodge") + ylab("Subfamilies") + xlab("Number of states") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0) + scale_fill_grey()
+a = ggplot(shuffle_state_potential,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,position="dodge") + ylab("Subfamilies") + xlab("Number of states") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0) + scale_fill_grey() + theme(legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + guides(fill=guide_legend(ncol=2))
 
 test = subfamily_state_potential
 test$Iteration = rep("Real",dim(subfamily_state_potential)[1])
 test = rbind(test,subfamily_state_potential_shuffle)
 test$Iteration = factor(test$Iteration,levels=c(seq(1,10,1),"Real"))
   
-b = ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State,labeller=labeller(State=all_state_labels)) + ylab("Density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom") + guides(fill=guide_legend(nrow=1))
+b = ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State,labeller=labeller(State=all_state_labels)) + ylab("Density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + guides(fill=guide_legend(nrow=1))
 
 # Plot number of enrichments per state for true TEs vs. shuffled TEs
-c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
 
-d = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of enriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+d = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of\nenriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
 
-grid.arrange(a,b,c,d,layout_matrix=rbind(c(1),c(2),c(3,4)),nrow=3,heights=c(0.15,0.55,0.3))
+grid.arrange(a,b,c,d,layout_matrix=rbind(c(1),c(2),c(3,4)),nrow=3,heights=c(0.15,0.55,0.3),widths=c(0.48,0.52))
 ```
 
 ### Subfamily potential
@@ -4435,7 +4433,7 @@ all_lengths_blocks = merge(all_lengths_blocks,metadata[,c("Sample",sample_catego
 all_lengths_blocks_corr = ddply(all_lengths_blocks,.(State),summarise,Cor=as.numeric(unlist(cor.test(Blocks,Median,method="spearman"))["estimate.rho"]),Pvalue=as.numeric(unlist(cor.test(Blocks,Median,method="spearman"))["p.value"]))
 ```
 
-```{r Figure S23, echo=FALSE}
+```{r Figure S21, echo=FALSE}
 source("R_scripts/histone_modification.R")
 
 a = ggplot(histones,aes(x=Position/1000,y=Level,color=Mark,group=Mark)) + geom_line(size=1.5,alpha=0.7) + theme(panel.grid=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Distance from TE center (kbp)")+ylim(0,12) + facet_wrap(~ State,nrow=3) + scale_y_continuous(sec.axis = sec_axis(~./12.5, name = "DNA methylation level"))
