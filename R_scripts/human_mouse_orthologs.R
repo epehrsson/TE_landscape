@@ -1,7 +1,7 @@
 # Read in human-mouse orthologous TEs and metadata
 
 # Corresponding human-mouse samples
-human_mouse_samples = read.table("Mouse/human_mouse_samples.txt",sep='\t')
+human_mouse_samples = read.table("sample_lists/human_mouse_samples.txt",sep='\t')
 colnames(human_mouse_samples) = c("Human_sample","Mouse_sample_WGBS","Mouse_sample_chromHMM")
 human_mouse_samples = merge(human_mouse_samples,metadata[,c("Sample",sample_categories)],by.x="Human_sample",by.y="Sample")
 

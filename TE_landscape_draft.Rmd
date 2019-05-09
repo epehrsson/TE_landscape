@@ -124,7 +124,7 @@ germline_colors = setNames(brewer.pal(6,"Dark2"),c("Pluripotent","Mesoderm","Ect
 
 group_order = c("ESC","iPSC","ES-deriv","Blood & T-cell","HSC & B-cell","Thymus","Brain","Neurosph","Digestive","Epithelial","Adipose","Mesench","Myosat","Muscle","Sm. Muscle","Heart","Other","IMR90","ENCODE2012")
 
-age_labels = setNames(c("Cell line","Fetal","Non-fetal","Unknown"),c("Cell_line","Unknown","Non_fetal","Fetal"))
+age_labels = setNames(c("Cell line","Fetal","Non-fetal","Unknown"),c("Cell_line","Fetal","Non_fetal","Unknown"))
 
 # Genic features
 features = c("cpgIsland","promoters","5UTR","CDS","3UTR","exons","introns","intergenic")
@@ -1257,59 +1257,12 @@ cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2,
 
 ### Supplementary Figure 1
 
-```{bash histone profile, eval=FALSE}
-# Updated with summit TEs 5/29/18 to 6/19/18 (should be run on htcf)
-
-# Each TE extended from center to 10kb region, excluding those that would extend past the ends of the chromosomes.	 
-
-#TE_landscape/features/TEs/rmsk_TE_10kb.txt	
-while read chr size; do awk -v OFS="\t" -v chr=$chr -v size=$size '{if($1 == chr && $2 > 4999 && ($3+5000 < size)) print $1,int($2+(($3-$2)/2))-5000,int($2+(($3-$2)/2))+5000,$1,$2,$3,$4,$5,$6,$7}' rmsk_TE.txt >> rmsk_TE_10kb.txt; done < hg19_standard.genome
-
-#TE_landscape/features/TEs/rmsk_other_10kb.txt	
-while read chr size; do awk -v OFS="\t" -v chr=$chr -v size=$size '{if($1 == chr && $2 > 4999 && ($3+5000 < size)) print $1,int($2+(($3-$2)/2))-5000,int($2+(($3-$2)/2))+5000,$1,$2,$3,$4,$5,$6,$7}' rmsk_other.txt >> rmsk_other_10kb.txt; done < hg19_standard.genome
-
-# 10kb-extended TE bed file, rearranged so original coordinates are first	 
-
-#TE_landscape/features/TEs/rmsk_TE_10kb.bed	
-awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' /bar/epehrsson/TE_landscape/rmsk_TE_10kb.txt > rmsk_TE_10kb.bed
-
-#TE_landscape/features/TEs/rmsk_other_10kb.bed	
-awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' rmsk_other_10kb.txt > /scratch/ecp/rmsk_other_10kb.bed
-
-# Combined into one file
-cat features/TEs/rmsk_*_10kb.bed > features/TEs/rmsk_TEother_10kb.bed
-
-# TEs in state in sample
-awk -v OFS='\t' '{print $0 > "ever/rmsk_TEother_"$8".txt"}' rmsk_TEother_chromHMM_summit_sorted.txt
-while read line; do echo $line; awk -v OFS='\t' '{if($10 != "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_"$10".txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
-while read line; do echo $line; awk -v OFS='\t' '{if($10 == "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_8_ZNF.Rpts.txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
- 
-# Finds level of histone modifications and DNase over 10kb region centered on TEs in bins	
-intersect_histone.sh
-# Finds level of DNA methylation over 10kb region centered on TEs, in bins
-intersect_meth.sh
-
-# Epigenetic profiles by state and mark
-#TE_landscape/compare_marks/profile_histone/rmsk_TEother_[state]_[mark]_average.txt [108 files]
-# marks.txt is a list of 9 
-while read state; do while read mark; do echo $state $mark; cat averages/rmsk_TEother_E*_$state\_$mark\_average.txt > rmsk_TEother_$state\_$mark\_average.tmp; python calculate_bin_average_all.py rmsk_TEother_$state\_$mark\_average.tmp rmsk_TEother_$state\_$mark\_average.txt; rm rmsk_TEother_$state\_$mark\_average.tmp; done < marks.txt; done < chromHMM_states.txt
-
-# Combined histone profiles
-while read state; do while read mark; do awk -v OFS='\t' -v mark=$mark -v state=$state '{print $0, mark, state}' rmsk_TEother_$state\_$mark\_average.txt >> TEother_average.txt; done < marks.txt; done < chromHMM_states.txt
-```
-
 ```{r Figure S1, echo=FALSE}
-source("R_scripts/histone_modification.R")
-
 # Plot bases in genome/TEs in each state by sample, increasing order
 all_state_proportion_matrix = dcast(all_state_proportion[which(all_state_proportion$Cohort %in% c("Genome","TE")),],State+Sample+Group~Cohort,value.var="Bases")
 all_state_proportion_corr = ddply(all_state_proportion_matrix,.(State),summarise,Cor=as.numeric(unlist(cor.test(Genome,TE,method="spearman"))["estimate.rho"]),Pvalue=as.numeric(unlist(cor.test(Genome,TE,method="spearman"))["p.value"]))
 
-a = ggplot(all_state_proportion_matrix,aes(x=log10(Genome),y=log10(TE))) + geom_point(aes(color=Group)) + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",ncol=6,labeller=labeller(State=all_state_labels)) + xlab("Bases/CpGs in genome (log10)") + ylab("Bases/CpGs in TEs (log10)") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_state_proportion_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
-
-b = ggplot(histones,aes(x=Position/1000,y=Level,color=Mark,group=Mark)) + geom_line(size=1.5,alpha=0.7) + theme(panel.grid=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Distance from TE center (kbp)")+ylim(0,12) + facet_wrap(~ State,nrow=3) + scale_y_continuous(sec.axis = sec_axis(~./12.5, name = "DNA methylation level"))
-
-grid.arrange(a,b,heights=c(0.55,0.45))
+ggplot(all_state_proportion_matrix,aes(x=log10(Genome),y=log10(TE))) + geom_point(aes(color=Group)) + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",ncol=6,labeller=labeller(State=all_state_labels)) + xlab("Bases/CpGs in genome (log10)") + ylab("Bases/CpGs in TEs (log10)") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_state_proportion_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 ```
 
 ### Compare TE bases to non-TE bases by sample
@@ -1337,16 +1290,16 @@ ddply(all_state_proportion_matrix,.(State),summarise,Genome_corr = unlist(cor.te
 ```{r Figure S2, echo=FALSE}
 source("R_scripts/feature_overlap.R")
 
+# Feature overlap
+a = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),legend.key.size = unit(2,'mm')) + scale_x_discrete(labels=genic_labels) + scale_fill_discrete(labels=coding_labels,name="Feature") + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=overlap_labels)) + xlab("Feature") + ylab("Proportion")
+
 ## Average proportion by sample
-a = ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion)),aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("Feature") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels)) 
+b = ggplot(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion)),aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("Feature") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_wrap(~Mark,nrow=1,labeller=labeller(Mark = mark_labels)) 
 
 # Total proportion split by protein-coding/non-coding
-b = ggplot(combined_proportion[which(combined_proportion$Feature %in% c("promoters","5UTR","3UTR","exons","introns")),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("Feature") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-12),legend.key.size = unit(3,'mm')) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_grid(Coding~Mark,labeller=labeller(Coding=coding_labels,Mark=mark_labels)) + guides(fill = guide_legend(ncol = 8,title.position = "top"))
+c = ggplot(combined_proportion[which(combined_proportion$Feature %in% c("promoters","5UTR","3UTR","exons","introns")),],aes(x=Feature,y=Proportion,fill=State)) + geom_bar(stat="identity") + xlab("Feature") + ylab("Proportion in state") + scale_fill_manual(values=all_state_colors,labels=all_state_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="bottom",legend.box.margin = margin(t=-12),legend.key.size = unit(3,'mm')) + scale_x_discrete(labels=c("TE","Genome",genic_labels)) + facet_grid(Coding~Mark,labeller=labeller(Coding=coding_labels,Mark=mark_labels)) + guides(fill = guide_legend(ncol = 8,title.position = "top"))
 
-# Feature overlap
-c = ggplot(feature_overlap_long,aes(x=Feature,y=Percent,fill=Coding)) + geom_bar(position="dodge",stat="identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),legend.key.size = unit(2,'mm')) + scale_x_discrete(labels=genic_labels) + scale_fill_discrete(labels=coding_labels,name="Feature") + facet_wrap(~Measure,nrow=1,labeller=labeller(Measure=overlap_labels)) + xlab("Feature") + ylab("Proportion")
-
-grid.arrange(a,b,c,nrow=3,heights=c(0.22,0.53,0.25))
+grid.arrange(a,b,c,nrow=3,heights=c(0.25,0.22,0.53))
 ```
 
 ### RefSeq feature analysis
@@ -1420,17 +1373,17 @@ source("R_scripts/potential_class.R")
 ### Figure 2
 
 ```{r Figure 2, echo=FALSE}
-a = ggplot(combine_boxplot,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs in state") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_point(data=combine_stats,aes(x=State,y=Proportion_ever),color="red",size=2) 
+a = ggplot(combine_boxplot,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of TEs\nin state") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_point(data=combine_stats,aes(x=State,y=Proportion_ever),color="red",size=2) 
 
-b = ggplot(combine_class_ever,aes(x=State,y=Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="TEs ever in state by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
+b = ggplot(combine_class_ever,aes(x=State,y=Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion of TEs\never in state by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
 
-c = ggplot(combine_potential[which(combine_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
+c = ggplot(combine_potential[which(combine_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples\nin state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
-d = ggplot(combine_potential[which(combine_potential$Sample.Proportion == 1),],aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=1.01,size=2.5) + scale_y_reverse(limits=c(8,0)) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + ylab("TEs in state in\n100% of samples (log10)")
+d = ggplot(combine_potential[which(combine_potential$Sample.Proportion == 1),],aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=1.01,size=2.5) + scale_y_reverse(limits=c(8,0)) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + ylab("Number of TEs in state in\n100% of samples (log10)")
 
-e = ggplot(ddply(combine_potential[which(combine_potential$Sample.Proportion >= 0.9),],.(State),summarise,Count=sum(Count)),aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=0,size=2.5) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("TEs in state in\n90% of samples (log10)") + scale_y_continuous(limits=c(0,8))
+e = ggplot(ddply(combine_potential[which(combine_potential$Sample.Proportion >= 0.9),],.(State),summarise,Count=sum(Count)),aes(x=State,y=log10(Count+1),fill=State)) + geom_bar(stat="identity") + geom_text(aes(label=format(Count, big.mark=",", scientific=FALSE)),hjust=0,size=2.5) + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Number of TEs in state in\n90% of samples (log10)") + scale_y_continuous(limits=c(0,8))
 
-f = ggplot(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),aes(x=State,y=TEs.Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion in\neach class (90%)") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
+f = ggplot(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),aes(x=State,y=TEs.Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion of TEs in 90%\nof samples by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
 
 grid.arrange(a,b,c,d,e,f,legend_class, nrow = 3, layout_matrix=rbind(c(1,2,3),c(4,5,6),c(NA,NA,7)),widths=c(0.42,0.29,0.29),heights=c(0.475,0.475,0.05))
 ```
@@ -1570,9 +1523,200 @@ sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a
 awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_genes.txt | wc -l
 ```
 
-### Supplementary Figure 4
+### Background proportion of genome in active regulatory state
+
+Proportion of the genome that is in an active regulatory state in any Roadmap sample. 
+
+From the 200bp window-chromHMM intersections, I pulled out those in the 5 active regulatory states. Then, I found the number of unique windows that are ever in one of those states. There are 6,644,958, 43% of all windows.  
+
+```{bash window potential, eval=FALSE}
+# 200bp windows in an active regulatory state
+while read line; do awk -v OFS='\t' -v sample=$line '{if(($4 == "1_TssA") || ($4 == "2_TssAFlnk") || ($4 == "3_TxFlnk") || ($4 == "6_EnhG") || ($4 == "7_Enh")) print $5, $6, $7, $4, sample}' chromHMM/genome/windows/windows_$line\.bed >> chromHMM/genome/windows/windows_active_reg.bed; done < sample_lists/mnemonics.txt
+
+# Number of unique windows that are ever in an active regulatory state
+cut -f1-3 chromHMM/genome/windows/windows_active_reg.bed | sort | uniq | wc -l
+```
+
+Because these windows are smaller than TEs, I will confirm the results using the shuffled TEs. Found the number of shuffled TEs (times 10 iterations) that are ever in an active regulatory state. The mean proportion is 48.66% +/- 0.03%, a very tight distribution that is slightly higher than the value for actual TEs. 
+
+```{bash shuffled potential, eval=FALSE}
+# Number of shuffled TEs per iteration that are ever in an active regulatory state
+for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromHMM_potential.txt | awk '{if(($8 > 0) || ($9 > 0) || ($10 > 0) || ($13 > 0) || ($14 > 0)) print $0}' | wc -l; done
+```
+
+### Supplementary Figure 4 (block/summit and 18-state)
+
+'''Block/summit'''
+
+How many TEs are responsible for their chromHMM region? Found TEs that overlap the center of chromHMM blocks.
+
+```{bash block control, eval=FALSE}
+# Filtered TE x chromHMM state intersections to only those where the TE overlaps the center of the block
+while read line; do awk -v OFS='\t' -v sample=$line '{mid=$9+(($10-$9)/2)-0.5;if((mid >= $2) && (mid < $3)) print $0, sample}' chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_TE >> chromHMM/blocks/rmsk_TE_block_summit.txt ; done < sample_lists/mnemonics.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{mid=$9+(($10-$9)/2)-0.5;if((mid >= $2) && (mid < $3)) print $0, sample}' chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_other >> chromHMM/blocks/rmsk_TE_block_summit.txt ; done < sample_lists/mnemonics.txt
+
+# Unique
+awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $11, $13]+=$12}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i]}}' chromHMM/rmsk_TE_block_summit.txt | sort -k1,1V -k2,2n -k3,3n -k4,4 -k9,9 - > chromHMM/rmsk_TE_block_summit_sorted.txt
+
+# Number of TEs in each state per sample
+awk -v OFS='\t' '{a[$8, $9]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' chromHMM/block/rmsk_TE_block_summit_sorted.txt > chromHMM/block/rmsk_TE_block_summit_counts.txt
+
+# Number of samples each TE is in each state
+awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $8]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' chromHMM/rmsk_TE_block_summit_sorted.txt > chromHMM/rmsk_TE_block_potential.txt
+```
+
+As a QC, found the number of TEs per state that are identified using block summit overlap, but not our usual analysis, and compared it to the total number identified using block summit overlap. The proportion is small, usually <1%. There are no subfamily x state combinations that are present in block overlap but not normally.
+
+```{bash block QC, eval=FALSE}
+# TEs overlapping a block summit that are not counted in the original analysis
+awk -v OFS='\t' '{if($8 != "8_ZNF/Rpts") print $1, $2, $3, $4, $5, $6, $7, $9, $10, $8 > $4"_"$8".txt"; else print $1, $2, $3, $4, $5, $6, $7, $9, $10, $8 > $4"_8_ZNF.Rpts.txt"}' rmsk_TE_block_summit_sorted.txt
+
+while read state; do while read subfam; do echo $subfam $state; comm -23 <(sort chromHMM/block/$subfam\_$state\.txt) <(cut -f1-10 chromHMM/subfamily/by_state/$subfam\_$state\.txt | sort) >> chromHMM/block/block_exclusive.txt; done < features/TEs/subfamily/subfamilies.txt; done < chromHMM/chromHMM_states.txt
+while read subfam; do echo $subfam; comm -23 <(sort chromHMM/block/$subfam\_8_ZNF.Rpts.txt) <(cut -f1-10 chromHMM/subfamily/by_state/$subfam\_8_ZNF.Rpts.txt | sort) >> chromHMM/block/block_exclusive.txt; done < features/TEs/subfamily/subfamilies.txt
+
+# Subfamily x state combinations present using block overlap but not normally
+while read state; do while read subfam; do if [ ! -f chromHMM/subfamily/by_state/$subfam\_$state\.txt ]; then if [ -f chromHMM/block/$subfam\_$state\.txt ]; then echo $subfam $state; fi; fi; done < features/TEs/subfamily/subfamilies.txt; done < chromHMM/chromHMM_states.txt >> chromHMM/block/not_all.txt
+while read subfam; do if [ ! -f chromHMM/subfamily/by_state/$subfam\_8_ZNF.Rpts.txt ]; then if [ -f chromHMM/block/$subfam\_8_ZNF.Rpts.txt ]; then echo $subfam; fi; fi; done < features/TEs/subfamily/subfamilies.txt
+
+# Number of TEs per state identified using block overlap but not normally vs. total
+awk -v OFS='\t' '{a[$10]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/block_exclusive.txt
+awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/rmsk_TE_block_summit_sorted.txt
+```
+
+As an intermediate between the chromHMM overlap rules in the paper and block center overlap, I repeated the analysis with just TEs that overlap 200bp bin summits. 
+
+```{bash summit control, eval=FALSE}
+# TEs per sample, restricted to those overlapping summits
+awk -v OFS='\t' '{if($11 == "summit") a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit_only.txt
+```
+
+The number of TEs in each state per sample is much smaller, with a median of 17% for 1_TssA (up to 43% for 11_BivFlnk).
+
+For 1_TssA and 7_Enh, >50% of the TEs identified as ever in the state using the rules in the paper are also identified when I just consider block centers, although this number is as low as 29% for 14_ReprPCWk and 36% for 3_TxFlnk. Overall, 26% of TEs can be in an active regulatory state in any sample, about half of the value in the paper. 
+
+```{r block analysis}
+source("R_scripts/chromHMM_block_potential.R")
+
+# Median samples in state
+test2 = ddply(test,.(State,Category),summarise,Median=median(na.omit(Ratio)))
+test2[order(test2$Median),]
+
+# Ever
+potential_ever[order(potential_ever$Ratio),]
+
+# TEs in any active regulatory state in any sample
+## Overlapping block centers
+dim(unique(block_potential[which(block_potential$State %in% chromHMM_states[c(1:3,6:7)]),TE_coordinates]))[1]/NUM_TE
+
+## Overlapping bin summits
+sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
+```
+
+'''18-state model'''
+
+The Roadmap project has 98 samples annotated with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model) (which includes H3K27ac). 15,478,375 windows have annotations for most samples (the same as for the 15-state model), 15181508 for the samples without chrY. The annotations do not go to the end of the chromosomes.
+
+```{bash 18 state, eval=FALSE}
+# Intersect 200bp windows with chromHMM, 18-state model
+while read line; do bedtools intersect -wo -a raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - > chromHMM/genome/windows/windows_18state_$line\.bed; done < sample_lists/H3K27ac_samples.txt
+
+# Summit TEs
+while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < sample_lists/H3K27ac_samples.txt
+for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
+for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
+
+# Majority TEs
+while read line; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_majority_$line\.txt; done < sample_lists/H3K27ac_samples.txt
+for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
+for file in rmsk_TEother_majority_E[0-9][0-9][0-9]; do mv $file $file\.txt; done
+
+# Combine and sort
+while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TEother_summit_$line\.txt >> rmsk_TEother_18state.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TEother_majority_$line\.txt >> rmsk_TEother_18state.txt; done < ~/TE_landscape/sample_lists/H3K27ac_samples.txt &
+awk '{print>$1}' rmsk_TEother_18state.txt
+while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_18state_sorted.txt; rm $line; done < chromosomes.txt
+```
+
+```{bash 18 state potential, eval=FALSE}
+# List of states in 18-state model
+sample_lists/chromHMM_18_states.txt
+
+# Potential
+python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_18state_sorted.txt features/TEs/rmsk_TEother.txt sample_lists/chromHMM_18_states.txt sample_lists/H3K27ac_samples.txt chromHMM/potential/rmsk_TEother_18state_potential.txt 0 9 7 8
+
+# TEs in state per sample
+awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_18state_sorted.txt > chromHMM/state_sample_counts_18state.txt
+```
+
+```{r 18 state potential load}
+# Load matrix
+chromHMM_18state = read.table("chromHMM/potential/rmsk_TEother_18state_potential.txt",sep='\t',header=TRUE,quote="")
+colnames(chromHMM_18state)[8:25] = names(chromHMM_states_18)
+
+# Potential
+## Distribution
+chromHMM_18state_dist = sample_distribution(chromHMM_18state,c(8:25),sample_counts["All","H3K27ac"])
+chromHMM_18state_potential = melt(chromHMM_18state_dist,id.vars="Samples")
+colnames(chromHMM_18state_potential) = c("Samples","State","Count")
+chromHMM_18state_potential = ddply(chromHMM_18state_potential,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
+
+## Stats
+chromHMM_18state_stats = potential_stats(chromHMM_18state_dist,18,sample_counts["All","H3K27ac"])
+chromHMM_18state_stats$State = factor(rownames(chromHMM_18state_stats),levels=names(chromHMM_states_18))
+
+## Number of TEs in each chromHMM state by sample
+state_sample_18state = read.table("chromHMM/state_sample_counts_18state.txt",sep='\t',quote="")
+colnames(state_sample_18state) = c("State","Sample","Count")
+state_sample_18state$Count = as.numeric(state_sample_18state$Count)
+state_sample_18state$Proportion = ifelse(metadata[match(state_sample_18state$Sample,metadata$Sample),]$chrY == "Yes",state_sample_18state$Count/NUM_TE,state_sample_18state$Count/NUM_TE_noY)
+state_sample_18state$State = factor(state_sample_18state$State,levels=names(chromHMM_states_18))
+```
+
+The number of TEs in the quiescent state is back down, to a median of 62% per sample. Additionally, the number of TEs ever in an active regulatory state is back up to 48%, despite losing ~30 samples! Specifically, 39% can be in the 11_EnhWk state (weak enhancer), 25% in 10_EnhA2 (active enhancer), and 17% in 9_EnhA1 (active enhancer), although only 2% are ever in the 1_TssA state. 73% can be transcribed - very similar to what we see with the 15-state model.
+
+```{r 18 state potential analysis, cache=TRUE}
+ddply(state_sample_18state,.(State),summarise,Median=median(Proportion))
+
+## Active regulatory states (states 1-4, 7-11)
+sum(apply(chromHMM_18state[c(8:11,14:18)],1,function(x) sum(x > 0)) > 0)/NUM_TE
+## Transcribed states (states 5-6)
+sum(apply(chromHMM_18state[12:13],1,function(x) sum(x > 0)) > 0)/NUM_TE
+## Poised regulatory states (states 14-15)
+sum(apply(chromHMM_18state[21:22],1,function(x) sum(x > 0)) > 0)/NUM_TE
+## Repressed states (states 13, 16-17)
+sum(apply(chromHMM_18state[c(20,23:24)],1,function(x) sum(x > 0)) > 0)/NUM_TE
+
+ddply(chromHMM_18state_potential,.(State),summarise,Count=sum(Count[which(Samples != 0)]))
+chromHMM_18state_stats
+```
+
+Block/summit analysis and potential analysis (Fig 2A/C) using 18-state chromHMM model.  
 
 ```{r Figure S4, echo=FALSE}
+# Plot (x-axis in increasing order of median block size)
+a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
+  ylab("TEs in state per sample\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_fill_discrete(guide=FALSE) + coord_flip()
+
+b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
+  theme(axis.text.y = element_blank(),axis.title.y = element_blank(),axis.ticks.y = element_blank()) + 
+  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),guide=FALSE) + coord_flip()
+
+category_legend = get_legend(ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position = "bottom") + 
+  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),name="Overlap") + coord_flip())
+
+c = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
+
+d = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
+
+grid.arrange(a,b,category_legend,c,d,nrow=3,layout_matrix=rbind(c(1,2),c(3),c(4,5)),heights=c(0.5,0.05,0.45),widths=c(0.55,0.45))
+```
+
+### Supplementary Figure 5
+
+```{r Figure S5, echo=FALSE}
 a = ggplot(combine_boxplot_class,aes(x=State,y=Proportion,fill=Class)) + geom_boxplot() + scale_fill_manual(values=class_colors,guide=FALSE) + coord_flip() + ylab("Proportion of TEs in state") + scale_x_discrete(labels=rev(all_state_labels),limits=rev(levels(combine_boxplot_class$State))) + geom_point(data=combine_stats_class,aes(x=State,y=Proportion_ever,color=Class),position=position_dodge(width=0.5)) + scale_color_manual(values=class_colors) + theme(legend.position="bottom",axis.title.y = element_text(margin = margin(r = -5)),legend.key.size = unit(1,'mm'),legend.box.margin = margin(t=-10)) + guides(color = guide_legend(nrow = 2)) 
 
 state_order = ddply(combine_stats_class,"State",summarise,CV=sd(Samples_avg_all)/mean(Samples_avg_all), Range=max(Samples_avg_all)-min(Samples_avg_all))
@@ -1615,19 +1759,19 @@ median(rmsk_TE$CpGs)
 ddply(rmsk_TE,.(class_update),summarise,Median_CpGs=median(CpGs),Median_CpGs_wCpGs=median(CpGs[which(CpGs > 0)]))
 ```
 
-### Supplementary Figure 5
+### Supplementary Figure 6
 
 ```{bash promoter chromHMM counts, eval=FALSE}
 # Number of promoters in state in sample
 awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt > chromHMM/promoters_state_sample_counts_summit.txt
 ```
 
-```{r Figure S5 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+```{r Figure S6 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/potential_promoter.R")
 source("R_scripts/potential_exon.R")
 ```
 
-```{r Figure S5, echo=FALSE}
+```{r Figure S6, echo=FALSE}
 # Promoters
 a = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of promoters in state") + coord_flip() + scale_x_discrete(limits=rev(states[1:21]),labels=all_state_labels[1:21]) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.05,0.05))
 
@@ -1753,28 +1897,7 @@ ddply(combine_boxplot[which(combine_boxplot$Sample != "E017"),],.(State),summari
 combine_boxplot[which(combine_boxplot$Sample == "E017"),]
 ```
 
-### Background proportion of genome in active regulatory state
-
-Proportion of the genome that is in an active regulatory state in any Roadmap sample. 
-
-From the 200bp window-chromHMM intersections, I pulled out those in the 5 active regulatory states. Then, I found the number of unique windows that are ever in one of those states. There are 6,644,958, 43% of all windows.  
-
-```{bash window potential, eval=FALSE}
-# 200bp windows in an active regulatory state
-while read line; do awk -v OFS='\t' -v sample=$line '{if(($4 == "1_TssA") || ($4 == "2_TssAFlnk") || ($4 == "3_TxFlnk") || ($4 == "6_EnhG") || ($4 == "7_Enh")) print $5, $6, $7, $4, sample}' chromHMM/genome/windows/windows_$line\.bed >> chromHMM/genome/windows/windows_active_reg.bed; done < sample_lists/mnemonics.txt
-
-# Number of unique windows that are ever in an active regulatory state
-cut -f1-3 chromHMM/genome/windows/windows_active_reg.bed | sort | uniq | wc -l
-```
-
-Because these windows are smaller than TEs, I will confirm the results using the shuffled TEs. Found the number of shuffled TEs (times 10 iterations) that are ever in an active regulatory state. The mean proportion is 48.66% +/- 0.03%, a very tight distribution that is slightly higher than the value for actual TEs. 
-
-```{bash shuffled potential, eval=FALSE}
-# Number of shuffled TEs per iteration that are ever in an active regulatory state
-for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromHMM_potential.txt | awk '{if(($8 > 0) || ($9 > 0) || ($10 > 0) || ($13 > 0) || ($14 > 0)) print $0}' | wc -l; done
-```
-
-### Supplementary Figure 6 (replicates)
+### Response Figure 1 (replicates)
 
 Identifying pairs of samples that are so similar they could be considered replicates. Relied on Table S1 from the Roadmap publication. 
 
@@ -1803,10 +1926,57 @@ source("R_scripts/replicate_matrices.R")
 ```
 
 ```{r run replicates, cache=TRUE, cache.lazy=FALSE}
-source("R_scripts/potential_replicates.R")
+# Select replicates
+replicates = as.data.frame(matrix(c("E019","E020",
+                                    "E008","E014",
+                                    "E003","E016",
+                                    "E055","E056",
+                                    "E059","E061",
+                                    "E101","E102"),ncol=2,byrow = TRUE))
+colnames(replicates) = c("Sample 1","Sample 2")
+replicates$Set = rep("Replicate",6)
+
+test = as.data.frame(cbind(rep(as.vector(replicates$`Sample 1`),each=4),
+                           rep(c("E032","E049","E066","E071"),times=6),
+                           rep("Tissue",24)))
+colnames(test) = c("Sample 1","Sample 2","Set")
+
+replicates = rbind(replicates,test)
+replicates$Pair = paste(replicates$`Sample 1`,replicates$`Sample 2`,sep="/")
+rm(test)
+
+# Apply over replicates
+## Number of samples per TE x state
+chromHMM_replicates = apply(replicates,1,function(z) ddply(chromHMM_active_matrix[which(chromHMM_active_matrix$Sample %in% as.vector(z[1:2])),],.(State,chromosome,start,stop,subfamily,family,class,strand),summarise,Samples=length(Sample)))
+names(chromHMM_replicates) = replicates$Pair
+chromHMM_replicates = ldply(chromHMM_replicates)
+colnames(chromHMM_replicates)[1] = "Pair"
+chromHMM_replicates = merge(chromHMM_replicates,replicates[,c("Pair","Set")],by="Pair")
 ```
 
-```{r replicate analysis}
+```{r run replicates window, cache=TRUE, cache.lazy=FALSE, eval=FALSE}
+## Number of samples per window x state
+window_replicates = apply(replicates,1,function(z) ddply(windows_active[which(windows_active$Sample %in% as.vector(z[1:2])),],.(State,chr,start,stop),summarise,Samples=length(Sample)))
+names(window_replicates) = replicates$Pair
+window_replicates = ldply(window_replicates)
+colnames(window_replicates)[1] = "Pair"
+window_replicates = merge(window_replicates,replicates[,c("Pair","Set")],by="Pair")
+```
+
+```{r filter replictes, eval=FALSE}
+# Combine all active regulatory states
+chromHMM_replicates_active = ddply(chromHMM_replicates,.(Pair,Set,chromosome,start,stop,subfamily,family,class,strand),summarise,Samples=max(Samples))
+
+# Fraction of TEs in either sample found in both
+chromHMM_replicates_all = ddply(chromHMM_replicates_active,.(Pair,Set,Samples),summarise,Count=length(Samples))
+
+## Combine all
+chromHMM_replicates_count = dcast(chromHMM_replicates_all,Pair+Set~Samples,value.var="Count")
+chromHMM_replicates_count[is.na(chromHMM_replicates_count)] = 0
+chromHMM_replicates_count$Fraction = chromHMM_replicates_count$`2`/(chromHMM_replicates_count$`1`+chromHMM_replicates_count$`2`)
+```
+
+```{r replicate analysis, eval=FALSE}
 dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
 
 replicates_median = dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
@@ -1814,24 +1984,7 @@ replicates_median$Ratio = replicates_median$Replicate/replicates_median$Tissue
 replicates_median
 ```
 
-Shuffled replicate analysis, currently with iteration 1 only. 
-
-```{bash shuffled replicate, eval=FALSE}
-awk '{if(($8 == "1_TssA") || ($8 == "2_TssAFlnk") || ($8 == "3_TxFlnk") || ($8 == "6_EnhG") || ($8 == "7_Enh")) print $0}' chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_chromHMM_sorted.txt > chromHMM/shuffled_TEs/rmsk_TE_shuffle_1_active_reg.txt
-```
-
-```{r shuffled replicate analysis, cache=TRUE, cache.lazy=FALSE}
-source("R_scripts/replicate_matrices_shuffled.R")
-```
-
-```{r plot shuffled replicate analysis}
-# Analysis
-dcast(ddply(replicates_shuffled_count[which(replicates_shuffled_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
-
-dcast(ddply(replicates_shuffled_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
-```
-
-```{r Figure S6, echo=FALSE}
+```{r Figure R1, echo=FALSE, eval=FALSE}
 a = ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) +   scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Sample pair") + ylab("Fraction of TEs in both samples / either sample") +   theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),legend.position = "bottom",strip.text.y = element_text(size=5)) + scale_shape_manual(values=c(21,22,24,25),guide=FALSE) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))) + ylim(0,0.7)
 
 b = ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) + 
@@ -1919,13 +2072,11 @@ orthogonal_profile$SVA = orthogonal_profile$Other
 orthogonal_profile$Other = orthogonal_profile$`DNA?`+orthogonal_profile$`LINE?` + orthogonal_profile$`LTR?` + orthogonal_profile$RC + orthogonal_profile$`SINE?` + orthogonal_profile$Unknown + orthogonal_profile$`Unknown?`
 orthogonal_profile$Set = factor(c(rep("shuffle_constitutive",50),rep("restricted",5),rep("constitutive",5),"not_active"),levels=c("constitutive","shuffle_constitutive","restricted","not_active"))
 
-a = ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
+#ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
 
-b = ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
+#ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
 
-c = ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
-
-grid.arrange(a,b,c)
+#ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
 ```
 
 '''VISTA'''
@@ -2131,266 +2282,6 @@ set_legend = get_legend(ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=S
 grid.arrange(a,b,c,set_legend,layout_matrix = rbind(c(1,2),c(3),c(4)),widths=c(0.35,0.65),heights=c(0.35,0.6,0.05))
 ```
 
-### Supplementary Figure 8 (block/summit)
-
-How many TEs are responsible for their chromHMM region? Found TEs that overlap the center of chromHMM blocks.
-
-```{bash block control, eval=FALSE}
-# Filtered TE x chromHMM state intersections to only those where the TE overlaps the center of the block
-while read line; do awk -v OFS='\t' -v sample=$line '{mid=$9+(($10-$9)/2)-0.5;if((mid >= $2) && (mid < $3)) print $0, sample}' chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_TE >> chromHMM/blocks/rmsk_TE_block_summit.txt ; done < sample_lists/mnemonics.txt
-while read line; do awk -v OFS='\t' -v sample=$line '{mid=$9+(($10-$9)/2)-0.5;if((mid >= $2) && (mid < $3)) print $0, sample}' chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_other >> chromHMM/blocks/rmsk_TE_block_summit.txt ; done < sample_lists/mnemonics.txt
-
-# Unique
-awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $11, $13]+=$12}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sep[9], a[i]}}' chromHMM/rmsk_TE_block_summit.txt | sort -k1,1V -k2,2n -k3,3n -k4,4 -k9,9 - > chromHMM/rmsk_TE_block_summit_sorted.txt
-
-# Number of TEs in each state per sample
-awk -v OFS='\t' '{a[$8, $9]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' chromHMM/block/rmsk_TE_block_summit_sorted.txt > chromHMM/block/rmsk_TE_block_summit_counts.txt
-
-# Number of samples each TE is in each state
-awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $8]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' chromHMM/rmsk_TE_block_summit_sorted.txt > chromHMM/rmsk_TE_block_potential.txt
-```
-
-As a QC, found the number of TEs per state that are identified using block summit overlap, but not our usual analysis, and compared it to the total number identified using block summit overlap. The proportion is small, usually <1%. There are no subfamily x state combinations that are present in block overlap but not normally.
-
-```{bash block QC, eval=FALSE}
-# TEs overlapping a block summit that are not counted in the original analysis
-awk -v OFS='\t' '{if($8 != "8_ZNF/Rpts") print $1, $2, $3, $4, $5, $6, $7, $9, $10, $8 > $4"_"$8".txt"; else print $1, $2, $3, $4, $5, $6, $7, $9, $10, $8 > $4"_8_ZNF.Rpts.txt"}' rmsk_TE_block_summit_sorted.txt
-
-while read state; do while read subfam; do echo $subfam $state; comm -23 <(sort chromHMM/block/$subfam\_$state\.txt) <(cut -f1-10 chromHMM/subfamily/by_state/$subfam\_$state\.txt | sort) >> chromHMM/block/block_exclusive.txt; done < features/TEs/subfamily/subfamilies.txt; done < chromHMM/chromHMM_states.txt
-while read subfam; do echo $subfam; comm -23 <(sort chromHMM/block/$subfam\_8_ZNF.Rpts.txt) <(cut -f1-10 chromHMM/subfamily/by_state/$subfam\_8_ZNF.Rpts.txt | sort) >> chromHMM/block/block_exclusive.txt; done < features/TEs/subfamily/subfamilies.txt
-
-# Subfamily x state combinations present using block overlap but not normally
-while read state; do while read subfam; do if [ ! -f chromHMM/subfamily/by_state/$subfam\_$state\.txt ]; then if [ -f chromHMM/block/$subfam\_$state\.txt ]; then echo $subfam $state; fi; fi; done < features/TEs/subfamily/subfamilies.txt; done < chromHMM/chromHMM_states.txt >> chromHMM/block/not_all.txt
-while read subfam; do if [ ! -f chromHMM/subfamily/by_state/$subfam\_8_ZNF.Rpts.txt ]; then if [ -f chromHMM/block/$subfam\_8_ZNF.Rpts.txt ]; then echo $subfam; fi; fi; done < features/TEs/subfamily/subfamilies.txt
-
-# Number of TEs per state identified using block overlap but not normally vs. total
-awk -v OFS='\t' '{a[$10]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/block_exclusive.txt
-awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/rmsk_TE_block_summit_sorted.txt
-```
-
-As an intermediate between the chromHMM overlap rules in the paper and block center overlap, I repeated the analysis with just TEs that overlap 200bp bin summits. 
-
-```{bash summit control, eval=FALSE}
-# TEs per sample, restricted to those overlapping summits
-awk -v OFS='\t' '{if($11 == "summit") a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit_only.txt
-```
-
-```{r Figure S8, echo=FALSE,fig.height=6}
-source("R_scripts/chromHMM_block_potential.R")
-
-# Plot (x-axis in increasing order of median block size)
-a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + 
-  ylab("TEs in state per sample\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed") + scale_fill_discrete(guide=FALSE)
-
-b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position="top") + 
-  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),name="Overlap")
-
-grid.arrange(a,b,heights=c(0.45,0.55))
-```
-
-The number of TEs in each state per sample is much smaller, with a median of 17% for 1_TssA (up to 43% for 11_BivFlnk).
-
-For 1_TssA and 7_Enh, >50% of the TEs identified as ever in the state using the rules in the paper are also identified when I just consider block centers, although this number is as low as 29% for 14_ReprPCWk and 36% for 3_TxFlnk. Overall, 26% of TEs can be in an active regulatory state in any sample, about half of the value in the paper. 
-
-```{r block analysis}
-# Median samples in state
-test2 = ddply(test,.(State,Category),summarise,Median=median(na.omit(Ratio)))
-test2[order(test2$Median),]
-
-# Ever
-potential_ever[order(potential_ever$Ratio),]
-
-# TEs in any active regulatory state in any sample
-## Overlapping block centers
-dim(unique(block_potential[which(block_potential$State %in% chromHMM_states[c(1:3,6:7)]),TE_coordinates]))[1]/NUM_TE
-
-## Overlapping bin summits
-sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
-```
-
-### Supplementary Figure 9 (imputed)
-
-The Roadmap project has 98 samples annotated with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model) (which includes H3K27ac), as well as all samples annotated with a 25-state model generated using imputed data. The 25-state model uses "imputed data for 12 marks, H3K4me1, H3K4me2, H3K4me3, H3K9ac, H3K27ac, H4K20me1, H3K79me2, H3K36me3, H3K9me3, H3K27me3, H2A.Z, and DNase". 
-
-'''18-state model'''
-
-For the 18-state model, 15,478,375 windows have annotations for most samples (the same as for the 15-state model), 15181508 for the samples without chrY. The annotations do not go to the end of the chromosomes.
-
-```{bash 18 state, eval=FALSE}
-# Intersect 200bp windows with chromHMM, 18-state model
-while read line; do bedtools intersect -wo -a raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - > chromHMM/genome/windows/windows_18state_$line\.bed; done < sample_lists/H3K27ac_samples.txt
-
-# Summit TEs
-while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < sample_lists/H3K27ac_samples.txt
-for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
-for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
-
-# Majority TEs
-while read line; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_majority_$line\.txt; done < sample_lists/H3K27ac_samples.txt
-for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
-for file in rmsk_TEother_majority_E[0-9][0-9][0-9]; do mv $file $file\.txt; done
-
-# Combine and sort
-while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TEother_summit_$line\.txt >> rmsk_TEother_18state.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TEother_majority_$line\.txt >> rmsk_TEother_18state.txt; done < ~/TE_landscape/sample_lists/H3K27ac_samples.txt &
-awk '{print>$1}' rmsk_TEother_18state.txt
-while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_18state_sorted.txt; rm $line; done < chromosomes.txt
-```
-
-```{bash 18 state potential, eval=FALSE}
-# List of states in 18-state model
-sample_lists/chromHMM_18_states.txt
-
-# Potential
-python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_18state_sorted.txt features/TEs/rmsk_TEother.txt sample_lists/chromHMM_18_states.txt sample_lists/H3K27ac_samples.txt chromHMM/potential/rmsk_TEother_18state_potential.txt 0 9 7 8
-
-# TEs in state per sample
-awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_18state_sorted.txt > chromHMM/state_sample_counts_18state.txt
-```
-
-```{r 18 state potential load}
-# Load matrix
-chromHMM_18state = read.table("chromHMM/potential/rmsk_TEother_18state_potential.txt",sep='\t',header=TRUE,quote="")
-colnames(chromHMM_18state)[8:25] = names(chromHMM_states_18)
-
-# Potential
-## Distribution
-chromHMM_18state_dist = sample_distribution(chromHMM_18state,c(8:25),sample_counts["All","H3K27ac"])
-chromHMM_18state_potential = melt(chromHMM_18state_dist,id.vars="Samples")
-colnames(chromHMM_18state_potential) = c("Samples","State","Count")
-chromHMM_18state_potential = ddply(chromHMM_18state_potential,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
-
-## Stats
-chromHMM_18state_stats = potential_stats(chromHMM_18state_dist,18,sample_counts["All","H3K27ac"])
-chromHMM_18state_stats$State = factor(rownames(chromHMM_18state_stats),levels=names(chromHMM_states_18))
-
-## Number of TEs in each chromHMM state by sample
-state_sample_18state = read.table("chromHMM/state_sample_counts_18state.txt",sep='\t',quote="")
-colnames(state_sample_18state) = c("State","Sample","Count")
-state_sample_18state$Count = as.numeric(state_sample_18state$Count)
-state_sample_18state$Proportion = ifelse(metadata[match(state_sample_18state$Sample,metadata$Sample),]$chrY == "Yes",state_sample_18state$Count/NUM_TE,state_sample_18state$Count/NUM_TE_noY)
-state_sample_18state$State = factor(state_sample_18state$State,levels=names(chromHMM_states_18))
-```
-
-The number of TEs in the quiescent state is back down, to a median of 62% per sample. Additionally, the number of TEs ever in an active regulatory state is back up to 48%, despite losing ~30 samples! Specifically, 39% can be in the 11_EnhWk state (weak enhancer), 25% in 10_EnhA2 (active enhancer), and 17% in 9_EnhA1 (active enhancer), although only 2% are ever in the 1_TssA state. 73% can be transcribed - very similar to what we see with the 15-state model.
-
-```{r 18 state potential analysis, cache=TRUE}
-ddply(state_sample_18state,.(State),summarise,Median=median(Proportion))
-
-## Active regulatory states (states 1-4, 7-11)
-sum(apply(chromHMM_18state[c(8:11,14:18)],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Transcribed states (states 5-6)
-sum(apply(chromHMM_18state[12:13],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Poised regulatory states (states 14-15)
-sum(apply(chromHMM_18state[21:22],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Repressed states (states 13, 16-17)
-sum(apply(chromHMM_18state[c(20,23:24)],1,function(x) sum(x > 0)) > 0)/NUM_TE
-
-ddply(chromHMM_18state_potential,.(State),summarise,Count=sum(Count[which(Samples != 0)]))
-chromHMM_18state_stats
-```
-
-'''25-state model'''
-
-The imputed chromHMM annotations do not include chrY. 15,181,531 200bp windows have annotations in each sample (out of 15,478,399; does not include the 296,868 windows on chrY). However, the annotations go to the end of the chromosomes.
-
-```{bash imputed, eval=FALSE}
-# Intersect 200bp windows with imputed chromHMM
-while read line; do bedtools intersect -wo -a raw_data/chromHMM_imputed25/$line\_25_imputed12marks_mnemonics.bed -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - > chromHMM/genome/windows/windows_imputed_$line\.bed; done < sample_lists/mnemonics.txt
-
-# Summit
-## Intersect summit TEs with imputed chromHMM windows
-while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_imputed_$line\.bed > /scratch/ecp/TE_landscape/imputed/rmsk_TEother_summit_$line\.txt; done < sample_lists/mnemonics.txt
-
-## Filter to summit overlaps
-for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done &
-for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
-
-# Majority
-## Intersect majority TEs with imputed chromHMM blocks
-while read line; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b raw_data/chromHMM_imputed25/$line\_25_imputed12marks_mnemonics.bed > /scratch/ecp/TE_landscape/imputed/rmsk_TEother_majority_$line\.txt; done < sample_lists/mnemonics.txt
-
-## Identify majority state
-for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
-for file in rmsk_TEother_majority_E[0-9][0-9][0-9]; do mv $file $file\.txt; done
-
-# Combine and sort
-while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TEother_summit_$line\.txt >> rmsk_TEother_imputed.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TEother_majority_$line\.txt >> rmsk_TEother_imputed.txt; done < ~/TE_landscape/sample_lists/mnemonics.txt &
-awk '{print>$1}' rmsk_TEother_imputed.txt
-# Where chromosomes.txt is chr 1-22 and sex chromosomes
-while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_imputed_sorted.txt; rm $line; done < chromosomes.txt
-```
-
-```{bash imputed potential, eval=FALSE}
-# List of states in 25-state model
-sample_lists/chromHMM_imputed_states.txt
-
-# Potential 
-python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_imputed_sorted.txt features/TEs/rmsk_TEother.txt sample_lists/chromHMM_imputed_states.txt sample_lists/mnemonics.txt chromHMM/potential/rmsk_TEother_imputed_potential.txt 0 9 7 8 &
-
-# Number of TEs in state per sample
-awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_imputed_sorted.txt > chromHMM/state_sample_counts_imputed.txt
-```
-
-```{r imputed potential load}
-# Load matrix
-chromHMM_imputed = read.table("chromHMM/potential/rmsk_TEother_imputed_potential.txt",sep='\t',header=TRUE,quote="")
-colnames(chromHMM_imputed)[8:32] = names(imputed_states)
-
-# Potential
-## Distribution
-chromHMM_imputed_dist = sample_distribution(chromHMM_imputed,c(8:32),sample_counts["All","chromHMM"])
-chromHMM_imputed_potential = melt(chromHMM_imputed_dist,id.vars="Samples")
-colnames(chromHMM_imputed_potential) = c("Samples","State","Count")
-chromHMM_imputed_potential = ddply(chromHMM_imputed_potential,.(State),transform,Sample.Proportion = Samples/(length(Samples)-1))
-
-## Stats
-chromHMM_imputed_stats = potential_stats(chromHMM_imputed_dist,25,sample_counts["All","chromHMM"])
-chromHMM_imputed_stats$State = factor(rownames(chromHMM_imputed_stats),levels=names(imputed_states))
-
-## Number of TEs in each chromHMM state by sample
-state_sample_imputed = read.table("chromHMM/state_sample_counts_imputed.txt",sep='\t',quote="")
-colnames(state_sample_imputed) = c("State","Sample","Count")
-state_sample_imputed$Count = as.numeric(state_sample_imputed$Count)
-state_sample_imputed$Proportion = state_sample_imputed$Count/NUM_TE_noY
-state_sample_imputed$State = factor(state_sample_imputed$State,levels=names(imputed_states))
-```
-
-The 25-state model splits the active regulatory states into much finer detail (15 vs. 5), splits the transcribed states into 4 (from 2), and removes the weakly Polycomb repressed state and the bivalent enhancer state. Using this model, the median number of TEs in the quiescent state per sample is actually greatly increased to 77%, although interestingly, on 89% of TEs are ever in the state. Only 30% of TEs can be in an active regulatory state (15 states), 33% in a transcribed state (4 states), 7% in a poised regulatory state (2 states), and 14% in a repressed state (2 states). 19% of TEs can be in the 17_EnhW2 state (Weak Enhancer 2), 12% in 18_EnhAc (Primary H3K27ac possible Enhancer), and 11% in 15_EnhAF (Active Enhancer Flank); they are less represented in the stronger enhancer states, although 9% are in 14_EnhA2 (Active Enhancer 2).
-
-```{r imputed potential analysis, cache=TRUE}
-ddply(state_sample_imputed,.(State),summarise,Median=median(Proportion))
-
-## Active regulatory states (states 1-4, 9-19)
-sum(apply(chromHMM_imputed[c(8:11,16:26)],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Transcribed states (states 5-8)
-sum(apply(chromHMM_imputed[12:15],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Poised regulatory states (states 22-23)
-sum(apply(chromHMM_imputed[29:30],1,function(x) sum(x > 0)) > 0)/NUM_TE
-## Repressed states (states 21, 24)
-sum(apply(chromHMM_imputed[c(28,31)],1,function(x) sum(x > 0)) > 0)/NUM_TE
-
-ddply(chromHMM_imputed_potential,.(State),summarise,Count=sum(Count[which(Samples != 0)]))
-chromHMM_imputed_stats
-```
-
-Potential analysis (Fig 2A/C) using other chromHMM models. I got the corresponding colors for the imputed states from the [https://egg2.wustl.edu/roadmap/web_portal/imputed.html#chr_imp| Roadmap website], but many states share the same color. 
-
-```{r Figure S9, echo=FALSE}
-a = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
-
-b = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
-
-c = ggplot(state_sample_imputed,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=imputed_states,guide=FALSE) + scale_x_discrete(limits=rev(names(imputed_states))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_imputed_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
-
-d = ggplot(chromHMM_imputed_potential[which(chromHMM_imputed_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=imputed_states,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(imputed_states))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
-
-grid.arrange(a,b,c,d,nrow=2,heights=c(0.43,0.57),widths=c(0.55,0.45))
-```
-
 ### Figure 3
 
 ```{bash chromHMM intra, eval=FALSE}
@@ -2488,13 +2379,13 @@ meth_dynamics = melt(TE_meth_average[,c(meth_states,"States")],id.var="States")
 meth_dynamics = meth_dynamics[which(meth_dynamics$value > 0),]
 ```
 
-### Supplementary Figure 10
+### Supplementary Figure 8
 
-```{r Figure S10, echo=FALSE}
+```{r Figure S8, echo=FALSE}
 # State dynamics
-a = ggplot(chromHMM_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.5) + scale_fill_manual(values=chromHMM_colors,name="State",limits=chromHMM_states) + xlim(0,15) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
+a = ggplot(chromHMM_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.5) + scale_fill_manual(values=chromHMM_colors,name="State",limits=chromHMM_states) + xlim(0,15) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top")) + xlab("Number of chromHMM states")
 
-b = ggplot(meth_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.8) + scale_fill_manual(values=meth_colors,name="State",limits=meth_states,labels=meth_labels) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top"))
+b = ggplot(meth_dynamics,aes(x=States,y=..scaled..,fill=forcats::fct_rev(variable))) + geom_density(adjust=10,alpha=0.8) + scale_fill_manual(values=meth_colors,name="State",limits=meth_states,labels=meth_labels) + ylab("Density") + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(3,'mm')) + guides(fill=guide_legend(nrow=4,title.position = "top")) + xlab("Number of methylation states")
 
 # chromHMM states intra
 c = ggplot(chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),],aes(x=Max_states_intra,y = ..density..,fill=class_update)) + geom_histogram(binwidth=1,color="grey") + ylab("Proportion of TEs") + xlab("Number of chromHMM states") + facet_wrap(~class_update) + scale_fill_manual(values=class_colors,guide=FALSE) + theme(legend.position="bottom")
@@ -2624,9 +2515,9 @@ e
 e[2]/sum(e[2:length(e)])
 ```
 
-### Supplementary Figure 11 (shuffled state switching)
+### Supplementary Figure 9 (shuffled state switching)
 
-```{bash shuffled dynamics, eval=FALSE}
+```{bash shuffled dynamics}
 # Inter state switching for shuffled TEs
 ## chromHMM
 for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_inter.py rmsk_TE_shuffle_$i\_chromHMM_sorted.txt chromHMM_states.txt rmsk_TE_shuffle_$i\_chromHMM_inter.txt 9 7; done &
@@ -2639,7 +2530,7 @@ for i in {1..10}; do python ~/bin/TE_landscape/state_sharing_inter_meth.py WGBS/
 source("R_scripts/shuffled_state_switching.R")
 ```
 
-```{r Figure S11, echo=FALSE}
+```{r Figure S9, echo=FALSE}
 iteration_labels = unlist(setNames(lapply(seq(1,10,1),function(x) paste("Iteration ",x,sep="")),seq(1,10,1)))
 
 a = ggplot(shuffled_chromHMM_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_counts["All","chromHMM"])) + geom_tile() +
@@ -2678,7 +2569,7 @@ shuffled_meth_dynamics
 rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average"))
 ```
 
-### Supplementary Figure 12
+### Supplementary Figure 10
 
 Across all TEs x sample with DHS information, 2% overlap a peak summit; for H3K27ac, it is 0.7%. If they were independent, the expectation would be 0.02% of TEs overlapping both peaks. If I restrict the comparison to TEs x sample with both DHS and H3K27ac information (by default also chromHMM), the numbers become 2% and 0.8% (essentially the same), but the number of TEs x sample with both is 0.2%, 10X the expectation. So even without restricting to 1_TssA, there is already an enrichment between these two states, which we knew from the Chi-squared analyses.
 
@@ -2713,7 +2604,7 @@ python combine_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
 python aggregate_marks_pandas.py mnemonics.txt
 ```
 
-```{r Figure S12, echo=FALSE}
+```{r Figure S10, echo=FALSE}
 source("R_scripts/compare_marks.R")
 
 a = ggplot(by_chromHMM,aes(x=1,y=Proportion,fill=State)) + geom_bar(stat="identity",position="stack") + 
@@ -2946,9 +2837,9 @@ ddply(class_RNA,.(class_update),summarise,Median=median(Ratio))
 dcast(ddply(class_RNA,.(Group,class_update),summarise,Median=median(Ratio)),class_update~Group,value.var="Median")
 ```
 
-### Supplementary Figure 13
+### Supplementary Figure 11
 
-```{r Figure S13, echo=FALSE}
+```{r Figure S11, echo=FALSE}
 # Other sample classifications
 by_sample_all_long = melt(by_sample_all[,c("State","Sample","Proportion","Contribution",sample_categories[2:6])],id.vars=c("State","Sample","Proportion","Contribution"))
 colnames(by_sample_all_long)[5:6] = c("Category","Group")
@@ -3080,7 +2971,7 @@ source("R_scripts/shuffled_subfamily_enrichment.R")
 
 ```{r Figure 5, echo=FALSE}
 # Potential
-a = ggplot(subfam_states[which(subfam_states$variable == "States"),],aes(x=value)) + geom_histogram(binwidth=1,fill="black") + ylab("Subfamilies") + xlab("States") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0)
+a = ggplot(subfam_states[which(subfam_states$variable == "States"),],aes(x=value)) + geom_histogram(binwidth=1,fill="black") + ylab("Subfamilies") + xlab("Number of states") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0)
 
 # Clustering
 b = ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels) + labs(x=paste("PC1 (",round(sample_chromHMM_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_chromHMM_pca$eigenvalues[2],1),"%)",sep="")) + theme(aspect.ratio = 1,legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
@@ -3135,22 +3026,27 @@ test_log$Subfamilies = as.numeric(table(rmsk_TE_subfamily$family)[rownames(test_
 lapply(colnames(test_log)[1:21],function(x) test_log[which(test_log[,x] > 0 & test_log$Subfamilies > 0),c(x,"Subfamilies")])
 ```
 
-### Supplementary Figure 14
+### Supplementary Figure 12
 
-```{r Figure S14, echo=FALSE}
+```{r Figure S12, echo=FALSE}
+# Potential
+shuffle_state_potential = ddply(subfamily_state_potential_shuffle,.(Iteration,Metric,subfamily),summarise,States=sum(Samples > 0))
+
+a = ggplot(shuffle_state_potential,aes(x=States,fill=Iteration)) + geom_histogram(binwidth=1,position="dodge") + ylab("Subfamilies") + xlab("Number of states") + facet_wrap(~Metric,scales="free_x",nrow=1,labeller=labeller(Metric=mark_labels_simple)) + scale_y_continuous(limits=c(0,968)) + expand_limits(x=0) + scale_fill_grey()
+
 test = subfamily_state_potential
 test$Iteration = rep("Real",dim(subfamily_state_potential)[1])
 test = rbind(test,subfamily_state_potential_shuffle)
 test$Iteration = factor(test$Iteration,levels=c(seq(1,10,1),"Real"))
   
-a = ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State,labeller=labeller(State=all_state_labels)) + ylab("Density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom") + guides(fill=guide_legend(nrow=1))
+b = ggplot(test,aes(x=Sample.Proportion,y=..scaled..,fill=Iteration)) + geom_density(alpha=0.5) + facet_wrap(~State,labeller=labeller(State=all_state_labels)) + ylab("Density") + scale_fill_manual(values=c(rep("grey",10),"red")) + xlab("Proportion of samples in state") + theme(legend.position="bottom") + guides(fill=guide_legend(nrow=1))
 
 # Plot number of enrichments per state for true TEs vs. shuffled TEs
-b = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=State)) + geom_boxplot() + geom_point(data=enrichment_table,aes(x=State,y=Enrichments),color="red") + ylab("Number of enrichments") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
 
-c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of enriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
+d = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of enriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
 
-grid.arrange(a,b,c,layout_matrix=rbind(c(1),c(2,3)),nrow=2,heights=c(0.6,0.4))
+grid.arrange(a,b,c,d,layout_matrix=rbind(c(1),c(2),c(3,4)),nrow=3,heights=c(0.15,0.55,0.3))
 ```
 
 ### Subfamily potential
@@ -3185,7 +3081,7 @@ For DNase and H3K27ac, the number of subfamilies in each state in at least one s
 
 ```{r subfam potential shuffled}
 # Total number of states per subfamily, across samples
-subfamily_potential_shuffle_ever = ddply(ddply(subfamily_state_potential_shuffle,.(Iteration,Metric,subfamily),summarise,States=sum(Samples > 0)),.(Iteration,Metric,States),summarise,Subfamilies=length(subfamily))
+subfamily_potential_shuffle_ever = ddply(shuffle_state_potential,.(Iteration,Metric,States),summarise,Subfamilies=length(subfamily))
 ddply(subfamily_potential_shuffle_ever,.(Metric,States),summarise,Mean=mean(Subfamilies),SD=sd(Subfamilies))
 
 # Distribution of samples in state
@@ -3196,9 +3092,9 @@ ddply(subfamily_state_potential_shuffle,.(Iteration,State),summarise,Subfamilies
 ddply(shuffled_enrichment_counts_combine,.(State),summarise,Enrichments=median(Enrichments),Subfamilies=median(Subfamilies))
 ```
 
-### Supplementary Figure 15
+### Supplementary Figure 13
 
-```{r Figure S15, echo=FALSE}
+```{r Figure S13, echo=FALSE}
 ## Samples
 a = ggplot(sample_WGBS_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group,shape=Age)) + geom_point() + scale_color_manual(values=group_colors,guide=FALSE) + labs(x=paste("PC1 (",round(sample_WGBS_pca$eigenvalues[1],1),"%)",sep=""),y=paste("PC2 (",round(sample_WGBS_pca$eigenvalues[2],1),"%)",sep=""))+ scale_shape_manual(values=setNames(c(16,17,18,16),c("Non_fetal","Fetal","Cell_line","Unknown")),labels=age_labels,guide=FALSE) + theme(aspect.ratio = 1)
 
@@ -3304,11 +3200,11 @@ merge(TE_meth_subfamily_stats[which(TE_meth_subfamily_stats$All_members > 0),],r
 ddply(TE_meth_subfamily_stats,.(State),summarise,Median=mean(Median),Range=mean(Range),Max=mean(Max))
 ```
 
-### Supplementary Figure 16
+### Supplementary Figure 14
 
 GO BP results downloaded in tsv format from GREAT. 
 
-```{r Figure S16, echo=FALSE}
+```{r Figure S14, echo=FALSE}
 source("R_scripts/TE_correlation_subfamily.R") # Requires subfamily_enrichment.R
 source("R_scripts/subfamily_correlate.R") # Requires TE_correlation_subfamily.R
 
@@ -3607,11 +3503,11 @@ candidates_features_summary = ddply(candidates_features,.(subfamily,class_update
 write.table(candidates_features_summary,file="enrichment/candidates_features_summary.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
-### Supplementary Figure 17
+### Supplementary Figure 15
 
 Samples are ordered by group. Red lines split ESC/iPSC/ES-derived; Blood & T-cell/HSC & B-cell/Thymus; Brain/Neurosph; Digestive; Epithelial; Adipose/Mesench/Myosat/Muscle/Sm. Muscle/Heart/Other; IMR90/ENCODE2012
 
-```{r Figure S17, echo=FALSE}
+```{r Figure S15, echo=FALSE}
 # Subfamilies with at least one instance of >1% of state in an active state
 pc_subfamilies = as.vector(unique(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC & subfamily_state_sample_combined$State %in% c(chromHMM_states[1:7],meth_states[1:2],"DNase","H3K27ac")),]$subfamily))
 
@@ -3756,7 +3652,7 @@ ddply(rmsk_TE_measure[which(rmsk_TE_measure$class_update == "SINE"),],.(cpgIslan
 ddply(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),],.(cpgIsland_binary),summarise,Age=median(JC_distance))
 ```
 
-### Supplementary Figure 18
+### Supplementary Figure 16
 
 ```{bash chromosome epigenetics, eval=FALSE}
 # By chromosome
@@ -3773,7 +3669,7 @@ while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample,
 while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac/chr_H3K27ac.txt ; done < sample_lists/H3K27ac_samples.txt
 ```
 
-```{r Figure S18, echo=FALSE}
+```{r Figure S16, echo=FALSE}
 source("R_scripts/chromosome_potential.R")
 
 # Epigenetic state by chromosome
@@ -3791,9 +3687,9 @@ e = ggplot(chromosome_potential,aes(x=State,y=Zscore,label=chromosome)) + geom_p
 grid.arrange(a,b,c,d,e,layout_matrix=rbind(c(1,2),c(3,4),c(5)),heights=c(0.35,0.25,0.4))
 ```
 
-### Supplementary Figure 19 (intergenic potential)
+### Supplementary Figure 17 (intergenic potential)
 
-```{r Figure S19 scripts, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
+```{r Figure S17 scripts, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
 source("R_scripts/feature_overlap_state.R") #Requires potential.R
 source("R_scripts/intergenic_potential.R")
 ```
@@ -3804,11 +3700,11 @@ For 4_Tx, the proportion of TEs that are intergenic is higher than baseline for 
 
 Feature-state patterns roughly the same across class. Stronger for protein-coding than non-coding (not shown).
 
-```{r Figure S19, echo=FALSE}
-a = ggplot(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),],aes(x=Bin,y=Ratio,color=class_update)) + geom_line() + ylim(0,1) + scale_color_manual(values=class_colors,name="Class") + xlab("Proportion of samples in state") + ylab("Proportion of TEs overlapping genes") +  geom_hline(data=rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),],aes(yintercept=Proportion,color=class_update),linetype="dotted") + facet_grid(State~Genes,labeller = labeller(Genes=setNames(c("All genes","Protein-coding genes"),c("All","PC")),State=all_state_labels))
-
+```{r Figure S17, echo=FALSE}
 # Feature overlap vs. samples in state, by class
-b = ggplot(na.omit(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]),aes(x=State,y=forcats::fct_rev(Feature),fill=Enrichment*100)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background = element_rect(fill="lightgrey"),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_gradient2(name="% increase\nin sample\nproportion",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-100,5000),na.value="darkblue") + scale_y_discrete(labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class) + ylab("Feature")
+a = ggplot(na.omit(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),]),aes(x=State,y=forcats::fct_rev(Feature),fill=Enrichment*100)) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background = element_rect(fill="lightgrey"),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_gradient2(name="% increase\nin sample\nproportion",low="darkblue",high="darkred",mid="white",midpoint=0,limits=c(-100,5000),na.value="darkblue") + scale_y_discrete(labels=genic_labels) + scale_x_discrete(labels=all_state_labels) + facet_wrap(~Class) + ylab("Feature")
+
+b = ggplot(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),],aes(x=Bin,y=Ratio,color=class_update)) + geom_line() + ylim(0,1) + scale_color_manual(values=class_colors,name="Class") + xlab("Proportion of samples in state") + ylab("Proportion of TEs overlapping genes") +  geom_hline(data=rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),],aes(yintercept=Proportion,color=class_update),linetype="dotted") + facet_grid(State~Genes,labeller = labeller(Genes=setNames(c("All genes","Protein-coding genes"),c("All","PC")),State=all_state_labels))
 
 grid.arrange(a,b,nrow=2)
 ```
@@ -3840,9 +3736,9 @@ anova(model_hyper1,model_hyper2,test="F")
 anova(model_hyper2,model_hyper3,test="F")
 ```
 
-### Supplementary Figure 20
+### Supplementary Figure 18
 
-```{r Figure S20, echo=FALSE,fig.height=6}
+```{r Figure S18, echo=FALSE,fig.height=6}
 #source("R_scripts/state_metric_correlation.R")
 
 a = ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",mid="white",guide=FALSE) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),panel.background=element_rect(fill="lightgrey"),aspect.ratio = 1) + scale_y_discrete(labels=c("Mappability","Age","CpGs","CpGs/bp")) + scale_x_discrete(labels=c("Length","Mappability","Age","CpGs")) + xlab("TE characteristic") + ylab("TE characteristic")
@@ -4083,9 +3979,9 @@ d = ggplot(hg19_orthologs_specific,aes(x=factor(1),y=Count,fill=Subset,label=pas
 grid.arrange(a,b,c,d,nrow=2,layout_matrix=rbind(c(1,4,4),c(2,3,3)),heights=c(0.45,0.55))
 ```
 
-### Supplementary Figure 21
+### Supplementary Figure 19
 
-```{r Figure S21, echo=FALSE,fig.height=6}
+```{r Figure S19, echo=FALSE,fig.height=6}
 ortholog_stats = melt(rmsk_TE_class[,c("class_update","Count","Mouse_orthologs")],id.var="class_update")
 colnames(ortholog_stats)[2:3] = c("Category","TEs")
 ortholog_stats = ddply(ortholog_stats,.(Category),transform,Percent=100*TEs/sum(TEs))
@@ -4098,13 +3994,13 @@ ortholog_stats_subfam = ddply(ortholog_stats_subfam,.(Category),transform,Percen
   
 b = ggplot(ortholog_stats_subfam,aes(x=Category,y=Count,fill=class_update,label=paste(format(Count, big.mark=",", scientific=FALSE)," (",round(Percent,0),"%) ",sep=""))) + geom_bar(stat="identity",position="fill",width=0.8) + coord_polar(theta="y") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.x = element_blank(),axis.title.y = element_blank(),axis.text.x = element_blank(),axis.text.y = element_blank(),axis.ticks.y = element_blank(),plot.title = element_text(size=8)) + ggtitle("Subfamilies") + geom_text(position = position_fill(vjust = 0.5),size=2)
 
-c = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human_hypo,y=Mouse_hypo,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+c = ggplot(hg19_mm10_TE_WGBS_subfamily_hypo_paired,aes(x=Human_hypo,y=Mouse_hypo,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal() + scale_linetype_manual(values=c(1,2),guide=FALSE)
 
-d = ggplot(hg19_mm10_chromHMM_subfamily[which(hg19_mm10_chromHMM_subfamily$Human_state_chromHMM == "1_TssA" & hg19_mm10_chromHMM_subfamily$Mouse_state_chromHMM == "TssA"),],aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.05) + ylim(0,0.05) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+d = ggplot(hg19_mm10_chromHMM_subfamily[which(hg19_mm10_chromHMM_subfamily$Human_state_chromHMM == "1_TssA" & hg19_mm10_chromHMM_subfamily$Mouse_state_chromHMM == "TssA"),],aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.05) + ylim(0,0.05) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal() + scale_linetype_manual(values=c(1,2),guide=FALSE)
 
-e = ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal()
+e = ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors,guide=FALSE) + xlab("Subfamily proportion (human)") + ylab("Subfamily proportion (mouse)") + geom_abline(slope=1,linetype="dotted") + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + xlim(0,0.4) + ylim(0,0.4) + guides(color=FALSE,shape=FALSE,linetype=FALSE) + coord_equal() + scale_linetype_manual(values=c(1,2),guide=FALSE)
 
-legend = get_legend(ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors) + scale_shape_discrete(labels=age_labels) + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + scale_linetype_discrete(labels=age_labels) + xlab("Human") + ylab("Mouse") + theme(legend.position = "bottom",legend.direction = "horizontal",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
+legend = get_legend(ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors) + scale_shape_discrete(labels=age_labels) + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + scale_linetype_manual(labels=age_labels,values=c(1,2)) + xlab("Human") + ylab("Mouse") + theme(legend.position = "bottom",legend.direction = "horizontal",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
 grid.arrange(a,b,legend_class,c,d,e,legend,nrow=4,layout_matrix=rbind(c(1,NA,2),c(3),c(4,5,6),c(7)),heights=c(0.45,0.05,0.45,0.05))
 ```
@@ -4486,9 +4382,50 @@ while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' ../r
 while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' $line\-H3K27ac.narrowPeak >> peak_widths.txt; done < ../../../sample_lists/H3K27ac_samples.txt
 ```
 
-### Supplementary Figure 23
+```{bash histone profile, eval=FALSE}
+# Updated with summit TEs 5/29/18 to 6/19/18 (should be run on htcf)
 
-```{r Figure S23 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+# Each TE extended from center to 10kb region, excluding those that would extend past the ends of the chromosomes.	 
+
+#TE_landscape/features/TEs/rmsk_TE_10kb.txt	
+while read chr size; do awk -v OFS="\t" -v chr=$chr -v size=$size '{if($1 == chr && $2 > 4999 && ($3+5000 < size)) print $1,int($2+(($3-$2)/2))-5000,int($2+(($3-$2)/2))+5000,$1,$2,$3,$4,$5,$6,$7}' rmsk_TE.txt >> rmsk_TE_10kb.txt; done < hg19_standard.genome
+
+#TE_landscape/features/TEs/rmsk_other_10kb.txt	
+while read chr size; do awk -v OFS="\t" -v chr=$chr -v size=$size '{if($1 == chr && $2 > 4999 && ($3+5000 < size)) print $1,int($2+(($3-$2)/2))-5000,int($2+(($3-$2)/2))+5000,$1,$2,$3,$4,$5,$6,$7}' rmsk_other.txt >> rmsk_other_10kb.txt; done < hg19_standard.genome
+
+# 10kb-extended TE bed file, rearranged so original coordinates are first	 
+
+#TE_landscape/features/TEs/rmsk_TE_10kb.bed	
+awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' /bar/epehrsson/TE_landscape/rmsk_TE_10kb.txt > rmsk_TE_10kb.bed
+
+#TE_landscape/features/TEs/rmsk_other_10kb.bed	
+awk -v OFS="\t" '{print $4,$5,$6,$7,$8,$9,$10,$1,$2,$3}' rmsk_other_10kb.txt > /scratch/ecp/rmsk_other_10kb.bed
+
+# Combined into one file
+cat features/TEs/rmsk_*_10kb.bed > features/TEs/rmsk_TEother_10kb.bed
+
+# TEs in state in sample
+awk -v OFS='\t' '{print $0 > "ever/rmsk_TEother_"$8".txt"}' rmsk_TEother_chromHMM_summit_sorted.txt
+while read line; do echo $line; awk -v OFS='\t' '{if($10 != "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_"$10".txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
+while read line; do echo $line; awk -v OFS='\t' '{if($10 == "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_8_ZNF.Rpts.txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
+ 
+# Finds level of histone modifications and DNase over 10kb region centered on TEs in bins	
+intersect_histone.sh
+# Finds level of DNA methylation over 10kb region centered on TEs, in bins
+intersect_meth.sh
+
+# Epigenetic profiles by state and mark
+#TE_landscape/compare_marks/profile_histone/rmsk_TEother_[state]_[mark]_average.txt [108 files]
+# marks.txt is a list of 9 
+while read state; do while read mark; do echo $state $mark; cat averages/rmsk_TEother_E*_$state\_$mark\_average.txt > rmsk_TEother_$state\_$mark\_average.tmp; python calculate_bin_average_all.py rmsk_TEother_$state\_$mark\_average.tmp rmsk_TEother_$state\_$mark\_average.txt; rm rmsk_TEother_$state\_$mark\_average.tmp; done < marks.txt; done < chromHMM_states.txt
+
+# Combined histone profiles
+while read state; do while read mark; do awk -v OFS='\t' -v mark=$mark -v state=$state '{print $0, mark, state}' rmsk_TEother_$state\_$mark\_average.txt >> TEother_average.txt; done < marks.txt; done < chromHMM_states.txt
+```
+
+### Supplementary Figure 21
+
+```{r Figure S21 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/state_lengths.R")
 
 # Number vs. length of blocks/peaks by sample
@@ -4499,7 +4436,13 @@ all_lengths_blocks_corr = ddply(all_lengths_blocks,.(State),summarise,Cor=as.num
 ```
 
 ```{r Figure S23, echo=FALSE}
-ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median))) + geom_point(aes(color=Group)) + xlab("Number of blocks/peaks (log10)") + ylab("Median length of blocks/peaks (log10(bp))") + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",labeller=labeller(State=all_state_labels)) + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_lengths_blocks_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
+source("R_scripts/histone_modification.R")
+
+a = ggplot(histones,aes(x=Position/1000,y=Level,color=Mark,group=Mark)) + geom_line(size=1.5,alpha=0.7) + theme(panel.grid=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + ylab("Fold enrichment over input") + scale_color_manual(labels=c(levels(histones$Mark)[1:8],"DNA methylation"),values=c(gg_color_hue(8),"black")) + xlab("Distance from TE center (kbp)")+ylim(0,12) + facet_wrap(~ State,nrow=3) + scale_y_continuous(sec.axis = sec_axis(~./12.5, name = "DNA methylation level"))
+
+b = ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median))) + geom_point(aes(color=Group)) + xlab("Number of blocks/peaks (log10)") + ylab("Median length of blocks/peaks (log10(bp))") + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",labeller=labeller(State=all_state_labels)) + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_lengths_blocks_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
+
+grid.arrange(a,b,heights=c(0.45,0.55))
 ```
 
 ### State/peak lengths analysis
