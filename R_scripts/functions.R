@@ -272,21 +272,6 @@ tissue_matrix = function(x,matrix){
     Off = dim(matrix[which(matrix$Human_samples < 5 & matrix[[paste(x,".x",sep="")]] == 2 & matrix$Mouse_samples < 2),])[1])
 }
 
-# Replicates
-load_state = function(state){
-  # Load matrix
-  print("Load matrix")
-  state_sample = read.table(paste("chromHMM/chromHMM_",state,".txt",sep=""),sep='\t')[,c(1:8)]
-  colnames(state_sample) = c(TE_coordinates[c(1:4,6,5,7)],"Sample")
-  
-  # Add state total 
-  print("Adding state total")
-  state_sample = merge(state_sample,chromHMM_TE_state[,c(TE_coordinates,state)],by=TE_coordinates)
-  colnames(state_sample)[9] = "Total"
-  
-  return(state_sample)
-}
-
 profile_set = function(matrix_list){
   profiled = ldply(matrix_list,function(x) c(dim(x)[1],
                                              median(x$stop-x$start),
