@@ -81,17 +81,6 @@ chromHMM_states_18 = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxC
                           c("1_TssA","2_TssFlnk","3_TssFlnkU","4_TssFlnkD","5_Tx","6_TxWk","7_EnhG1","8_EnhG2","9_EnhA1","10_EnhA2","11_EnhWk",
                             "12_ZNF/Rpts","13_Het","14_TssBiv","15_EnhBiv","16_ReprPC","17_ReprPCWk","18_Quies"))
 
-imputed_states = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),
-                            rgb(255,69,0,maxColorValue=255),rgb(0,128,0,maxColorValue=255),rgb(0,128,0,maxColorValue=255),rgb(0,128,0,maxColorValue=255),
-                            rgb(0,150,0,maxColorValue=255),rgb(194,225,5,maxColorValue=255),rgb(194,225,5,maxColorValue=255),rgb(194,225,5,maxColorValue=255),
-                            rgb(194,225,5,maxColorValue=255),rgb(255,195,77,maxColorValue=255),rgb(255,195,77,maxColorValue=255),rgb(255,195,77,maxColorValue=255),
-                            rgb(255,255,0,maxColorValue=255),rgb(255,255,0,maxColorValue=255),rgb(255,255,0,maxColorValue=255),rgb(255,255,102,maxColorValue=255),
-                            rgb(102,205,170,maxColorValue=255),rgb(138,145,208,maxColorValue=255),rgb(230,184,183,maxColorValue=255),
-                            rgb(112,48,160,maxColorValue=255),rgb(128,128,128,maxColorValue=255),rgb(255,255,255,maxColorValue=255)),
-                          c("1_TssA","2_PromU","3_PromD1","4_PromD2","5_Tx5'","6_Tx","7_Tx3'","8_TxWk",
-                            "9_TxReg","10_TxEnh5'","11_TxEnh3'","12_TxEnhW","13_EnhA1","14_EnhA2","15_EnhAF","16_EnhW1",
-                            "17_EnhW2","18_EnhAc","19_DNase","20_ZNF/Rpts","21_Het","22_PromP","23_PromBiv","24_ReprPC","25_Quies"))
-
 # WGBS
 meth_states = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
 meth_labels = setNames(c("Hypomethylated","Intermediate meth","Hypermethylated","Missing meth data"),meth_states)
@@ -393,9 +382,6 @@ while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/con
 
 # 18-state chromHMM bedfiles
 wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/core_K27ac/jointModel/final/all.mnemonics.bedFiles.tgz
-
-# Imputed 25-state chromHMM bedfiles
-while read line; do wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/imputed12marks/jointModel/final/$line\_25_imputed12marks_mnemonics.bed.gz; done < ../../sample_lists/mnemonics.txt
 
 # Mouse (ENCODE)
 
@@ -1969,29 +1955,36 @@ chromHMM_replicates_active = ddply(chromHMM_replicates,.(Pair,Set,chromosome,sta
 
 # Fraction of TEs in either sample found in both
 chromHMM_replicates_count = ddply(chromHMM_replicates_active,.(Pair,Set,Samples),summarise,Count=length(Samples))
-chromHMM_replicates_count = dcast(chromHMM_replicates_all,Pair+Set~Samples,value.var="Count")
+chromHMM_replicates_count = dcast(chromHMM_replicates_count,Pair+Set~Samples,value.var="Count")
 chromHMM_replicates_count[is.na(chromHMM_replicates_count)] = 0
 chromHMM_replicates_count$Fraction = chromHMM_replicates_count$`2`/(chromHMM_replicates_count$`1`+chromHMM_replicates_count$`2`)
 ```
 
-```{r replicate analysis, eval=FALSE}
-dcast(ddply(chromHMM_replicates_count[which(chromHMM_replicates_count$Set == "Replicate"),],.(Threshold,State),summarise,Denominator=median(`1`+`2`)),State~Threshold,value.var="Denominator")
+```{r filter replicates window, cache=TRUE, cache.lazy=FALSE}
+# Combine all active regulatory states
+window_replicates_active = ddply(window_replicates,.(Pair,Set,chr,start,stop),summarise,Samples=max(Samples))
 
-replicates_median = dcast(ddply(chromHMM_replicates_count,.(Threshold,State,Set),summarise,Median=median(Fraction)),Threshold+State~Set,value.var="Median")
-replicates_median$Ratio = replicates_median$Replicate/replicates_median$Tissue
-replicates_median
+# Fraction of TEs in either sample found in both
+window_replicates_count = ddply(window_replicates_active,.(Pair,Set,Samples),summarise,Count=length(Samples))
+window_replicates_count = dcast(window_replicates_count,Pair+Set~Samples,value.var="Count")
+window_replicates_count[is.na(window_replicates_count)] = 0
+window_replicates_count$Fraction = window_replicates_count$`2`/(window_replicates_count$`1`+window_replicates_count$`2`)
 ```
 
-```{r Figure R1, echo=FALSE, eval=FALSE}
-a = ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) +   scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Sample pair") + ylab("Fraction of TEs in both samples / either sample") +   theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),legend.position = "bottom",strip.text.y = element_text(size=5)) + scale_shape_manual(values=c(21,22,24,25),guide=FALSE) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))) + ylim(0,0.7)
+```{r replicate analysis}
+chromHMM_replicates_count$Feature = rep("TE",dim(chromHMM_replicates_count)[1])
+window_replicates_count$Feature = rep("Bin",dim(window_replicates_count)[1])
+replicates_count = rbind(window_replicates_count,chromHMM_replicates_count)
 
-b = ggplot(replicates_shuffled_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) + 
-scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("Sample pair") + ylab("Fraction of TEs in both samples / either sample") + 
-theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),strip.text.y = element_text(size=5)) + scale_shape_manual(values=c(21,22,25),guide=FALSE) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))) + ylim(0,0.7)
+replicates_median = dcast(ddply(replicates_count,.(Feature,Set),summarise,Median=median(Fraction)),Feature~Set,value.var="Median")
+replicates_median$Ratio = replicates_median$Replicate/replicates_median$Tissue
+replicates_median
 
-legend_replicate = get_legend(ggplot(chromHMM_replicates_count,aes(x=Pair,y=Fraction,fill=State,shape=Threshold)) + geom_point(color="black",stroke=1) +   scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.text.x=element_text(angle=90,vjust=0.5,size=7),legend.position = "bottom",strip.text.y = element_text(size=6)) + scale_shape_manual(values=c(21,22,24,25),labels=c("Exclusive to pair","<5 samples","Exclusive to group","None")) + facet_grid(State~Set,scales="free_x",space="free_x",labeller=labeller(Set=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")))))
+by(replicates_count,replicates_count$Feature,function(x) wilcox.test(Fraction~Set,data=x))
+```
 
-grid.arrange(a,b,legend_replicate,heights=c(0.47,0.47,0.06))
+```{r Figure R1, echo=FALSE}
+ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
 ```
 
 ### Supplementary Figure 7 (orthogonal)
@@ -2115,7 +2108,7 @@ vista_val_fraction = ddply(vista_val,.(Set,State),summarise,Total=length(unique(
 # Fisher's exact test
 lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")]))
-lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State %in% c(x,NA) & vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")]))
+lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")]))
 ```
 
 '''HOMER'''
@@ -2160,13 +2153,12 @@ a = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,Stat
 a$Comparison = rep("restricted_shuffle",dim(a)[1])
 
 b = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
-b$Comparison = rep("constitutive_shuffle",dim(a)[1])
+b$Comparison = rep("constitutive_shuffle",dim(b)[1])
 
-c = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","not_active")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
-c$Comparison = rep("restricted_inactive",dim(b)[1])
+c = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+c$Comparison = rep("restricted_constitutive",dim(c)[1])
 
 homer_stats = rbind(a,b,c)
-homer_stats$Padj = p.adjust(homer_stats$p.value,method = "fdr")
 ```
 
 ```{r orthogonal homer analysis}
@@ -2181,7 +2173,10 @@ test$Cutoff = as.numeric(test$Cutoff)
 ggplot(test,aes(x=Cutoff,y=value,fill=Comparison)) + geom_bar(position="stack",stat="identity") + facet_wrap(~State)
 
 # Promoter motifs
-homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$Padj < 0.05),]
+table(homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$p.value < 0.05),c("Comparison","State")])
+
+## Correction across motifs and pairwise comparisons
+table(homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$p.value < 0.05/33),c("Comparison","State")])
 ```
 
 '''Population'''
@@ -2238,31 +2233,20 @@ rm(list=c("phastcons","gerp"))
 
 cons = merge(cons,orthogonal_sets,by="File",all.x=TRUE)
 cons[which(cons$File == "not_active"),]$State = rep(rep(states[c(1:3,6:7)],each=dim(cons[which(cons$File == "not_active"),])[1]/10),2)
-cons$Proportion = cons$Overlap/(cons$stop-cons$start)
 cons$Set = factor(cons$Set,levels=names(orthogonal_labels))
 
-ddply(cons,.(Set,State,Database),summarise,Mean=mean(Proportion),Overlapping=sum(Overlap > 10)/length(Overlap))
-
-# Tests
-## Proportion of element covered by conserved block (Wilcox)
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("restricted","shuffle_constitutive") & cons$Database == "PhastCons"),],Proportion~Set))
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("constitutive","shuffle_constitutive") & cons$Database == "PhastCons"),],Proportion~Set))
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State %in% c(x,NA) & cons$Set %in% c("restricted","not_active") & cons$Database == "PhastCons"),],Proportion~Set))
-
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("restricted","shuffle_constitutive") & cons$Database == "GERP"),],Proportion~Set))
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State == x & cons$Set %in% c("constitutive","shuffle_constitutive") & cons$Database == "GERP"),],Proportion~Set))
-lapply(states[c(1:3,6:7)],function(x) wilcox.test(data=cons[which(cons$State %in% c(x,NA) & cons$Set %in% c("restricted","not_active") & cons$Database == "GERP"),],Proportion~Set))
+ddply(cons,.(Set,State,Database),summarise,Overlapping=sum(Overlap > 10)/length(Overlap))
 
 ## Proportion of elements with >10bp of conserved block (Chi-squared)
 cons_10bp = ddply(cons,.(Set,State,Database),summarise,Overlapping=sum(Overlap > 10),Total=length(Overlap),Not=Total-Overlapping)
 
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
-lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State %in% c(x,NA) & cons_10bp$Set %in% c("restricted","not_active") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
 
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
-lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State %in% c(x,NA) & cons_10bp$Set %in% c("restricted","not_active") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 ```
 
 ```{r Figure S7, echo=FALSE}
@@ -3728,10 +3712,10 @@ ddply(rmsk_TE_measure,.(class_update),summarise,Het=median(`9_Het`),Hyper=median
 ddply(rmsk_TE_measure,.(class_update),summarise,Het=mean(`9_Het`),Hyper=mean(na.omit(Hypermethylated)))
 
 anova(model_het1,model_het2,test="F")
-anova(model_het2,model_het3,test="F")
-
 anova(model_hyper1,model_hyper2,test="F")
-anova(model_hyper2,model_hyper3,test="F")
+
+summary(model_het2)
+summary(model_hyper2)
 ```
 
 ### Supplementary Figure 18
