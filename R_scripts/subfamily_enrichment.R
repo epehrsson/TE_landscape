@@ -136,6 +136,16 @@ subfamily_CpG_meth$CpG_ijk_jk = subfamily_CpG_meth$CpG_ijk/subfamily_CpG_meth$Cp
 subfamily_CpG_meth = merge(subfamily_CpG_meth,metadata[,c(1,4:9)],by=c("Sample"),all.x=TRUE)
 
 # Members in state (average methylation)
+##  Proportion of subfamily members in each methylation state per sample
+TE_meth_average_long = melt(TE_meth_average[,c(4,6,8:44,54)],id.vars=c("subfamily","family","class_update"))
+colnames(TE_meth_average_long)[4:5] = c("Sample","Methylation")
+TE_meth_subfamily = ddply(TE_meth_average_long,.(subfamily,family,class_update,Sample),summarise,Hypomethylated=sum(na.omit(Methylation) < 0.3),
+                          Intermediate=sum(na.omit(Methylation) >= 0.3 & na.omit(Methylation) <= 0.7),Hypermethylated=sum(na.omit(Methylation) > 0.7),
+                          Missing=sum(is.na(Methylation)))
+TE_meth_subfamily = melt(TE_meth_subfamily,id.vars=c("subfamily","family","class_update","Sample"))
+colnames(TE_meth_subfamily)[5:6] = c("State","Members")
+rm(TE_meth_average_long)
+
 subfamily_CpG_meth = merge(subfamily_CpG_meth,TE_meth_subfamily[,c("subfamily","State","Sample","Members")],by=c("subfamily","Sample","State"))
 
 # Divide by number of members with CpGs in subfamily
