@@ -2,6 +2,10 @@ load("R_datasets/shuffled_DNase.RData")
 load("R_datasets/shuffled_H3K27ac.RData")
 load("R_datasets/shuffled_WGBS.RData")
 
+subfamily_chromHMM_sample_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = metadata$Sample,State = chromHMM_states)
+subfamily_DNase_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = as.vector(metadata[which(!is.na(metadata$DNase)),]$Sample))
+subfamily_H3K27ac_expand = expand.grid(subfamily = rmsk_TE_subfamily$subfamily,Sample = as.vector(metadata[which(!is.na(metadata$H3K27ac)),]$Sample))
+
 shuffled_enrichment = lapply(seq(1,10,1),function(i) {
   print(i)
   
@@ -12,17 +16,20 @@ shuffled_enrichment = lapply(seq(1,10,1),function(i) {
   print("Load chromHMM ijk")
   subfamily_chromHMM_sample_shuffle = read.table(paste("chromHMM/shuffled_TEs/subfamily/subfamily_state_sample_",i,".txt",sep=""),sep='\t')
   colnames(subfamily_chromHMM_sample_shuffle) = c("subfamily","State","Sample","Length_ijk")
-
+  subfamily_chromHMM_sample_shuffle = merge(subfamily_chromHMM_sample_shuffle,subfamily_chromHMM_sample_expand,by=c("subfamily","Sample","State"),all=TRUE)
+   
   # DNase
   print("Load DNase ijk")
   subfamily_DNase_sample_shuffle = read.table(paste("DNase/shuffled/subfamily/subfamily_DNase_sample_summit_",i,".txt",sep=""),sep='\t')
   colnames(subfamily_DNase_sample_shuffle) = c("subfamily","Sample","Length_ijk")
+  subfamily_DNase_sample_shuffle = merge(subfamily_DNase_sample_shuffle,subfamily_DNase_expand,by=c("subfamily","Sample"),all=TRUE)
   subfamily_DNase_sample_shuffle$State = rep("DNase",dim(subfamily_DNase_sample_shuffle)[1])
 
   # H3K27ac
   print("Load H3K27ac ijk")
   subfamily_H3K27ac_sample_shuffle = read.table(paste("H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_",i,".txt",sep=""),sep='\t')
   colnames(subfamily_H3K27ac_sample_shuffle) = c("subfamily","Sample","Length_ijk")
+  subfamily_H3K27ac_sample_shuffle = merge(subfamily_H3K27ac_sample_shuffle,subfamily_H3K27ac_expand,by=c("subfamily","Sample"),all=TRUE)
   subfamily_H3K27ac_sample_shuffle$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample_shuffle)[1])
 
   # WGBS (CpGs)
@@ -92,9 +99,19 @@ shuffled_enrichment = lapply(seq(1,10,1),function(i) {
   return(subfamily_state_sample_shuffle)
 })
 
-rm(shuffled_DNase_potential)
-rm(shuffled_H3K27ac_potential)
-rm(shuffled_WGBS_average)
+rm(list=c("shuffled_DNase_potential","shuffled_H3K27ac_potential","shuffled_WGBS_average","subfamily_chromHMM_sample_expand","subfamily_DNase_expand","subfamily_H3K27ac_expand"))
+
+# Subfamily potential
+subfamily_state_potential_shuffle = shuffled_enrichment
+names(subfamily_state_potential_shuffle) = seq(1,10,1)
+subfamily_state_potential_shuffle = ldply(subfamily_state_potential_shuffle,.id="Iteration")
+subfamily_state_potential_shuffle = ddply(subfamily_state_potential_shuffle,.(Iteration,subfamily,State),summarise,Samples=sum(Length_ijk > 0))
+subfamily_state_potential_shuffle$State = factor(subfamily_state_potential_shuffle$State,levels=states[1:21])
+subfamily_state_potential_shuffle$Metric = factor(ifelse(subfamily_state_potential_shuffle$State %in% chromHMM_states,"chromHMM",
+                                                         ifelse(subfamily_state_potential_shuffle$State %in% meth_states,"WGBS",
+                                                                as.character(subfamily_state_potential_shuffle$State))),levels=c("chromHMM","WGBS","DNase","H3K27ac"))
+subfamily_state_potential_shuffle$Sample.Proportion = as.numeric(subfamily_state_potential_shuffle$Samples/sample_counts["All",subfamily_state_potential_shuffle$Metric])
+subfamily_state_potential_shuffle$Iteration = factor(subfamily_state_potential_shuffle$Iteration,levels=seq(1,10,1))
 
 # Combine with main matrix, each iteration 
 shuffled_enrichment = lapply(shuffled_enrichment,function(x) {y = merge(x,subfamily_state_sample_combined,all.y=TRUE,by=c("State","Sample","subfamily")); y[is.na(y)] <- 0; return(y)})

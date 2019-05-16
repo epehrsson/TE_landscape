@@ -9,6 +9,8 @@ output: word_document
 knitr::opts_chunk$set(dev = 'pdf',dev.args=list(pdf = list(useDingbats = FALSE)),fig.width=7, fig.height=8, fig.path='TE_landscape_draft_figures/', cache.path="TE_landscape_draft_cache/")
 ```
 
+Includes code for producing figures and analysis for the manuscript. 
+
 # Setup
 
 ## Load required libraries
@@ -42,7 +44,7 @@ packageVersion("rcompanion")
 theme_set(theme_bw(base_size=10) %+replace%  theme(panel.background=element_rect(fill="white"),panel.border=element_rect(color="black",fill=NA),panel.grid=element_blank()))
 ```
 
-## Load functions
+## Load custom functions
 
 ```{r load functions}
 source("R_scripts/functions.R")
@@ -2926,11 +2928,9 @@ bash run_homer.sh enrichment/enrichment_list.txt
 ```
 
 ```{r Figure 5 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
-source("R_scripts/WGBS_subfamily_enrichment_TE.R")
 source("R_scripts/subfamily_enrichment.R") #Requires proportion.R
 source("R_scripts/subfamily_potential.R")
 source("R_scripts/subfamily_PCA.R")
-source("R_scripts/subfamily_potential_shuffle.R")
 source("R_scripts/shuffled_subfamily_enrichment.R")
 ```
 
