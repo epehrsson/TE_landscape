@@ -1983,7 +1983,7 @@ replicates_median
 by(replicates_count,replicates_count$Feature,function(x) wilcox.test(Fraction~Set,data=x))
 ```
 
-```{r Figure R1, echo=FALSE}
+```{r Figure R1, echo=FALSE,fig.height=4}
 ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
 ```
 
@@ -2003,6 +2003,12 @@ shuffled_pos = lapply(seq(1,10,1),
                       function(y) {a = lapply(states[c(1:3,6:7)],function(x) merge(shuffled_chromHMM_potential[[y]][which(shuffled_chromHMM_potential[[y]][[paste("X",x,sep="")]] > 50),TE_coordinates],
                                                                                    rmsk_TE_shuffled[[y]],by=TE_coordinates));
                         names(a) = states[c(1:3,6:7)]; return(a)})
+
+## Combining
+shuffled_pos_combine = lapply(states[c(1:3,6:7)],function(x) lapply(seq(1,10,1),function(y) shuffled_pos[[y]][[x]]))
+shuffled_pos_combine = lapply(shuffled_pos_combine,function(y) y <- ldply(y,.id="Iteration"))
+names(shuffled_pos_combine) = states[c(1:3,6:7)]
+
 rm(list=c("shuffled_chromHMM_potential","rmsk_TE_shuffled"))
 
 # Positive control, TEs
@@ -2011,6 +2017,14 @@ names(TE_pos) = states[c(1:3,6:7)]
 
 # Negative control
 TE_neg = merge(chromHMM_TE_state[which(apply(chromHMM_TE_state[,states[c(1:3,6:7)]],1,function(x) sum(x) == 0)),c(TE_coordinates)],rmsk_TE,by=TE_coordinates)
+
+# Metadata
+orthogonal_sets = data.frame(cbind(State=c(rep(states[c(1:3,6:7)],3),NA),
+                                   Set=c(rep("constitutive",5),rep("restricted",5),rep("shuffle_constitutive",5),"not_active")))
+orthogonal_sets$File = paste(orthogonal_sets$Set,orthogonal_sets$State,sep="_")
+orthogonal_sets$File[16] = "not_active"
+
+orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutive","Constitutively active","Inactive"),c("restricted","shuffle_constitutive","constitutive","not_active"))
 ```
 
 ```{r write orthogonal sets, eval=FALSE}
@@ -2035,24 +2049,15 @@ while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt > orthogona
 while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | wc -l; done < sample_lists/chromHMM_states.txt
 while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | sort | uniq | wc -l; done < sample_lists/chromHMM_states.txt
 
-## Overlapping bp
-for state in 1_TssA 2_TssAFlnk 3_TxFlnk 6_EnhG 7_Enh; do cat orthogonal/shuffle_*_constitutive_$state\.txt | awk '{sum+=$3-$2}END{print sum}'; done
-for state in 1_TssA 2_TssAFlnk 3_TxFlnk 6_EnhG 7_Enh; do cat orthogonal/shuffle_*_constitutive_$state\.txt | cut -f1-3| sort -k1,1 -k2,2n | bedtools merge -i - | awk '{sum+=$3-$2}END{print sum}' -; done
-```
-
-```{r orthogonal metadata}
-orthogonal_sets = data.frame(cbind(State=c(rep(states[c(1:3,6:7)],3),NA),
-                                   Set=c(rep("constitutive",5),rep("restricted",5),rep("shuffle_constitutive",5),"not_active")))
-orthogonal_sets$File = paste(orthogonal_sets$Set,orthogonal_sets$State,sep="_")
-orthogonal_sets$File[16] = "not_active"
-
-orthogonal_labels = setNames(c("Restricted activity","Shuffled constitutive","Constitutively active","Inactive"),c("restricted","shuffle_constitutive","constitutive","not_active"))
+## Overlapping bp (all sets)
+for file in orthogonal/*.txt; do echo $file; cut -f1-3 $file | sort -k1,1 -k2,2n | bedtools merge -i - | awk '{sum+=$3-$2}END{print sum}' -; done
+for file in orthogonal/*.txt; do echo $file; awk '{sum+=$3-$2}END{print sum}' $file; done
 ```
 
 Characteristics of each of the orthogonal evidence sets. Both the constitutively active and restricted true TEs are shorter than the shuffled constitutively active TEs, although TEs with restricted activity are slightly longer, particularly for the promoter states. Inactive TEs are intermediate in length. Constitutively active true TEs also have a higher proportion of SINE elements at the expense of LINE/LTR elements compared to restricted ones, likely due to exclusion of those TEs from canonical promoters. Finally, true TEs with constitutive promoter active are far more likely to overlap promoters, while those with restricted 7_Enh activity are more likely to be intergenic vs. intronic than TEs constitutively in the state.
 
 ```{r orthogonal characteristics}
-orthogonal_profile = rbind(ldply(shuffled_pos,function(y) profile_set(y)),profile_set(restricted),profile_set(TE_pos))
+orthogonal_profile = rbind(profile_set(shuffled_pos_combine),profile_set(restricted),profile_set(TE_pos))
 test = profile_set(list(TE_neg))
 test$`.id` = NA
 orthogonal_profile = rbind(orthogonal_profile,test)
@@ -2061,13 +2066,13 @@ rm(test)
 colnames(orthogonal_profile)[1:3] = c("State","Number","Length")
 orthogonal_profile$SVA = orthogonal_profile$Other
 orthogonal_profile$Other = orthogonal_profile$`DNA?`+orthogonal_profile$`LINE?` + orthogonal_profile$`LTR?` + orthogonal_profile$RC + orthogonal_profile$`SINE?` + orthogonal_profile$Unknown + orthogonal_profile$`Unknown?`
-orthogonal_profile$Set = factor(c(rep("shuffle_constitutive",50),rep("restricted",5),rep("constitutive",5),"not_active"),levels=c("constitutive","shuffle_constitutive","restricted","not_active"))
+orthogonal_profile$Set = factor(c(rep("shuffle_constitutive",5),rep("restricted",5),rep("constitutive",5),"not_active"),levels=c("restricted","shuffle_constitutive","constitutive","not_active"))
 
-#ggplot(orthogonal_profile,aes(x=Set,y=Length,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors) + ylim(0,350) + ylab("Median length (bp)") + scale_x_discrete(labels=orthogonal_labels)
+ggplot(orthogonal_profile,aes(x=State,y=Length,shape=Set)) + geom_point() + ylim(0,350) + ylab("Median length (bp)") + scale_shape_discrete(labels=orthogonal_labels)
 
-#ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) + scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature")
+ggplot(melt(orthogonal_profile[,c("Set","State",cohorts[c(1:2,5,8,10,13,16,19)])],id.vars=c("Set","State")),aes(x=State,y=value,shape=Set)) + geom_point() + ylim(0,1) + scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion overlapping feature") + facet_wrap(~variable) 
 
-#ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=Set,y=value,fill=State)) + geom_boxplot() + scale_fill_manual(values=all_state_colors,guide=FALSE) + ylim(0,1) +  scale_x_discrete(labels=orthogonal_labels) + facet_grid(State~variable) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class")
+ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA","Other")],id.vars=c("Set","State")),aes(x=State,y=value,shape=Set)) + geom_point() + ylim(0,1) +  scale_shape_discrete(labels=orthogonal_labels) + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + ylab("Proportion in class") + facet_wrap(~variable) 
 ```
 
 '''VISTA'''
@@ -2109,6 +2114,7 @@ vista_val_fraction = ddply(vista_val,.(Set,State),summarise,Total=length(unique(
 lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")]))
+lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State %in% c(x,NA) & vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")]))
 ```
 
 '''HOMER'''
@@ -2148,35 +2154,24 @@ homer_known = merge(homer_known,ddply(orthogonal_profile,.(State,Set),summarise,
 homer_known[which(homer_known$Set == "not_active"),]$Number = orthogonal_profile[which(orthogonal_profile$Set == "not_active"),]$Number
 ```
 
-```{r homer statistics}
-a = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+```{r orthogonal homer analysis}
+# Stats
+a = ddply(homer_known[which(homer_known$State %in% states & homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
 a$Comparison = rep("restricted_shuffle",dim(a)[1])
 
-b = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+b = ddply(homer_known[which(homer_known$State %in% states & homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("constitutive","shuffle_constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
 b$Comparison = rep("constitutive_shuffle",dim(b)[1])
 
-c = ddply(homer_known[which(homer_known$State %in% states),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+c = ddply(homer_known[which(homer_known$State %in% states & homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","constitutive")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
 c$Comparison = rep("restricted_constitutive",dim(c)[1])
 
-homer_stats = rbind(a,b,c)
-```
+d = ddply(homer_known[which(homer_known$State %in% states & homer_known$`Motif Name` %in% grep("Promoter",unique(homer_known$`Motif Name`),value=TRUE)),],.(`Motif Name`,State),function(x) {y <- x[which(x$Set %in% c("restricted","not_active")),c("Target Seqs with Motif","Number")]; y$`Target without` = y$Number - y$`Target Seqs with Motif`; return(unlist(chisq.test(y[,c("Target Seqs with Motif","Target without")]))["p.value"])})
+d$Comparison = rep("restricted_inactive",dim(d)[1])
 
-```{r orthogonal homer analysis}
-# Number of significant comparisons
-table(droplevels(homer_stats[which(homer_stats$Padj < 0.05),c("Comparison","State")]))
-
-# Number of significant comparisons at each p-value threshold
-test = lapply(seq(0,350,1),function(x) melt(as.matrix(table(homer_stats[which(as.numeric(homer_stats$p.value) < 10^-x),c("Comparison","State")]))))
-names(test) = lapply(seq(0,350,1),function(x) 10^-x)
-test = ldply(test,.id="Cutoff")
-test$Cutoff = as.numeric(test$Cutoff)
-ggplot(test,aes(x=Cutoff,y=value,fill=Comparison)) + geom_bar(position="stack",stat="identity") + facet_wrap(~State)
+homer_stats = rbind(a,b,c,d)
 
 # Promoter motifs
-table(homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$p.value < 0.05),c("Comparison","State")])
-
-## Correction across motifs and pairwise comparisons
-table(homer_stats[which(homer_stats$`Motif Name` %in% grep("Promoter",unique(homer_stats$`Motif Name`),value=TRUE) & homer_stats$p.value < 0.05/33),c("Comparison","State")])
+table(homer_stats[which(homer_stats$p.value < 0.05),c("Comparison","State")])
 ```
 
 '''Population'''
@@ -2243,10 +2238,12 @@ cons_10bp = ddply(cons,.(Set,State,Database),summarise,Overlapping=sum(Overlap >
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","constitutive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","inactive") & cons_10bp$Database == "PhastCons"),c("Overlapping","Not")]))
 
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("constitutive","shuffle_constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","constitutive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
+lapply(states[c(1:3,6:7)],function(x) chisq.test(cons_10bp[which(cons_10bp$State == x & cons_10bp$Set %in% c("restricted","inactive") & cons_10bp$Database == "GERP"),c("Overlapping","Not")]))
 ```
 
 ```{r Figure S7, echo=FALSE}
