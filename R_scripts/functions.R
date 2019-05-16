@@ -129,45 +129,6 @@ correlate_spearman = function(matrix, indpt_var, response_vars){ #For all TEs, c
 }
 
 # Enrichment
-plot_binary_heatmap = function(matrix,metric="chromHMM",state="none",min_sample=0,max_sample=128,enrichment_threshold=1.5,enrichment_column="Enrichment",subfamilies=NULL) 
-{
-  #Input matrix should be subfamily_state_sample_filter
-  
-  #Filter metadata based on metric
-  metadata_matrix = filter_metadata(metadata,metric)
-  
-  #Column metadata
-  column_metadata = data.frame(Group=metadata_matrix$Group,Anatomy=metadata_matrix$Anatomy,Age=metadata_matrix$Age,Cancer=metadata_matrix$Cancer,Germline=metadata_matrix$Germline,Type=metadata_matrix$Type)
-  column_colors = list(Age=brewer.pal(4,"YlOrRd"),Cancer=c("white","red"),Germline=brewer.pal(6,"Dark2"),Type=brewer.pal(5,"Greens"),Group=group_colors,Anatomy=anatomy_colors,Class=class_colors[c(1:4,6:7)])
-  
-  #Create matrix
-  if (state != "none"){
-    matrix = matrix[which(matrix$State == state),] #Filter by state
-  } 
-  
-  test = dcast(matrix,subfamily~Sample,value.var=enrichment_column)
-  rownames(test) = test[,1]
-  test[,setdiff(metadata_matrix$Sample,colnames(test))] = rep(NA,dim(test)[1])
-  test = test[,2:dim(test)[2]]
-  test = test[,as.vector(metadata_matrix$Sample)]
-  
-  #Convert to binary
-  test[is.na(test) | test < enrichment_threshold] = 0
-  test[test > enrichment_threshold] = 1
-  
-  #Filter by number of samples
-  test = test[which(apply(test,1,sum) >= min_sample & apply(test,1,sum) <= max_sample),]
-  
-  #Filter by subfamilies of interest
-  if (!is.null(subfamilies)){ 
-    test = test[subfamilies,]
-  }
-
-  #Plot
-  aheatmap(test,Rowv=FALSE,Colv=FALSE,distfun="binary",breaks=0.5,legend=FALSE,color=c("white","cornflowerblue"),border_color="NA",
-           annRow=data.frame(Class=rmsk_TE_subfamily[match(rownames(test),rmsk_TE_subfamily$subfamily),]$class_update),annColors=column_colors,annCol=column_metadata,annLegend=FALSE)
-}
-
 get_subfamily_in_state = function(subfamily,state,metric){
   # Get subfamily members ever in state
   if (metric=="chromHMM"){
