@@ -4,52 +4,60 @@
 #SBATCH --mem=5G
 #SBATCH --array=39,42%2
 
-# Total RNA-seq read coverage and length for entire genome, TEs, classes, and subfamilies
+# Calculates total RNA-seq read coverage and length of coverage for entire genome, TEs, TE classes, and TE subfamilies
 
-# Sort bed files
-#sort -k1,1 -k2,2n rmsk_TEother_merge.txt > rmsk_TEother_merge
-#sort -k1,1 -k2,2n TEother_subfamily_merge.txt > TEother_subfamily_merge
-#sort -k1,1 -k2,2n TEother_class_merge.txt > TEother_class_merge
-
+# Load required packages
 ml bedops
 ml bedtools
 
+# Load feature list
 mapfile -t features < $1
 
+# Load sample list
 sample=$( sed -n ${SLURM_ARRAY_TASK_ID}p RNA_samples_agnostic.txt )
 
-#Get unnormalized RNA-seq file and convert to bed file
+# Get unnormalized RNA-seq read coverage file from Roadmap site
 wget http://egg2.wustl.edu/roadmap/data/byDataType/rna/signal/unnormalized_wig/strandagnostic/$sample\.wig.gz
 echo "Downloaded wig file"
 
+# Unzip and covert to bed file
 gunzip $sample\.wig.gz
 wig2bed < $sample.wig > $sample\.bed
 echo "Converted to bed file"
 
+# Remove wig file
 rm $sample.wig
 
+# For each feature:
 for feature in "${features[@]}"
 do
-  #Intersect feature with RNA file
+  # Intersect feature with RNA-seq read coverage file
   bedtools intersect -wo -a $feature -b $sample\.bed > $feature\_$sample\.bed -sorted
   echo "Intersected with RNA"
 
-  #Get average over that file
+  # Get total read coverage and length of coverage over the feature
+
+  # Check the number of columns in the file to determine feature
   declare -i columns=$( head -n 1 $feature\_$sample\.bed | awk -v FS='\t' '{print NF}' -)
+
+  ## TE classes and subfamilies
   if [ $columns -eq 10 ]
   then
     awk -v OFS='\t' -v sample=$sample '{total[$4]+=$9*$10;len[$4]+=$10}END{for(i in total){print sample, i, total[i], len[i]}}' $feature\_$sample\.bed >> $feature\_average.txt
+
+  ## TEs
   else
     awk -v OFS='\t' -v sample=$sample '{total+=$8*$9;len+=$9}END{print sample, total, len}' $feature\_$sample\.bed >> TE_average.txt
   fi
   echo "Got average expression"
 
-  #rm $feature\_$sample\.bed
+  # Remove intersection file
+  rm $feature\_$sample\.bed
 done
 
-# Average over genome
+# Total read coverage and length of coverage over genome
 awk -v OFS='\t' -v sample=$sample '{total+=$5;len+=$3-$2}END{print sample, total, len}' $sample\.bed >> Genome_average.txt
 echo "Got average genome expression"
 
-#Removing sample files
-#rm $sample\.bed
+# Remove sample file
+rm $sample\.bed

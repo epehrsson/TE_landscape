@@ -426,12 +426,12 @@ while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/con
 # Mouse (ENCODE)
 
 # chromHMM (mm10)
-#TE_landscape/bash_scripts/get_mouse_chromHMM.sh
 #TE_landscape/raw_data/mouse/chromHMM/ENCFF#.bed.gz [12 files]
+bash TE_landscape/bash_scripts/get_mouse_chromHMM.sh
 
 # WGBS (mm10)
-#TE_landscape/bash_scripts/get_meth.txt
 #TE_landscape/raw_data/mouse/WGBS/ENCFF#.bed [9 files]
+bash TE_landscape/bash_scripts/get_mouse_meth.sh
 ```
 
 Divided the hg19 genome into 200bp windows (n=15,478,399; no contigs or chrM). Intersected with chromHMM to get state assignments across the genome and reformatted to bed files. 
@@ -570,8 +570,8 @@ Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS pe
 
 ```{bash TE DHS matrix, eval=FALSE}
 # Intersect with individual TEs
-TE_landscape/DNase/intersect_sample_list_DNase_peak.sh
 #TE_landscape/DNase/intersect/TEs/rmsk_TEother_E#-DNase.macs2.narrowPeak [53 files]
+bash TE_landscape/DNase/intersect_sample_list_DNase_peak.sh
 
 # Filtering to summit
 for file in DNase/intersect/TEs/rmsk_TEother_E*-DNase.macs2.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 DNase/summit/TEs/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
@@ -597,9 +597,7 @@ while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, 
 Average RNA-seq read coverage for individual TEs. Intersected individual TEs with unnormalized, strand-agnostic RNA-seq read coverage, then calculated the average read coverage per TE. Combined values for all samples into a single matrix with a row for each TE and a column per sample. 
 
 ```{bash TE RNA matrix, eval=FALSE}
-# Average RNA-seq expression
-
-# Intersect TEs with RNA-seq bedfiles (sorted)
+# Average RNA-seq expression for individual TEs
 intersect_RNA_agnostic.sh
 
 # Average expression per TE, raw, combined samples
@@ -639,7 +637,7 @@ sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_exons_unique.txt > RNAseq/refse
 Intersected individual exons with unnormalized, strand-agnostic RNA-seq read coverage, then calculated the average read coverage per exon. Combined values for all samples into a single matrix with a row for each exon and a column per sample. 
 
 ```{bash exon RNA matrix, eval=FALSE}
-# Intersect exons with RNA-seq bedfiles
+# Average RNA-seq expression for individual exons
 intersect_RNA_agnostic.sh
 
 # Average expression per exon, raw, combined samples
@@ -1144,7 +1142,7 @@ The number of bases total and in each chromHMM state across the entire genome, b
 #TE_landscape/chromHMM/genome/sample_summaries/E#_15_coreMarks_mnemonics.bed_state [127 files]	
 for file in chromHMM_bedfiles/E*_15_coreMarks_mnemonics.bed; do awk 'BEGIN{SUM=0}{SUM+=$3-$2}END{print SUM}' $file > $file\_state; while read line; do grep $line $file | awk 'BEGIN{SUM=0}{SUM+=$3-$2}END{print SUM}' - >> $file\_state; done < chromHMM_states.txt ; done
 
-# Table of number of bases in each state in each sample	(combines bp counts of state per sample into one file)
+# Matrix of number of bases in each state in each sample
 #TE_landscape/chromHMM/genome/mnemonics_state.txt	
 bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_bedfiles/*state
 ```
@@ -2912,9 +2910,14 @@ test[order(test$State,test$Proportion),]
 
 ### Figure 4
 
-Finds the total RNA-seq read coverage and the length of the covered region for the entire genome, TEs, and each TE class and subfamily, for the entire genome and over chrY.
+Finds the total RNA-seq read coverage and the length of the covered region for the entire genome, TEs, and each TE class and subfamily, for the entire genome and over chrY only.
 
 ```{bash RNA coverage, eval=FALSE}
+# Sort bed files
+sort -k1,1 -k2,2n rmsk_TEother_merge.txt > rmsk_TEother_merge
+sort -k1,1 -k2,2n TEother_subfamily_merge.txt > TEother_subfamily_merge
+sort -k1,1 -k2,2n TEother_class_merge.txt > TEother_class_merge
+
 intersect_RNA_features.sh
 intersect_RNA_chrY.sh
 ```
@@ -4513,9 +4516,10 @@ awk -v OFS='\t' '{print $0 > "ever/rmsk_TEother_"$8".txt"}' rmsk_TEother_chromHM
 while read line; do echo $line; awk -v OFS='\t' '{if($10 != "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_"$10".txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
 while read line; do echo $line; awk -v OFS='\t' '{if($10 == "8_ZNF/Rpts") print $0 > "ever/rmsk_TEother_"$8"_8_ZNF.Rpts.txt"}' ever/rmsk_TEother_$line\.txt; done < mnemonics.txt
  
-# Finds level of histone modifications and DNase over 10kb region centered on TEs in bins	
+# Finds fold change over input for histone modifications and DHS over 10kb region centered on TEs, in 50bp bins	
 intersect_histone.sh
-# Finds level of DNA methylation over 10kb region centered on TEs, in bins
+
+# Finds DNA methylation level over 10kb region centered on TEs, in 50bp bins
 intersect_meth.sh
 
 # Epigenetic profiles by state and mark

@@ -1,3 +1,4 @@
+# Downloads mm10 WGBS data from ENCODE
 wget https://www.encodeproject.org/files/ENCFF592SYK/@@download/ENCFF592SYK.bed.gz
 wget https://www.encodeproject.org/files/ENCFF895RRK/@@download/ENCFF895RRK.bed.gz
 wget https://www.encodeproject.org/files/ENCFF796POX/@@download/ENCFF796POX.bed.gz

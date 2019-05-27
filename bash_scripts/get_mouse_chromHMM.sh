@@ -1,3 +1,4 @@
+# Downloads mm10 chromHMM data from ENCODE
 wget https://www.encodeproject.org/files/ENCFF580WIS/@@download/ENCFF580WIS.bed.gz .
 wget https://www.encodeproject.org/files/ENCFF520TYE/@@download/ENCFF520TYE.bed.gz .
 wget https://www.encodeproject.org/files/ENCFF360BWA/@@download/ENCFF360BWA.bed.gz .
