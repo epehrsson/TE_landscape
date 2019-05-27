@@ -61,19 +61,23 @@ methylation_states.txt
 ```
 
 ```{r define vectors}
+# Chromosomes
+standard_chromosomes = c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM")
+
 # TE coordinates
 TE_coordinates = c("chromosome","start","stop","subfamily","family","class","strand")
 hg19_coordinates = c("human_chr_hg19","human_start_hg19","human_stop_hg19","human_subfamily","human_class","human_family","human_strand_hg19")
 mm10_coordinates = c("mouse_chr_mm10","mouse_start_mm10","mouse_stop_mm10","mouse_subfamily","mouse_class","mouse_family","mouse_strand_mm10")
 
-# Chromosomes
-standard_chromosomes = c("chr1","chr2","chr3","chr4","chr5","chr6","chr7","chr8","chr9","chr10","chr11","chr12","chr13","chr14","chr15","chr16","chr17","chr18","chr19","chr20","chr21","chr22","chrX","chrY","chrM")
+# TE classes
+class_colors = setNames(c("#4A72E8","#FF6600","#006600","#cc0000","lightseagreen","#5C5C5C"),c("DNA","LINE","LTR","SINE","SVA","Other"))
 
-# chromHMM
+# chromHMM states
+## 15-state model
 chromHMM_states = c("1_TssA","2_TssAFlnk","3_TxFlnk","4_Tx","5_TxWk","6_EnhG","7_Enh","8_ZNF/Rpts","9_Het","10_TssBiv","11_BivFlnk","12_EnhBiv","13_ReprPC","14_ReprPCWk","15_Quies")
-chromHMM_labels = setNames(c("Active TSS","Flanking active TSS","Transcription at gene 5'/3'","Strong transcription","Weak transcription","Genic enhancer","Enhancer","ZNF genes/repeats","Heterochromatin","Poised TSS","Flanking poised TSS/enhancer","Poised enhancer","Repressed Polycomb","Weak repressed Polycomb","Quiescent"),chromHMM_states)
 chromHMM_colors = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),rgb(50,205,50,maxColorValue=255),rgb(0,128,0,maxColorValue=255),rgb(0,100,0,maxColorValue=255),rgb(194,225,5,maxColorValue=255),rgb(255,255,0,maxColorValue=255),rgb(102,205,170,maxColorValue=255),rgb(138,145,208,maxColorValue=255),rgb(205,92,92,maxColorValue=255),rgb(233,150,122,maxColorValue=255),rgb(189,183,107,maxColorValue=255),rgb(128,128,128,maxColorValue=255),rgb(192,192,192,maxColorValue=255),"grey90"),chromHMM_states)
 
+## 18-state model
 chromHMM_states_18 = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),rgb(255,69,0,maxColorValue=255),
                             rgb(255,69,0,maxColorValue=255),rgb(0,128,0,maxColorValue=255),rgb(0,100,0,maxColorValue=255),
                             rgb(194,225,5,maxColorValue=255),rgb(194,225,5,maxColorValue=255),rgb(255,195,77,maxColorValue=255),
@@ -83,31 +87,32 @@ chromHMM_states_18 = setNames(c(rgb(255,0,0,maxColorValue=255),rgb(255,69,0,maxC
                           c("1_TssA","2_TssFlnk","3_TssFlnkU","4_TssFlnkD","5_Tx","6_TxWk","7_EnhG1","8_EnhG2","9_EnhA1","10_EnhA2","11_EnhWk",
                             "12_ZNF/Rpts","13_Het","14_TssBiv","15_EnhBiv","16_ReprPC","17_ReprPCWk","18_Quies"))
 
-# WGBS
+## Mouse chromHMM states
+mouse_chromHMM_states = c("TssA","TssAFlnk1","TssAFlnk2","Tx1","Tx2","Enh","EnhLo1","EnhLo2","HetCons","HetFac","TssBiv","EnhPois1","EnhPois2","QuiesG","Quies")
+mouse_chromHMM_colors = setNames(c("red","orangered2","orangered4","green4","darkgreen","yellow","gold1","goldenrod2","cornflowerblue","steelblue2","indianred3","burlywood1","lightgoldenrod2","grey","lightgrey"),mouse_chromHMM_states)
+
+# WGBS/methylation states
 meth_states = c("Hypomethylated","Intermediate","Hypermethylated","Missing")
 meth_labels = setNames(c("Hypomethylated","Intermediate meth","Hypermethylated","Missing meth data"),meth_states)
 meth_colors = setNames(c("#F8766D","#00BFC4","#7CAE00","#C77CFF"),meth_states)
 
-# All states
+# All epigenetic states
 states = c(chromHMM_states,meth_states,"DNase","H3K27ac","Expressed_samples")
 all_state_colors = c(chromHMM_colors,meth_colors,"aquamarine","tan1","black","black","black") 
 names(all_state_colors)[20:24] = c("DNase","H3K27ac","Expressed_samples","Bases","CpGs")
 all_state_labels = setNames(c(chromHMM_states,meth_labels,"DHS","H3K27ac","RPKM > 1"),states)
 all_pc_states = c(states[1:21],unlist(lapply(states[1:21],function(x) paste(x,"PC",sep="_"))))
 
-# Metric labels
+# Technique labels
 metric_labels = c("chromHMM","WGBS","DNase","H3K27ac","RPKM > 1")
 names(metric_labels) = c("chromHMM","WGBS","DNase","H3K27ac","Expressed_samples")
 
-# TE classification
-class_colors = setNames(c("#4A72E8","#FF6600","#006600","#cc0000","lightseagreen","#5C5C5C"),c("DNA","LINE","LTR","SINE","SVA","Other"))
-
 # Sample classification
 sample_categories = c("Group","Anatomy","Type","Age","Cancer","Germline")
-category_labels = setNames(c("Group","Anatomy","Type","Age","Cancer","Germlayer"),sample_categories)
+category_labels = setNames(c("Group","Anatomy","Type","Age","Cancer","Germ layer"),sample_categories)
 
 group_colors = setNames(c("#924965","#4178AE","#E41A1C","#69608A","#B65C73","#FF9D0C","#678C69","#55A354","#E67326","#FFD924","#AF5B39","#D56F80","#999999","#C5912B","#C58DAA","#F182BC","#C2655D","#DAB92E","#000000"),c("ESC","ES-deriv","IMR90","iPSC","Mesench","Epithelial","HSC & B-cell","Blood & T-cell","Myosat","Neurosph","Adipose","Heart","Other","Brain","Digestive","Sm. Muscle","Muscle","Thymus","ENCODE2012"))
-anatomy_colors = setNames(c("#B2DF8A","#33A02C","#FB9A99","#FFED6F","#80B1D3","#666666","#924965","#4178AE","#FDBF6F","#CAB2D6","#6A3D9A","#BEBADA","#FCCDE5","#BC80BD","#E7298A","#FF7F00","#69608A","#B3DE69","#CCEBC5","#000000","#FB8072","#FDB462","#8DD3C7","#D9D9D9","#E31A1C","#A6CEE3","#D95F02","#E6AB02","#66A61E","#B15928","#E31A1C","#8DD3C7","#E7298A","#A6761D","#666666"),c("ADRENAL","BLOOD","BONE","BRAIN","BREAST","CERVIX","ESC","ESC_DERIVED","FAT","GI_COLON","GI_DUODENUM","GI_ESOPHAGUS","GI_INTESTINE","GI_RECTUM","GI_STOMACH","HEART","IPSC","KIDNEY","LIVER","LUNG","MUSCLE","MUSCLE_LEG","OVARY","PANCREAS","PLACENTA","SKIN","SPLEEN","STROMAL_CONNECTIVE","THYMUS","VASCULAR",NA,NA,NA,NA,NA))
+anatomy_colors = setNames(c("#B2DF8A","#33A02C","#FB9A99","#FFED6F","#80B1D3","#666666","#924965","#4178AE","#FDBF6F","#CAB2D6","#6A3D9A","#BEBADA","#FCCDE5","#BC80BD","#E7298A","#FF7F00","#69608A","#B3DE69","#CCEBC5","#000000","#FB8072","#FDB462","#8DD3C7","#D9D9D9","#E31A1C","#A6CEE3","#D95F02","#E6AB02","#66A61E","#B15928"),c("ADRENAL","BLOOD","BONE","BRAIN","BREAST","CERVIX","ESC","ESC_DERIVED","FAT","GI_COLON","GI_DUODENUM","GI_ESOPHAGUS","GI_INTESTINE","GI_RECTUM","GI_STOMACH","HEART","IPSC","KIDNEY","LIVER","LUNG","MUSCLE","MUSCLE_LEG","OVARY","PANCREAS","PLACENTA","SKIN","SPLEEN","STROMAL_CONNECTIVE","THYMUS","VASCULAR"))
 type_colors = setNames(brewer.pal(5,"Greens"),c("PrimaryCulture","PrimaryCell","PrimaryTissue","CellLine","ESCDerived"))
 age_colors = setNames(brewer.pal(4,"YlOrRd"),c("Cell_line","Unknown","Non_fetal","Fetal"))
 cancer_colors = setNames(c("lightgrey","red"),c("No","Yes"))
@@ -124,40 +129,41 @@ genic_labels = setNames(c("CpG island","Promoter","5'UTR","CDS","3'UTR","Exon","
 cohorts = c("cpgIsland","promoters","promoters_pc","promoters_nc","5UTR","5UTR_pc","5UTR_nc","coding_exon","coding_exon_pc","3UTR","3UTR_pc","3UTR_nc",
                      "exons","exons_pc","exons_nc","introns","introns_pc","introns_nc","intergenic","blacklist","Vista_enhancers")
 
-# Feature labels
+# Feature overlap labels
+overlap_labels = c("% genome","% TEs (either strand)","% TEs (same strand)","% feature in TEs")
+names(overlap_labels) = c("Genome_percent_genome","TEs_percent_TE","TEs_strand_percent_TE","Genome_percent_TE")
+
+# Coding labels
 coding_labels = c("All","Protein-coding","Non-coding")
 names(coding_labels) = c("All","pc","nc")
 
-# Colnames vectors
+# Column name vectors
 measure_states_extra = c("States.chromHMM","Max_states_intra","States.WGBS","Max_expression")
 measure_metrics = c("Length","mappability","JC_distance","CpGs","CpGs_per_length")
 measure_metrics_subfam = c("Count","Total_length","Length","Mappability","Age","CpGs","Count_CpGs","CpGs_per_TE","CpGs_per_kbp")
 
 enrichment_names = c("Length_ijk","Length_ik","Length_jk","Length_k","Enrichment","Length_percent_jk","Members","Count","Percent")
 
-# Metric labels
 variable_labels = setNames(c("Length (bp)","Mappability","Jukes-Cantor evolutionary distance","CpGs","CpGs/bp"),measure_metrics)
 measure_labels = setNames(c("Number of TEs","Total length (bp)","Median length (bp)","Median mappability","Median age (JC)","Total CpGs","TEs with CpGs","CpGs/TE","CpGs/kbp"),measure_metrics_subfam)
-
-# Mouse-human chromHMM states
-mouse_chromHMM_states = c("TssA","TssAFlnk1","TssAFlnk2","Tx1","Tx2","Enh","EnhLo1","EnhLo2","HetCons","HetFac","TssBiv","EnhPois1","EnhPois2","QuiesG","Quies")
-mouse_chromHMM_colors = setNames(c("red","orangered2","orangered4","green4","darkgreen","yellow","gold1","goldenrod2","cornflowerblue","steelblue2","indianred3","burlywood1","lightgoldenrod2","grey","lightgrey"),mouse_chromHMM_states)
-
-overlap_labels = c("% genome","% TEs (either strand)","% TEs (same strand)","% feature in TEs")
-names(overlap_labels) = c("Genome_percent_genome","TEs_percent_TE","TEs_strand_percent_TE","Genome_percent_TE")
 ```
 
 ## Load metadata
 
+Loads a data frame of metadata for each Roadmap epigenome, including: epigenome name; Group, Anatomy, and Type assignments from the REMC; Germ layer, Age, and Cancer assignments from this study; whether the epigenome has data for each techique, includes chrY, and is excluded with cancer cell lines and IMR90.
+
 ```{bash sample lists, eval=FALSE}
-# Samples with chromHMM annotations (127, 121 without cancer cell lines and IMR90)
+# Samples with chromHMM annotations
+## All 127 samples
 mnemonics.txt
+
+## 121 samples, excluding cancer cell lines and IMR90
 mnemonics_noCancer.txt
 
 # Samples with WGBS data (37)
 WGBS_samples.txt
 
-# Samples with DNase data (53)
+# Samples with DHS data (53)
 DNase_samples.txt
 
 # Samples with H3K27ac data (98)
@@ -173,8 +179,10 @@ source("R_scripts/metadata.R")
 
 ## Load sample statistics
 
+Creates a matrix of sample counts for each technique (all samples or excluding cancer cell lines/IMR90), for all samples and only those with chrY. Also creates labels for each technique.
+
 ```{r load sample stats}
-# Samples with each metric: all, not excluded, no Y, both
+# Samples with data for each technique: all, not excluded, no Y, both
 sample_counts = rbind(apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x)),])[1]),
                       apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$Exclude == "Include"),])[1]),
                       apply(metadata[,c("Sample","WGBS","DNase","H3K27ac","RNA")],2,function(x) dim(metadata[which(!is.na(x) & metadata$chrY == "Yes"),])[1]),
@@ -193,12 +201,18 @@ mark_labels_simple = setNames(c("chromHMM","WGBS","DHS","H3K27ac","RPKM > 1"),c(
 
 ## Create essential matrices
 
+Creates matrices of features (TEs, promoters, etc.) and their intersection with epigenetic states. 
+
+### TEs
+
+Filters the hg19 repeats identified by RepeatMasker to standard chromosomes (no contigs) and 12 TE classes. 
+
 ```{bash TEs, eval=FALSE}
 # RepeatMasker file for hg19	 
 #TE_landscape/raw_data/rmsk.txt.gz -> /bar/genomes/hg19/rmsk/rmsk.txt.gz	
 #TE_landscape/features/rmsk.txt	
 
-# RepeatMasker file restricted to all TE classes, chr 1-22, X, Y, M	 
+# RepeatMasker files restricted to all TE classes, chr 1-22, X, Y, M	 
 
 #TE_landscape/features/TEs/rmsk_TE.txt	
 awk -v OFS='\t' '{if(($12 == "LTR" || $12 == "DNA" || $12 == "SINE" || $12 == "LINE") && ($6 !~ /_/)) print $6, $7, $8, $11, $12, $13, $10}' rmsk.txt > rmsk_TE.txt
@@ -210,8 +224,10 @@ awk -v OFS='\t' '{if(($12=="Unknown"||$12=="Unknown?"||$12=="DNA?"||$12=="LINE?"
 cat rmsk_TE.txt rmsk_other.txt > rmsk_TEother.txt
 ```
 
+Average 36bp mappability per repeat from Sundaram et al 2014 Genome Research. Filtered to TE subfamilies. 
+
 ```{bash TE mappability, eval=FALSE}
-# Rsmk 36bp mappability file (from Sundaram et al), standard chromosomes
+# Rmsk 36bp mappability file, standard chromosomes
 #TE_landscape/mappability/rmsk.txt.mapability.36mer -> /bar/genomes/hg19/rmsk/rmsk.txt.mapability.36mer
 
 # TE 36bp mappability file	 
@@ -223,10 +239,11 @@ while read line; do awk -v subfam=$line '{if($4 == subfam) print $0}' rmsk.txt.m
 while read line; do awk -v subfam=$line '{if($4 == subfam) print $0}' rmsk.txt.mapability.36mer >> rmsk_other_mappability_36mer.txt; done < other_subfamilies.txt
 ```
 
+Calculates Jukes-Cantor evolutionary distance from subfamily consensus for all hg19 repeats, using the RepeatMasker file with substitution rate as input. Filtered to standard chromosomes and TE classes.
+
 ```{bash TE age, eval=FALSE}
-# JC evolutionary distance for rmsk repeats (takes zipped rmsk file as input)
+# Python script takes *rmsk.txt.gz file in the same folder as input, calculates JC evolutionary distance for rmsk repeats
 #TE_landscape/age/rmsk.txt.gz.JCage	
-# Python script takes *rmsk.txt.gz as input
 python calcAge_generalized.py rmsk.txt.gz.JCage
 
 # JC evolutionary matrix for TEs, standard chromosomes	 
@@ -238,10 +255,14 @@ awk -v OFS='\t' '{if(($6 == "LTR" || $6 == "DNA" || $6 == "SINE" || $6 == "LINE"
 awk -v OFS='\t' '{if(($6 == "LTR?" || $6 == "DNA?" || $6 == "SINE?" || $6 == "LINE?" || $6 == "Unknown?" || $6 == "Unknown" || $6 == "Other" || $6 == "RC") && ($1 !~ /_/)) print $1, $2, $3, $4, $5, $6, $7, $8, $9}' rmsk.txt.gz.JCage > rmsk_other_JCage.txt
 ```
 
-CpGs per TE loaded from ''TE_CpG_count.txt'', generated in "TE CpG count" chunk below.
+Downloaded hg19 chromosome sizes, RefSeq genic features, and CpG islands from the UCSC Table Browser. 
 
 ```{bash download RefSeq features, eval=FALSE}
-# hg19 RefSeq features from UCSC Table Browser
+# Chromosome sizes
+#TE_landscape/raw_data/hg19.genome	
+mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from hg19.chromInfo"  > hg19.genome
+
+# RefSeq features
 #genic_features/refseq_3UTR.txt
 #genic_features/refseq_5UTR.txt
 #genic_features/refseq_coding_exon.txt
@@ -252,15 +273,17 @@ CpGs per TE loaded from ''TE_CpG_count.txt'', generated in "TE CpG count" chunk 
 # Regions 2000bp upstream of RefSeq gene TSS
 #genic_features/refseq_up2000.txt
 
-# hg19 CpG islands from UCSC Table Browser
+# CpG islands
 #genic_features/cpgIslandExtUnmasked.txt
-
-# File of chromosome sizes from UCSC	 
-#TE_landscape/raw_data/hg19.genome	
-mysql --user=genome --host=genome-mysql.cse.ucsc.edu -A -e "select chrom, size from hg19.chromInfo"  > hg19.genome
 ```
 
+Filtered chromosome sizes to remove contigs and chrM. Expanded promoter regions (2000bp upstream of TSS) to 500bp downstream of TSS. Identified intergenic regions by taking the complement of RefSeq genic regions.
+
 ```{bash process RefSeq features, eval=FALSE}
+# hg19 chromosome sizes from UCSC, filtered to chr 1-22, X, Y	
+#TE_landscape/features/hg19_standard.genome	
+head -n25 hg19.genome > hg19_standard.genome
+
 # Expand 500bp downstream of RefSeq gene TSS	 
 #genic_features/refseq_promoters.txt	
 bedtools slop -i refseq_up2000.txt -g hg19.genome -l 0 -r 500 -s > refseq_promoters.txt
@@ -268,11 +291,9 @@ bedtools slop -i refseq_up2000.txt -g hg19.genome -l 0 -r 500 -s > refseq_promot
 # Intergenic regions	 
 #genic_features/refseq_intergenic.txt	
 bedtools complement -i refseq_genes.txt -g hg19.genome.standard > refseq_intergenic.txt
-
-# File of chromosome sizes from UCSC, filtered to chr 1-22, X, Y	 
-#TE_landscape/features/hg19_standard.genome	
-head -n25 hg19.genome > hg19_standard.genome
 ```
+
+Created files of unique regions overlapping each RefSeq feature (all, protein-coding, and non-coding) and CpG islands by merging individual features. Coding status was determined by RefSeq accession. 
 
 ```{bash merge RefSeq features, eval=FALSE}
 # Merged features
@@ -299,6 +320,8 @@ for file in refseq*.txt; do awk -v OFS='\t' '{if(substr($4,0,2) == "NM") print $
 for file in refseq*.txt; do awk -v OFS='\t' '{if(substr($4,0,2) == "NR") print $1, $2, $3}' $file | sort -k1,1V -k2,2n - | bedtools merge -i - > $(basename "$file" .txt)\_nc_merge.txt; done
 ```
 
+Intersected individual TEs with merged RefSeq features (all, protein-coding, and non-coding) and CpG islands and summed the length of overlap for each TE. 
+
 ```{bash TE RefSeq, eval=FALSE}
 # Intersection between TEs, RefSeq features	 
 #TE_landscape/features/intersect_features/rmsk_TEother_refseq_[feature].txt [7 files]	
@@ -316,6 +339,8 @@ for file in ~/genic_features/RefSeq/refseq_*c_merge.txt; do bedtools intersect -
 bedtools intersect -wo -a rmsk_TEother.txt -b ~/genic_features/cpgIslandExtUnmasked_merge.txt | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > rmsk_TEother_cpgIsland.txt
 ```
 
+Identified TEs that overlap hg19 blacklist regions. No TE in the SVA or Other classes overlaps a blacklist region. 
+
 ```{bash TE blacklist, eval=FALSE}
 # TEs that overlap the hg19 blacklist	 
 
@@ -326,7 +351,7 @@ bedtools intersect -wao -a rmsk_TE.txt -b ../../genomes/hg19/blacklist.bed > TE_
 bedtools intersect -wao -a rmsk_other.txt -b ../../genomes/hg19/blacklist.bed > other_blacklist.bed
 ```
 
-There are 1,790 human VISTA enhancers, 934 of which positively validated.
+Downloaded VISTA enhancers, filtered to those identified in human, converted to bed format, and identified those that are positively validated. There are 1,790 human VISTA enhancers, 934 of which positively validated. Intersected positively validated VISTA enhancers with TEs and identified TEs with overlap. 
 
 ```{bash TE VISTA, eval=FALSE}
 # VISTA enhancers	
@@ -344,6 +369,9 @@ awk -v FS=':|-|\t' -v OFS='\t' '{print $1, $2, $3, $4, $5}' features/vista_enhan
 # Human, positively validated VISTA enhancers in bed format
 #TE_landscape/features/vista_enhancers/vista_enhancers_human.bed	
 
+wc -l features/vista_enhancers/vista_enhancers_human.bed
+# 934
+
 # Human, positively validated VISTA enhancers intersected with TEs	 
 #TE_landscape/features/intersect_features/vista_enhancers_rmsk_TE.txt	
 bedtools intersect -wo -a vista_enhancers_human.bed -b rmsk_TE.txt > vista_enhancers_rmsk_TE.txt
@@ -352,11 +380,21 @@ bedtools intersect -wo -a vista_enhancers_human.bed -b rmsk_TE.txt > vista_enhan
 bedtools intersect -wo -a vista_enhancers_human.bed -b rmsk_other.txt > vista_enhancers_rmsk_other.txt
 
 cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk -v OFS='\t' '{a[$4,$5,$6,$7,$8,$9,$10]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' -  > features/intersect_features/vista_enhancers_TE.txt
+
+# Number of VISTA enhancers overlapping TEs
+cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2, $3}' - | sort | uniq | wc -l
+# 355
 ```
+
+Creates a data frame of individual TEs, including: length, TE class (assigned by Roadmap and SVA/Other class designations from this study), mappability, Jukes-Cantor evolutionary distance, number of CpGs, CpG density (CpGs/bp), length of overlap with RefSeq genic features, intergenic regions, CpG islands, and blacklist regions, and VISTA enhancers. CpG density is loaded from ''TE_CpG_count.txt'', generated in the "TE CpG count" chunk below.
 
 ```{r create TEs, eval=FALSE}
 source("R_scripts/TE_matrix.R")
 ```
+
+### Epigenetic states
+
+Downloaded epigenetic data from the Roadmap Epigenomics Project and mouseENCODE. 
 
 ```{bash get epigenetic data, eval=FALSE}
 # Roadmap
@@ -365,6 +403,9 @@ source("R_scripts/TE_matrix.R")
 #TE_landscape/raw_data/chromHMM/all.mnemonics.bedFiles.tgz
 #TE_landscape/raw_data/chromHMM/E#_15_coreMarks_mnemonics.bed [127 files]
 http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/coreMarks/jointModel/final/all.mnemonics.bedFiles.tgz
+
+# 18-state chromHMM bedfiles
+wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/core_K27ac/jointModel/final/all.mnemonics.bedFiles.tgz
 
 # WGBS
 # By-chromosome WGBS fractional methylation matrices of CpG x sample 	
@@ -382,9 +423,6 @@ while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/con
 # RNA-seq normalization factors
 #TE_landscape/raw_data/RNAseq/all.EGID.N.readlength
 
-# 18-state chromHMM bedfiles
-wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/core_K27ac/jointModel/final/all.mnemonics.bedFiles.tgz
-
 # Mouse (ENCODE)
 
 # chromHMM (mm10)
@@ -396,9 +434,9 @@ wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmMo
 #TE_landscape/raw_data/mouse/WGBS/ENCFF#.bed [9 files]
 ```
 
-There are 15,478,399 200bp windows. All of the intersections with chromHMM are 200bp. Only 24 windows do not have chromHMM annotations (one per chromosome).
+Divided the hg19 genome into 200bp windows (n=15,478,399; no contigs or chrM). Intersected with chromHMM to get state assignments across the genome and reformatted to bed files. 
 
-The total width of the windows (3,095,677,412) is slightly larger than what is covered by chromHMM (3,095,675,000; no chrM). The missing 2,412 bp is at the end of the chromosomes and does not overlap any TEs (both windows and chromHMM start at base 0 for all chromosomes).  
+All of the intersections are 200bp. The total width of the 200bp windows (3,095,677,412 bp) is slightly larger than what is covered by chromHMM (3,095,675,000 bp). The missing 2,412 bp is at the end of the chromosomes and does not overlap any TEs (both windows and chromHMM start at base 0 for all chromosomes). Only 24 windows do not have chromHMM annotations, one per chromosome.
 
 ```{bash 200bp windows, eval=FALSE}
 # Divided up the genome into 200bp windows
@@ -418,6 +456,12 @@ awk '{sum+=$3-$2}END{print sum}' features/hg19_standard.windows
 awk '{if($1 != "chrM") sum+=$3-$2}END{print sum}' raw_data/chromHMM/E001_15_coreMarks_mnemonics.bed
 ```
 
+### Intersection of TEs with epigenetic states
+
+Assigned individual TEs to epigenetic states based on overlap with epigenetic annotations, using 5 techniques.
+
+Assignment of individual TEs to chromHMM states. First, intersected TEs with 200bp windows and found TEs that overlap the center of a window. Then, identified those that do not. 
+
 ```{bash split TEs summit, eval=FALSE}
 # Intersect TEs with 200bp windows
 bedtools intersect -wo -a features/TEs/rmsk_TEother.txt -b features/hg19_standard.windows > features/TEs/rmsk_TEother_windows.txt
@@ -432,6 +476,8 @@ comm -23 <(sort features/TEs/rmsk_TEother.txt) <(sort features/TEs/rmsk_TEother_
 sort -k1,1 -k2,2n features/TEs/rmsk_TEother_majority.txt > features/TEs/rmsk_TEother_majority
 mv features/TEs/rmsk_TEother_majority features/TEs/rmsk_TEother_majority.txt
 ```
+
+Intersected individual TEs with chromHMM bedfiles and found the total length of overlap between each TE and each chromHMM state per sample. From the intersection files, identified intersections where the TE overlaps the center of a 200bp window. Summed the total overlap of the TE with the state, including only intersections with 200bp window centers. For those that do not overlap a 200bp window center, found the state covering the majority of the TE (ties were randomly assigned). Combined all into one file and sorted.
 
 ```{bash TE chromHMM matrix, eval=FALSE}
 # Intersect with individual TEs
@@ -471,21 +517,7 @@ while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, 
 sort -k1,1V -k2,2n -k3,3n -k4,4 -k8,8 rmsk_TEother_chromHMM.txt > ~/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt
 ```
 
-```{bash TE summit QC, eval=FALSE}
-# Number of states per TE overlapping summit
-for file in chromHMM/summit/TEs/rmsk_TEother_E*_chromHMM.bed; do cut -f1-7,11 $file | sort | uniq | awk '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){print a[i]}}' - | awk '{b[$1]+=1}END{for(i in b){print i, b[i]}}' -; done
-
-# TEs not completely covered with summit rules
-python ~/bin/TE_landscape/check_missing_bp.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt rmsk_TEother_total_chromHMM.txt
-
-# Missing bp per sample
-awk '{if($8 == "summit") a[$9]+=($3-$2-$10)}END{for(i in a){print i, a[i]}}' rmsk_TEother_total_chromHMM.txt
-awk '{if($8 == "majority") a[$9]+=($3-$2-$10)}END{for(i in a){print i, a[i]}}' rmsk_TEother_total_chromHMM.txt
-
-# Number of TEs missing bp per sample
-awk '{if($8 == "summit") a[$9]+=1}END{for(i in a){print i, a[i]}}' rmsk_TEother_total_chromHMM.txt
-awk '{if($8 == "majority") a[$9]+=1}END{for(i in a){print i, a[i]}}' rmsk_TEother_total_chromHMM.txt
-```
+Using the chromHMM states assigned above, found the number of samples in which each TE is annotated with each state, for all samples and excluding cancer cell lines/IMR90. 
 
 ```{bash TE chromHMM potential, eval=FALSE}
 # All
@@ -495,18 +527,25 @@ python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_chromHMM_summit_sor
 python ~/bin/TE_landscape/potential.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt features/TEs/rmsk_TEother.txt chromHMM/chromHMM_states.txt sample_lists/mnemonics_noCancer.txt chromHMM/potential/rmsk_TEother_chromHMM_summit_potential_noCancer.txt 0 7 9 8
 ```
 
+Found the maximum number of states with which each TE can be annotated in a single sample, for TEs overlapping 200bp window centers only. 
+
 ```{bash TE chromHMM max intra, eval=FALSE}
 # Maximum states per TE in any sample
 python ~/bin/TE_landscape/state_sharing_intra_max.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/rmsk_TEother_chromHMM_summit_max.txt 7
 ```
 
+Assignment of individual TEs to methylation states. First, combined the CpG methylation level across all chromosomes and reformatted as a sorted bed file. 
+
 ```{bash process WGBS, eval=FALSE}
-# Bedfile of CpG methylation level across all chromsomes, both strands 	 
+# Bedfile of CpG methylation level across all chromosomes, both strands 	 
 #TE_landscape/WGBS/all_CpG_Meth.bedGraph	
 #TE_landscape/WGBS/all_CpG_Meth.bed	
+
 for file in /bar/mchoudhary/2chromTE/Meth/FractionalMethylation_Removed_E027_E064_Fixed_E012/chr*.fm; do awk -v chr=$(basename "$file" .fm) -v OFS='\t' '{print chr, $1, $1+1, $0}' $file >> all_CpG_Meth.bedGraph; done &
 cut -f1-3,5- all_CpG_Meth.bedGraph | sort -k1,1V -k2,2n -k3,3n - > all_CpG_Meth.bed
 ```
+
+Intersected the CpG methylation level bedfile with individual TEs and found the average methylation across all CpGs overlapping each TE. 
 
 ```{bash TE WGBS matrix, eval=FALSE}
 # Intersect with individual TEs
@@ -519,11 +558,15 @@ for file in xa*; do echo $file; bedtools intersect -wo -a ~/TE_landscape/rmsk_TE
 python ~/bin/TE_landscape/average_methylation.py TE_CpG_Meth_new.bed ~/TE_landscape/rmsk_TEother.txt ~/TE_landscape/WGBS_samples.txt TE_CpG_Meth_new_average.txt
 ```
 
+Counted the number of CpGs overlapping each TE. 
+
 ```{bash TE CpG count, eval=FALSE}
 # Number of CpGs per TE	 
 #TE_landscape/WGBS/TE_CpG_count.txt	
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' TE_CpG_Meth_new.bed > TE_CpG_count.txt
 ```
+
+Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the center of the DHS peak. Counted the number of intersections per TE and combined into one file. 
 
 ```{bash TE DHS matrix, eval=FALSE}
 # Intersect with individual TEs
@@ -537,6 +580,8 @@ for file in DNase/intersect/TEs/rmsk_TEother_E*-DNase.macs2.narrowPeak; do pytho
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt >> DNase/rmsk_TEother_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
+Overlap of individual TEs with H3K27ac peaks. Intersected individual TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file. 
+
 ```{bash TE H3K27ac matrix, eval=FALSE}
 # Intersect with individual TEs
 #TE_landscape/H3K27ac/intersect/TEs/rmsk_TEother_E#-H3K27ac.narrowPeak [98 files]
@@ -548,6 +593,8 @@ for file in H3K27ac/intersect/TEs/rmsk_TEother_E*-H3K27ac.narrowPeak; do python 
 # Matrix of TE x sample x state
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/rmsk_TEother_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
 ```
+
+Average RNA-seq read coverage for individual TEs. Intersected individual TEs with unnormalized, strand-agnostic RNA-seq read coverage, then calculated the average read coverage per TE. Combined values for all samples into a single matrix with a row for each TE and a column per sample. 
 
 ```{bash TE RNA matrix, eval=FALSE}
 # Average RNA-seq expression
@@ -561,28 +608,7 @@ cut -f1-7 rmsk_TEother.txt.sorted_E003_average.txt > rmsk_TEother_average.txt
 while read line; do cut -f10 rmsk_TEother.txt.sorted_$line\_average.txt | paste rmsk_TEother_average.txt - > rmsk_TEother_average; mv rmsk_TEother_average rmsk_TEother_average.txt ; done < RNA_samples_agnostic.txt
 ```
 
-```{bash individual RefSeq exons, eval=FALSE}
-# Unique Refseq exon coordinates, filtered to standard chromosomes
-awk -v OFS='\t' '{if($1 !~ /_/) print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_exons.txt | sort | uniq > ~/genic_features/RefSeq/refseq_exons_unique.txt
-
-# Sorted
-sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_exons_unique.txt > RNAseq/refseq_exons_unique.txt.sorted
-
-# Number of exons overlapping each other
-sort -k1,1V -k2,2n -k3,3n ~/genic_features/RefSeq/refseq_exons_unique.txt | bedtools merge -i - | wc -l
-```
-
-```{bash exon RNA matrix, eval=FALSE}
-# Intersect exons with RNA-seq bedfiles
-intersect_RNA_agnostic.sh
-
-# Average expression per exon, raw, combined samples
-#TE_landscape/RNAseq/refseq_exons_average.txt
-cut -f1-4 refseq_exons_unique.txt.sorted_E003_average.txt > refseq_exons_average.txt
-while read line; do cut -f7 refseq_exons_unique.txt.sorted_$line\_average.txt | paste refseq_exons_average.txt - > refseq_exons_average; mv refseq_exons_average refseq_exons_average.txt ; done < RNA_samples_agnostic.txt
-```
-
-TEs ever in state, split into subfamily x state.
+Created matrices of all TE x sample instances in each state, split by subfamily x state.
 
 ```{bash by subfamily state, eval=FALSE}
 # TEs by subfamily and state
@@ -598,6 +624,42 @@ awk '{print $0 > "DNase/subfamily/"$4"_DNase.txt"}' DNase/rmsk_TEother_DNase_sum
 awk '{print $0 > "H3K27ac/subfamily/"$4"_H3K27ac.txt"}' H3K27ac/rmsk_TEother_H3K27ac_summit.txt
 ```
 
+### RefSeq exons and intersection with RNA-seq read coverage
+
+Average RNA-seq read coverage for individual RefSeq exons. Filtered the RefSeq exons to standard chromosomes (no contigs) and found unique exons. 
+
+```{bash individual RefSeq exons, eval=FALSE}
+# Unique Refseq exon coordinates, filtered to standard chromosomes
+awk -v OFS='\t' '{if($1 !~ /_/) print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_exons.txt | sort | uniq > ~/genic_features/RefSeq/refseq_exons_unique.txt
+
+# Sorted
+sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_exons_unique.txt > RNAseq/refseq_exons_unique.txt.sorted
+```
+
+Intersected individual exons with unnormalized, strand-agnostic RNA-seq read coverage, then calculated the average read coverage per exon. Combined values for all samples into a single matrix with a row for each exon and a column per sample. 
+
+```{bash exon RNA matrix, eval=FALSE}
+# Intersect exons with RNA-seq bedfiles
+intersect_RNA_agnostic.sh
+
+# Average expression per exon, raw, combined samples
+#TE_landscape/RNAseq/refseq_exons_average.txt
+cut -f1-4 refseq_exons_unique.txt.sorted_E003_average.txt > refseq_exons_average.txt
+while read line; do cut -f7 refseq_exons_unique.txt.sorted_$line\_average.txt | paste refseq_exons_average.txt - > refseq_exons_average; mv refseq_exons_average refseq_exons_average.txt ; done < RNA_samples_agnostic.txt
+```
+
+### Load TE and exon state assignments
+
+Creates dataframes with the epigenetic state assignments for each TE (row) in each sample or state (column). 
+
+For chromHMM, the dataframe includes the number of samples each TE is annotated with each state, the number of states the TE is annotated with across all samples (total and unique), the maximum number of states the TE is annotated with in a single sample, and whether the TE overlaps the center of any 200bp window. The number of samples each TE is annotated with each state is loaded into a separate dataframe excluding cancer cell lines and IMR90. 
+
+For WGBS, the dataframe lists the average methylation per TE for each sample, for only TEs that overlap at least one CpG. It also includes the number of CpGs per TE, the number of samples in which the TE is annotated with each methylation state (for all samples with WGBS data and excluding IMR90), and the total number of states with which the TE is annotated across samples (all and excluding IMR90). 
+
+For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample. They also include the total number of samples in which the TE overlaps a peak center, across all samples and excluding cancer cell lines and IMR90. Each dataframe includes only TEs overlapping a peak in at least one sample.
+
+For expression, the read length and normalization factor provided by the Roadmap project for each epigenome are used to normalize the average read coverage per TE and create a dataframe with the average RPKM per TE in each sample. The dataframe also includes the total number of samples in which the TE is expressed RPKM > 1 (in all samples or excluding cancer cell lines/IMR90) and the maximum expression across samples. The same information is provided for unique RefSeq exons in a separate dataframe. 
+
 ```{r create TE epigenetics, eval=FALSE}
 source("R_scripts/chromHMM_matrix.R")
 source("R_scripts/WGBS_TE_avg_methylation.R")
@@ -605,6 +667,10 @@ source("R_scripts/DNase_peaks.R")
 source("R_scripts/H3K27ac_peaks.R")
 source("R_scripts/RNAseq.R")
 ```
+
+### RefSeq promoters and intersection with epigenetic states
+
+Filtered the RefSeq promoters (2000bp upstream and 500bp downstream of each TSS) to standard chromosomes (no contigs) and found unique promoters. 
 
 ```{bash individual RefSeq promoters, eval=FALSE}
 # Unique Refseq promoter coordinates	 
@@ -614,10 +680,9 @@ awk -v OFS='\t' '{print $1, $2, $3, $6}' ~/genic_features/RefSeq/refseq_promoter
 # Filtered to standard chromosomes	 
 #genic_features/RefSeq/refseq_promoters_unique_std.txt	
 awk -v OFS='\t' '{if($1 !~ /_/) print $0}' refseq_promoters_unique.txt > refseq_promoters_unique_std.txt
-
-# Number of promoters overlapping each other
-sort -k1,1V -k2,2n -k3,3n ~/genic_features/RefSeq/refseq_promoters_unique_std.txt | bedtools merge -i - | wc -l
 ```
+
+Assignment of individual promoters to chromHMM states. Intersected each promoter with the chromHMM bedfiles and filtered to only intersections where the promoter overlaps the center of a 200bp window. Summed the total overlap of the promoter with the state, including only intersections with 200bp window centers. 
 
 ```{bash promoter chromHMM matrix, eval=FALSE}
 # Intersect with Refseq promoters
@@ -630,10 +695,14 @@ python ~/bin/TE_landscape/filter_summit.py chromHMM/Refseq_promoters/chromHMM_re
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $8, $10]+=$9}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[6], a[i], sep[5]}}' chromHMM/summit/promoters/chromHMM_refseq_promoters_unique_summit.txt | sort -k1,1V -k2,2n -k3,3n -k5,5 - > chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt
 ```
 
+Found the number of samples in which each promoter is annotated with each chromHMM state. Promoters on contigs are removed at this stage. 
+
 ```{bash promoter chromHMM potential, eval=FALSE}
 # Refseq promoters
 python ~/bin/TE_landscape/potential.py chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt ~/genic_features/RefSeq/refseq_promoters_unique_std.txt chromHMM/chromHMM_states.txt sample_lists/mnemonics.txt chromHMM/potential/refseq_promoters_chromHMM_summit_potential.txt 0 4 6 5
 ```
+
+Assignment of individual promoters to methylation states. Intersected the unique promoters with the CpG methylation level bedfile, then found the average methylation level across all CpGs overlapping each promoter. Promoters on contigs are removed at this stage. 
 
 ```{bash promoter WGBS matrix, eval=FALSE}
 # Intersect with Refseq promoters
@@ -644,6 +713,8 @@ bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b
 #TE_landscape/WGBS/Refseq_promoters/refseq_promoter_unique_CpG_Meth_average.txt	
 python ~/bin/TE_landscape/average_methylation_promoter.py refseq_promoter_unique_CpG_Meth.bed ~/genic_features/RefSeq/refseq_promoters_unique_std.txt ../../sample_lists/WGBS_samples.txt refseq_promoter_unique_CpG_Meth_average.txt
 ```
+
+Overlap of individual promoters with DHS peaks. Intersected individual promoters with DHS peaks by sample, then filtered to only intersections where the promoter overlaps the center of the DHS peak. Counted the number of intersections per promoter and combined into one file. 
 
 ```{bash promoter DHS matrix, eval=FALSE}
 # Intersect with Refseq promoters
@@ -656,6 +727,8 @@ for file in DNase/Refseq_promoters/refseq_promoter_unique_E*-DNase.macs2.narrowP
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' DNase/summit/promoters/refseq_promoter_unique_$line\_DNase_summit.txt >> DNase/refseq_promoter_unique_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
+Overlap of individual promoters with H3K27ac peaks. Intersected individual promoters with H3K27ac peaks by sample, then filtered to only intersections where the promoter overlaps the center of the H3K27ac peak. Counted the number of intersections per promoter and combined into one file. 
+
 ```{bash promoter H3K27ac matrix, eval=FALSE}
 # Intersect with Refseq promoters
 #TE_landscape/H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPeak [98 files]
@@ -667,11 +740,21 @@ for file in H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPea
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' H3K27ac/summit/promoters/refseq_promoter_unique_$line\_H3K27ac_summit.txt >> H3K27ac/refseq_promoter_unique_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
+Creates dataframes of individual promoter assignment to epigenetic states. 
+
+For chromHMM states, the dataframe includes the number of samples in which each promoter is assigned to each state. 
+
+For methlyation states, the dataframe includes the average methylation level for each promoter in each sample, as well as the number of samples in which the promoter is annotated with each methylation state. 
+
+For DHS and H3K27ac peak overlap, the dataframe includes the number of peaks overlapping the promoter in each sample. Promoters on contigs are removed at this stage, and all promoters, regardless of whether they overlap a peak in any sample, are included in the dataframe. The total number of samples in which each promoter overlaps a peak center is also provided.
+
 ```{r create promoter epigenetics, eval=FALSE}
 source("R_scripts/promoter_matrices.R")
 ```
 
-All shuffled files have 4,430,788 TEs, same number of class and subfamily as true TEs, but not same number on each chromosome. 
+### Shuffled TEs and intersection with epigenetic states
+
+Creates 10 iterations of shuffled TE locations on standard chromosomes (no chrM or contigs), excluding genome gaps. All shuffled files have 4,430,788 TEs, with the same number of class and subfamily as true TEs, but not the same number on each chromosome. The files were sorted. 
 
 ```{bash shuffled TEs, eval=FALSE}
 # hg19 gaps, sorted	 
@@ -687,6 +770,8 @@ for i in {1..10}; do sort -k1,1 -k2,2n features/shuffled_TEs/rmsk_TE_shuffle_$i\
 for i in {1..10}; do mv features/shuffled_TEs/rmsk_TE_shuffle_$i\_sorted.txt features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt; done
 ```
 
+Intersected the shuffled TEs with RefSeq genic features (all, protein-coding, non-coding), intergenic regions, and CpG islands and found the length of overlap between each shuffled TE and the features. 
+
 ```{bash shuffled feature overlap, eval=FALSE}
 # Intersection between shuffled TEs, Refseq features
 #TE_landscape/features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_#_cpgIsland.txt [10 files]
@@ -698,6 +783,12 @@ for i in {1..10}; do mv features/shuffled_TEs/rmsk_TE_shuffle_$i\_sorted.txt fea
 for j in {1..10}; do for file in ~/genic_features/RefSeq/*_merge.txt; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b $file | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_$(basename "$file" .txt)\.txt; done; bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b ~/genic_features/RefSeq/refseq_intergenic.txt | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_refseq_intergenic.txt; bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$j\.txt -b ~/genic_features/cpgIslandExtUnmasked_merge.txt | awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=$11}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' - > features/shuffled_TEs/intersect_features/rmsk_TE_shuffle_$j\_cpgIsland.txt; done
 ```
 
+Assignment of shuffled TEs to chromHMM states. First, shuffled TEs were intersected with 200bp windows, and those overlapping the center of a window were identified. That set of TEs was then intersected with the 200bp windows that had been assigned a chrommHMM state earlier. The intersections were filtered to those where the TE overlaps the center of the 200bp window, and the total overlap with the intersections per state was summed. Note that the length of chromHMM state overlap is not the same for shuffled TEs as for real TEs.
+
+Shuffled TEs that are between 200bp window centers were also identified and intersected with the chromHMM bedfiles. Each TE can overlap at most two states, and the TE was assigned the state overlapping the majority of its length. 
+
+The two sets of TEs were combined for each iteration and sorted within each chromosome. 
+
 ```{bash shuffled chromHMM matrix, eval=FALSE}
 # Summit
 ## Identify summit TEs by intersecting with 200bp windows
@@ -708,11 +799,11 @@ for i in {1..10}; do awk '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) print $0}' feat
 for file in features/shuffled_TEs/rmsk_TE_shuffle_*_summit.txt; do cut -f1-7 $file | sort -k1,1 -k2,2n | uniq > features/shuffled_TEs/$(basename $file .txt); mv features/shuffled_TEs/$(basename $file .txt) $file; done
 
 ## Intersect with 200bp chromHMM windows 
-for i in {1..2}; do while read line; do bedtools intersect -wo -sorted -a features/shuffled_TEs/rmsk_TE_shuffle_$i\_summit.txt -b chromHMM/genome/windows/windows_$line\.bed > /scratch/ecp/shuffled/rmsk_TE_shuffle_$i\_$line\_summit.txt; done < sample_lists/mnemonics.txt; done
+for i in {1..10}; do while read line; do bedtools intersect -wo -sorted -a features/shuffled_TEs/rmsk_TE_shuffle_$i\_summit.txt -b chromHMM/genome/windows/windows_$line\.bed > /scratch/ecp/shuffled/rmsk_TE_shuffle_$i\_$line\_summit.txt; done < sample_lists/mnemonics.txt; done
 
 ## Filter to bin summit overlap and sum state within TE
 for file in rmsk_TE_shuffle_1_E*_summit.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done &
-for i in {1..7}; do for file in rmsk_TE_shuffle_$i\_E*_summit; do mv $file $file\.txt; done; done
+for i in {1..10}; do for file in rmsk_TE_shuffle_$i\_E*_summit; do mv $file $file\.txt; done; done
 
 # Majority
 ## TEs that are not summit overlapping (majority), sorted
@@ -720,27 +811,27 @@ for i in {1..10}; do comm -23 <(sort features/shuffled_TEs/rmsk_TE_shuffle_$i\.t
 for file in features/shuffled_TEs/rmsk_TE_shuffle_*_majority.txt; do sort -k1,1 -k2,2n $file > features/shuffled_TEs/$(basename $file .txt); mv features/shuffled_TEs/$(basename $file .txt) $file; done
 
 ## Intersection with chromHMM states
-## Each can only overlap at most 2 states
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\_majority.txt -b raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed > /scratch/ecp/shuffled/rmsk_TE_shuffle_$i\_$line\_majority.txt; done < sample_lists/mnemonics.txt; done &
 
 ## Pick the majority state
-for file in rmsk_TE_shuffle_1_E*_majority.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
-for i in {2..10}; do for file in rmsk_TE_shuffle_$i\_E*_majority.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done; done &
+for i in {1..10}; do for file in rmsk_TE_shuffle_$i\_E*_majority.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done; done &
 for file in rmsk_TE_shuffle_*_E*_majority; do mv $file $file\.txt; done
 
 # Combined summit and majority TEs
-for i in {1..7}; do while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TE_shuffle_$i\_$line\_summit.txt >> rmsk_TE_shuffle_$i\_chromHMM.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TE_shuffle_$i\_$line\_majority.txt >> rmsk_TE_shuffle_$i\_chromHMM.txt; done < ~/TE_landscape/sample_lists/mnemonics.txt; done &
+for i in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TE_shuffle_$i\_$line\_summit.txt >> rmsk_TE_shuffle_$i\_chromHMM.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TE_shuffle_$i\_$line\_majority.txt >> rmsk_TE_shuffle_$i\_chromHMM.txt; done < ~/TE_landscape/sample_lists/mnemonics.txt; done &
 
 # Sorted
 # Where chromosomes.txt is chr 1-22 and sex chromosomes
 for i in {1..10}; do awk '{print>$1}' rmsk_TE_shuffle_$i\_chromHMM.txt; while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TE_shuffle_$i\_chromHMM_sorted.txt; rm $line; done < chromosomes.txt; done
 ```
 
-Note: chromHMM overlap bp is not the same for shuffled summit TEs as for real summit TEs.
+For each iteration of shuffled TEs, found the number of samples in which each TE is annotated with each chromHMM state. 
 
 ```{bash shuffled chromHMM potential, eval=FALSE}
 for i in {1..10}; do python ~/bin/TE_landscape/potential.py rmsk_TE_shuffle_$i\_chromHMM_sorted.txt ~/TE_landscape/features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt chromHMM_states.txt mnemonics.txt rmsk_TE_shuffle_$i\_chromHMM_potential.txt 0 9 7 8; done &
 ```
+
+Assignment of individual TEs to methylation states. Intersected each iteration of shuffled TEs with the CpG methylation level bedfile, then found the average methylation level over all CpGs overlapping each TE for each sample. 
 
 ```{bash shuffled WGBS matrix, eval=FALSE}
 # Intersect with shuffled TEs
@@ -752,10 +843,14 @@ for i in {1..10}; do for file in x*; do bedtools intersect -wo -a ../rmsk_TE_shu
 for i in {1..10}; do python ~/bin/TE_landscape/average_methylation.py rmsk_TE_shuffle_$i\_Meth.bed ../rmsk_TE_shuffle_$i\.txt ~/TE_landscape/sample_lists/WGBS_samples.txt rmsk_TE_shuffle_$i\_Meth_average.txt; done
 ```
 
+Counted the number of CpGs overlapping each shuffled TE. 
+
 ```{bash shuffled CpG count, eval=FALSE}
 #TE_landscape/WGBS/shuffled/TE_CpG_count_#.txt [10 files]
 for j in {1..10}; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(k in a){split(k,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[k];}}' rmsk_TE_shuffle_$j\_Meth.bed > TE_CpG_count_$j.txt; done
 ```
+
+Overlap of shuffled TEs with DHS peaks. Intersected individual shuffled TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the center of the DHS peak. Counted the number of intersections per TE and combined into one file per iteration. 
 
 ```{bash shuffled DHS, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak > DNase/shuffled/rmsk_TE_$line\_$i\-DNase.narrowPeak; done < sample_lists/DNase_samples.txt; done
@@ -765,6 +860,8 @@ for file in DNase/shuffled/rmsk_TE_E*-DNase.narrowPeak; do python ~/bin/TE_lands
 for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/rmsk_TE_$line\_$j\_DNase_summit.txt >> DNase/shuffled/rmsk_TE_$j\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done &
 ```
 
+Overlap of shuffled TEs with H3K27ac peaks. Intersected individual shuffled TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file per iteration. 
+
 ```{bash shuffled H3K27ac, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > H3K27ac/shuffled/rmsk_TE_$line\_$i\-H3K27ac.narrowPeak; done < sample_lists/H3K27ac_samples.txt; done
 
@@ -772,6 +869,16 @@ for file in H3K27ac/shuffled/rmsk_TE_E*-H3K27ac.narrowPeak; do python ~/bin/TE_l
 
 for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/shuffled/rmsk_TE_$line\_$j\_H3K27ac_summit.txt >> H3K27ac/shuffled/rmsk_TE_$j\_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt; done
 ```
+
+Creates dataframes of shuffled TEs and the epigenetic state assignments for each shuffled TE, across 4 techniques. 
+
+The first script creates a dataframe of individual shuffled TEs for each iteration, including TE coordinates and the length of overlap with RefSeq genic features, intergenic regions, and CpG islands. 
+
+For chromHMM, the dataframes include the number of samples in which each shuffled TE is annotated with each state and the number of unique states the TE is annotated with across all samples. 
+
+For WGBS, the dataframes list the average methylation per shuffled TE for each sample, for only TEs that overlap at least one CpG. It also includes the number of CpGs per TE, the number of samples in which the TE is annotated with each methylation state, and the total number of methylation states with which the TE is annotated across samples. 
+
+For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample and the total number of samples in which each TE overlaps a peak center. Each dataframe includes only TEs overlapping a peak in at least one sample.
 
 ```{r create shuffled matrices, eval=FALSE}
 source("R_scripts/shuffled_matrix.R")
@@ -782,6 +889,8 @@ source("R_scripts/shuffled_matrix_H3K27ac.R")
 ```
 
 ## Load essential matrices
+
+The dataframes of TEs and TE epigenetic state assignments created above are loaded (as well as the exon expression dataframe). 
 
 ```{r load essential matrices}
 load("R_datasets/rmsk_TE.RData")
@@ -794,16 +903,22 @@ load("R_datasets/rna.RData")
 
 ## Load feature sizes
 
+Creates a file of unique regions overlapping TEs by merging individual TEs. 
+
 ```{bash merged TEs, eval=FALSE}
 # Merged all TE RepeatMasker file	 
 #TE_landscape/features/TEs/merge/rmsk_TEother_merge.txt	
 cat rmsk_TE.txt rmsk_other.txt | sort -k1,1 -k2,2n - | bedtools merge -i - > rmsk_TEother_merge.txt
 ```
 
+Finds the total length of the regions covered by TEs, for the entire genome (no contigs) and without chrY. 
+
 ```{bash merged TE width, eval=FALSE}
 awk '{sum+=$3-$2}END{print sum}' features/TEs/merge/rmsk_TEother_merge.txt
 awk '{if($1 != "chrY") sum+=$3-$2}END{print sum}' features/TEs/merge/rmsk_TEother_merge.txt
 ```
+
+Counts the number of CpGs in the genome and overlapping TEs. 
 
 ```{bash count CpGs, eval=FALSE}
 wc -l WGBS/all_CpG_Meth.bed
@@ -814,39 +929,50 @@ bedtools intersect -a all_CpG_Meth.bed -b rmsk_TEother_merge.txt > CpG_TE_Meth.b
 wc -l WGBS/CpG_TE_Meth.bed
 ```
 
+For the RefSeq genic features and intergenic regions, finds the total length of the regions covered by the feature (no contigs; with and without chrY) and the length of overlap with TEs (either strand or same strand only). 
+
 ```{bash get feature length, eval=FALSE}
 bash feature_overlap_length.sh
 ```
 
+Loads constants and feature sizes, including a matrix of RefSeq feature lengths. 
+
 ```{r load feature sizes}
 # Genome
+## Chromosome length
 hg19_genome = read.table("raw_data/hg19.genome",sep='\t',header=TRUE)
+
+## Length of the genome, with and without chrY, no contigs
 GENOME_WIDTH = sum(as.numeric(hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes),]$size))
 GENOME_WIDTH_noY = sum(as.numeric(hg19_genome[which(hg19_genome$chrom %in% standard_chromosomes & hg19_genome$chrom != "chrY"),]$size))
 
-# Total widths
+## Total length of the genome across all samples with data for that technique
 CHROMHMM_TOTAL_WIDTH = sample_counts["chrY","chromHMM"]*GENOME_WIDTH + (sample_counts["All","chromHMM"]-sample_counts["chrY","chromHMM"])*GENOME_WIDTH_noY
 DNASE_TOTAL_WIDTH = sample_counts["chrY","DNase"]*GENOME_WIDTH + (sample_counts["All","DNase"]-sample_counts["chrY","DNase"])*GENOME_WIDTH_noY
 H3K27AC_TOTAL_WIDTH = sample_counts["chrY","H3K27ac"]*GENOME_WIDTH + (sample_counts["All","H3K27ac"]-sample_counts["chrY","H3K27ac"])*GENOME_WIDTH_noY
 
 # TEs 
+## Number of individual TEs, with and without chrY
 NUM_TE = dim(rmsk_TE)[1]
 NUM_TE_noY = dim(rmsk_TE[which(rmsk_TE$chromosome != "chrY"),])[1]
+
+## Number of individual TEs overlapping any CpG
 NUM_TE_WGBS = dim(TE_meth_average)[1]
   
+## Length of regions overlapping TEs (unique), with and without chrY
 MERGED_TE_WIDTH = 1389947349
 MERGED_TE_WIDTH_noY = 1375898142
 
-# Total widths
+## Total length of regions overlapping TEs across all samples with data for that techique
 CHROMHMM_TE_WIDTH = sample_counts["chrY","chromHMM"]*MERGED_TE_WIDTH + (sample_counts["All","chromHMM"]-sample_counts["chrY","chromHMM"])*MERGED_TE_WIDTH_noY
 DNASE_TE_WIDTH = sample_counts["chrY","DNase"]*MERGED_TE_WIDTH + (sample_counts["All","DNase"]-sample_counts["chrY","DNase"])*MERGED_TE_WIDTH_noY
 H3K27AC_TE_WIDTH = sample_counts["chrY","H3K27ac"]*MERGED_TE_WIDTH + (sample_counts["All","H3K27ac"]-sample_counts["chrY","H3K27ac"])*MERGED_TE_WIDTH_noY
 
-# CpGs
+# Number of CpGs in the genome and overlapping TEs
 ALL_CPGS = 56434896/2
 TE_CPGS = 28373958/2
 
-# Feature lengths
+# Length of RefSeq features and intergenic regions, with and without chrY, and the length of overlap with TEs (either strand or same strand)
 feature_overlap = as.data.frame(matrix(readLines("features/intersect_features/feature_overlap.txt"),ncol=5,byrow=TRUE))
 colnames(feature_overlap) = c("Cohort","Genome","Genome_noY","TEs","TEs_stranded")
 feature_overlap$Cohort = gsub("refseq_","",feature_overlap$Cohort)
@@ -855,7 +981,9 @@ feature_overlap[,2:5] = apply(feature_overlap[,2:5],2,function(x) as.numeric(x))
 feature_overlap = feature_overlap[,c(1,6:7,2:5)]
 ```
 
-## Calculate TE class and subfamily stats
+## Calculate TE class and subfamily statistics
+
+Lists of TE classes, including DNA, LINE, LTR, SINE, SVA (Other in the RepeatMasker file), and Other (Unknown, RC, and five ? classes in the RepeatMasker file).
 
 ```{bash classes, eval=FALSE}
 # Four large TE classes (DNA, LINE, LTR, SINE)
@@ -865,16 +993,18 @@ TE_class.txt
 other_class.txt
 ```
 
+Creates lists of unique regions overlapping each TE class by merging individual TEs. Includes the original Other class without RC, as well as the Other class with RC that is used in these analyses. All merged class files were combined into a single file. 
+
 ```{bash merged class, eval=FALSE}
 # Merged file for each class	
 #TE_landscape/features/TEs/class/rmsk_[class].txt [13 files]	
 while read line; do awk -v OFS='\t' -v class=$line '{if($5 == class)print $0}' rmsk_TE.txt | bedtools merge -i - > TE_classes/rmsk_$line\.txt; done < TE_class.txt &
 while read line; do awk -v OFS='\t' -v class=$line '{if($5 == class)print $0}' rmsk_other.txt | bedtools merge -i - > TE_classes/rmsk_$line\.txt; done < other_class.txt &
 
-# Original Unconfident class (without RC)
+## Original Unconfident class (without RC)
 awk -v OFS='\t' '{if(($5=="LTR?")||($5=="DNA?")||($5=="LINE?")||($5=="SINE?")||($5=="Unknown?")||($5=="Unknown")) print $0}' ../rmsk_other.txt | bedtools merge -i - > rmsk_Unconfident.txt
 
-# Adding RC to Unconfident class	 
+## Adding RC to Unconfident class	 
 #TE_landscape/features/TEs/class/rmsk_Unconfident_RC.txt	
 awk -v OFS='\t' '{if(($5=="LTR?")||($5=="DNA?")||($5=="LINE?")||($5=="SINE?")||($5=="Unknown?")||($5=="Unknown")||($5=="RC")) print $0}' ../rmsk_TEother.txt | bedtools merge -i - > rmsk_Unconfident_RC.txt
     
@@ -887,13 +1017,16 @@ while read line; do awk -v OFS='\t' -v class=$line '{print $0, class}' rmsk_$lin
 awk -v OFS='\t' '{print $0, "Unconfident_RC"}' rmsk_Unconfident_RC.txt >> TEother_class_merge.txt
 ```
 
+Number of CpGs per class, generated by counting the number of unique CpGs overlapping each class in the file of intersections between individual TEs and CpGs. 
+
 ```{bash class CpG count, eval=FALSE}
-# Number of CpGs per class	 
 #TE_landscape/WGBS/class/TE_CpG_class.txt	
 awk -v OFS='\t' '{print $5, $8, $9, $10}' TE_CpG_Meth_new.bed | sort | uniq | awk -v OFS='\t' '{a[$1]+=1}END{for(i in a){print i, a[i];}}' - > TE_CpG_class.txt 
 awk -v OFS='\t' '{if($5 == "LTR?" || $5 == "DNA?" || $5 == "SINE?" || $5 == "LINE?" || $5 == "Unknown?" || $5 == "Unknown") print $8, $9, $10}' TE_CpG_Meth_new.bed | sort | uniq | wc -l >> TE_CpG_class.txt
-awk -v OFS='\t' '{if($5 == "LTR?" || $5 == "DNA?" || $5 == "SINE?" || $5 == "LINE?" || $5 == "Unknown?" || $5 == "Unknown" || $5 == "RC") print $8, $9, $10}' TE_CpG_Meth_new.bed | sort | uniq | wc -l >> class/TE_CpG_class.txt #Had to add name manually
+awk -v OFS='\t' '{if($5 == "LTR?" || $5 == "DNA?" || $5 == "SINE?" || $5 == "LINE?" || $5 == "Unknown?" || $5 == "Unknown" || $5 == "RC") print $8, $9, $10}' TE_CpG_Meth_new.bed | sort | uniq | wc -l >> class/TE_CpG_class.txt #Added name manually
 ```
+
+The total length of the region overlapping each TE class (unique), with and without chrY. 
 
 ```{bash class length, eval=FALSE}
 # Class lengths with/without chrY	 
@@ -904,6 +1037,8 @@ awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' TEother_class_me
 awk -v OFS='\t' '{if($1 != "chrY") a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' TEother_class_merge.txt > class_lengths_noY.txt
 ```
 
+Lists of TE subfamilies, including those in the SVA and Other classes. 
+
 ```{bash subfamilies, eval=FALSE}
 # 903 subfamilies in the DNA/LINE/SINE/LTR classes OR all 968 subfamilies
 subfamilies.txt
@@ -911,6 +1046,8 @@ subfamilies.txt
 # 65 subfamilies belonging to Other and SVA classes
 other_subfamilies.txt
 ```
+
+Creates lists of unique regions overlapping each TE subfamily by merging individual TEs. All merged subfamily files were combined into a single file. 
 
 ```{bash merged subfamilies, eval=FALSE}
 # Merged file for each subfamily	 
@@ -923,6 +1060,8 @@ while read line; do awk -v OFS='\t' -v subfam=$line '{print $0, subfam}' rmsk_$l
 while read line; do rm rmsk_$line\.txt; done < other_subfamilies.txt
 ```
 
+The total length of the region overlapping each TE subfamily (unique), with and without chrY. 
+
 ```{bash subfamily length, eval=FALSE}
 # Subfamily lengths with/without chrY	 
 #TE_landscape/features/TEs/subfamily/subfamily_lengths.txt	
@@ -932,11 +1071,18 @@ awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' TEother_subfamil
 awk -v OFS='\t' '{if($1 != "chrY") a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' TEother_subfamily_merge.txt > subfamily_lengths_noY.txt
 ```
 
+Number of CpGs per subfamily, generated by counting the number of unique CpGs overlapping each subfamily in the file of intersections between individual TEs and CpGs. 
+
 ```{bash subfamily CpG count, eval=FALSE}
-# Number of CpGs per subfamily	 
 #TE_landscape/WGBS/subfamily/TE_CpG_subfamily.txt	
 awk -v OFS='\t' '{print $4, $8, $9, $10}' TE_CpG_Meth_new.bed | sort | uniq | awk -v OFS='\t' '{a[$1]+=1}END{for(i in a){print i, a[i];}}' - > TE_CpG_subfamily.txt
 ```
+
+Generates dataframes with metadata for each TE class and subfamily. 
+
+The by-class dataframe includes: the number of elements (with and without chrY) per class; number of families and subfamilies; median and SD length of the individual TEs; median mappability; median Jukes-Cantor distance; the proportion of members overlapping each RefSeq genic feature, intergenic regions, CpG islands, VISTA enhancers, and blacklist regions; number of unique CpGs overlapping the class; proportion of all CpGs and CpGs overlapping TEs that overlap the class; number and proportion of individual TEs with CpGs; the total length of the class (unique; with and without chrY); and the total length of the class across all samples with data for each epigenetic technique.
+
+The by-subfamily dataframe includes: the number of elements (with and without chrY) per subfamily; median length of the individual TEs; median mappability; median Jukes-Cantor distance; the total length of the subfamily (unique; with and without chrY); number of unique CpGs overlapping the class; mean CpGs per TE and per kbp; number of individual TEs with CpGs; the proportion of members overlapping each RefSeq genic feature, intergenic regions, CpG islands, VISTA enhancers, and blacklist regions; and the proportion of members on each chromosome.
 
 ```{r calculate TE stats, cache=TRUE, cache.lazy=FALSE}
 source("R_scripts/TE_class_stats.R")
@@ -947,41 +1093,49 @@ source("R_scripts/TE_subfamily_stats.R")
 
 ## Basic sample stats
 
+Prints a matrix of samples with data for each epigenetic technique, including those with chrY and excluding IMR90/cancer cell lines. 
+
 ```{r basic sample stats}
 sample_counts
 ```
 
 ## Basic TE statistics
 
+Prints statistics for TEs. 
+
 ```{r basic TE stats}
 # Number of TEs
 NUM_TE
 
-# % of genome
+# % of genome within TEs
 MERGED_TE_WIDTH/GENOME_WIDTH
 
-# % CpGs overlapping TEs
+# % of CpGs overlapping TEs
 TE_CPGS/ALL_CPGS
 
-# Number of families
+# Number of TE families
 length(unique(rmsk_TE$family))
 
-# Number of subfamilies
+# Number of TE subfamilies
 length(unique(rmsk_TE$subfamily))
 
-# Length of TEs
+# Length of individual TEs (min, median, max)
 ddply(rmsk_TE,.(),summarise,Min=min(Length),Median=median(Length),Max=max(Length))
 
-# % TEs overlapping CpGs
+# Number and % of TEs overlapping at least one CpG or overlapping no CpG
 NUM_TE_WGBS
 NUM_TE_WGBS/NUM_TE
 NUM_TE-NUM_TE_WGBS
+
+# Number of CpGs per TE (min, median, max)
 ddply(TE_meth_average,.(),summarise,Min=min(CpGs),Median=median(CpGs),Max=max(CpGs))
 ```
 
 # Results
 
-## Contribution
+## Contribution of TEs to the regulatory epigenome
+
+The number of bases total and in each chromHMM state across the entire genome, by sample. Combined into a single file with a column for each sample and a row for each chromHMM state. 
 
 ```{bash genome chromHMM, eval=FALSE}
 # Whole genome
@@ -994,6 +1148,8 @@ for file in chromHMM_bedfiles/E*_15_coreMarks_mnemonics.bed; do awk 'BEGIN{SUM=0
 #TE_landscape/chromHMM/genome/mnemonics_state.txt	
 bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_bedfiles/*state
 ```
+
+The number of bases total and in each chromHMM state within TEs, by sample. Intersected the file of unique TE bases with the chromHMM annotations for each sample, summed the number of bases in each chromHMM state, then combined into a single file with a column for each sample. 
 
 ```{bash TE chromHMM, eval=FALSE}
 # Merged TEs
@@ -1010,6 +1166,8 @@ for file in chromHMM_other/*; do awk '{SUM+=$8}END{print SUM}' $file > $file\_st
 #TE_landscape/chromHMM/mnemonics_TEother_merge_states.txt	
 bash combine_states.sh chromHMM_states.txt mnemonics.txt chromHMM_other/*state
 ```
+
+The number of bases in each chromHMM state within each RefSeq genic feature and intergenic regions, by sample. Intersected each file of unique feature regions with the chromHMM annotations for each sample, then summed the number of bases in each chromHMM state. 
 
 ```{bash feature chromHMM, eval=FALSE}
 # Intersect with merged features
@@ -1030,7 +1188,7 @@ while read line; do bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_int
 awk -v OFS='\t' '{a[$1, $2, $9]+=$10}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' chromHMM/Refseq_features/chromHMM_features.txt > chromHMM/chromHMM_refseq_features.txt
 ```
 
-chromHMM annotations are 2,583bp shorter than the width of all chromosomes and 2,417bp when chrY is excluded. All RefSeq feature bases are annotated, indicating all chromHMM-unannoted bases are intergenic. 
+The chromHMM annotations are 2,583bp shorter than the width of all chromosomes (as specified by UCSC, no contigs), 2,417bp when chrY is excluded. However, all RefSeq feature bases are annotated, indicating all chromHMM-unannotated bases are intergenic. 
 
 ```{bash chromHMM QC, eval=FALSE}
 # Difference between hg19 chromosome lengths and chromHMM annotation
@@ -1040,17 +1198,23 @@ awk -v OFS='\t' '{chr[$1]+=$3-$2}END{for(i in chr){print i, chr[i]}}' raw_data/c
 for file in chromHMM/Refseq_features/intersect/chromHMM_*.bed; do awk -v OFS='\t' -v feature=$(basename $file .bed) '{a[$9]+=$8}END{for(i in a){print feature, a[i]}}' $file | sort | uniq; done < features/features.txt
 ```
 
+The number of CpGs in each methylation state across the entire genome, by sample. CpGs are assigned a methylation state based on methylation level. 
+
 ```{bash genome WGBS, eval=FALSE}
 # Number of CpGs in each state, all CpGs, each sample
 #TE_landscape/WGBS/all_CpG_Meth_states.txt		 
 awk '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print i" "hypo[i]" "inter[i]" "hyper[i]" "miss[i];}' all_CpG_Meth.bed > all_CpG_Meth_states.txt
 ```
 
+The number of CpGs in each methylation state within TEs, by sample. 
+
 ```{bash TE WGBS, eval=FALSE}
 # Number of CpGs in each state, TE CpGs, each sample
 #TE_landscape/WGBS/CpG_TE_Meth_states.txt		 
 awk '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print i" "hypo[i]" "inter[i]" "hyper[i]" "miss[i];}' CpG_TE_Meth.bed > CpG_TE_Meth_states.txt
 ```
+
+The number of CpGs in each methylation state within each RefSeq feature, by sample. 
 
 ```{bash feature WGBS, eval=FALSE}
 # Merged features
@@ -1062,6 +1226,8 @@ bedtools intersect -a WGBS/all_CpG_Meth.bed -b ~/genic_features/RefSeq/refseq_in
 awk -v OFS='\t' '{for (i=5;i<=NF;i++){if($i == -1) miss[$1, i]+=1; else if ($i < 0.3) hypo[$1, i]+=1; else if ($i > 0.7) hyper[$1, i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[$1, i]+=1}}END{for(i in hypo){split(i,sep,SUBSEP); print "Hypomethylated", sep[1], sep[2], hypo[i]}; for(i in hyper){split(i,sep,SUBSEP); print "Hypermethylated", sep[1], sep[2], hyper[i]}; for(i in inter){split(i,sep,SUBSEP); print "Intermediate", sep[1], sep[2], inter[i]}; for(i in miss){split(i,sep,SUBSEP); print "Missing", sep[1], sep[2], miss[i]}}' WGBS/feature_CpG_Meth.bed > WGBS/feature_CpG_Meth_states.txt
 ```
 
+The number of and total width of DHS peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the center overlaps the TE). 
+
 ```{bash genome DHS, eval=FALSE}
 #TE_landscape/DNase/DNase_stats.txt	
 
@@ -1071,6 +1237,8 @@ while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/con
 # Peaks overlapping TEs per sample (no summit rule)
 while read line; do awk '{print $8, $9, $10}' rmsk_TEother_$line\-DNase.macs2.narrowPeak | sort | uniq | wc -l >> test; done < ../DNase_samples.txt
 ```
+
+The total width of DHS peaks overlapping TEs and the number of DHS peaks whose center overlaps a TE, by sample. Intersected DHS peaks with merged TE regions and summed the length of overlap. Using the intersection of DHS peaks with individual TEs that was filtered to only those that overlap the center of a peak, counted the number of unique DHS peaks whose center overlaps a TE. 
 
 ```{bash TE DHS, eval=FALSE}
 # Intersect with merged TEs
@@ -1084,6 +1252,8 @@ awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merg
 while read line; do awk -v OFS='\t' '{print $8, $9, $10}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt | sort | uniq | wc -l >> DNase/rmsk_TEother_DNase_summit_stats.txt; done < sample_lists/DNase_samples.txt
 ```
 
+The total width of DHS peaks overlapping RefSeq genic features and intergenic regions, by sample. Intersected DHS peaks with merged feature regions, then summed the total length of overlap. 
+
 ```{bash feature DHS, eval=FALSE}
 for file in ~/genic_features/RefSeq/*_merge.txt; do feature=$(basename "$file" _merge.txt); echo $feature; while read line; do echo $line; bedtools intersect -wo -a raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak -b $file | awk -v OFS='\t' -v sample=$line -v feature=$feature '{print sample, feature, $0}' - >> DNase/refseq_features_DNase_intersect.txt; done < sample_lists/DNase_samples.txt; done
 
@@ -1092,6 +1262,8 @@ while read line; do echo $line; bedtools intersect -wo -a raw_data/DNase/DNase_n
 # Merged features
 awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i]}}' DNase/refseq_features_DNase_intersect.txt > DNase/refseq_features_DNase.txt
 ```
+
+The number of and total width of H3K27ac peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the center overlaps the TE). 
 
 ```{bash genome H3K27ac, eval=FALSE}
 #TE_landscape/H3K27ac/H3K27ac_stats.txt	
@@ -1102,6 +1274,8 @@ while read line; do echo $line >> H3K27ac_stats.txt; wc -l H3K27ac_narrow_peaks/
 # Peaks overlapping TEs per sample (no summit rule)
 while read line; do awk '{print $8, $9, $10}' H3K27ac_TEs/rmsk_TEother_$line\-H3K27ac.narrowPeak | sort | uniq | wc -l >> test; done < ../H3K27ac_samples.txt #Combine in Excel
 ```
+
+The total width of H3K27ac peaks overlapping TEs and the number of H3K27ac peaks whose center overlaps a TE, by sample. Intersected H3K27ac peaks with merged TE regions and summed the length of overlap. Using the intersection of H3K27ac peaks with individual TEs that was filtered to only those that overlap the center of a peak, counted the number of unique H3K27ac peaks whose center overlaps a TE. 
 
 ```{bash TE H3K27ac, eval=FALSE}
 # Intersect with merged TEs
@@ -1115,6 +1289,8 @@ awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merg
 while read line; do awk -v OFS='\t' '{print $8, $9, $10}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt | sort | uniq | wc -l >> H3K27ac/rmsk_TEother_H3K27ac_summit_stats.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
+The total width of H3K27ac peaks overlapping RefSeq genic features and intergenic regions, by sample. Intersected H3K27ac peaks with merged feature regions, then summed the total length of overlap. 
+
 ```{bash feature H3K27ac, eval=FALSE}
 for file in ~/genic_features/RefSeq/*_merge.txt; do feature=$(basename "$file" _merge.txt); echo $feature; while read line; do echo $line; bedtools intersect -wo -a raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak -b $file | awk -v OFS='\t' -v sample=$line -v feature=$feature '{print sample, feature, $0}' - >> H3K27ac/refseq_features_H3K27ac_intersect.txt; done < sample_lists/H3K27ac_samples.txt; done
 
@@ -1123,6 +1299,8 @@ while read line; do echo $line; bedtools intersect -wo -a raw_data/H3K27ac/H3K27
 # Merged features
 awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/refseq_features_H3K27ac_intersect.txt > H3K27ac/refseq_features_H3K27ac.txt
 ```
+
+The number of bases in each TE class annotated with each chromHMM state, by sample. Includes both old and current Other class definitions. Intersected the merged class file with chromHMM annotations, then summed across each state.
 
 ```{bash class chromHMM, eval=FALSE}
 # TE merged classes
@@ -1141,6 +1319,8 @@ for file in ../../raw_data/chromHMM/E*.bed; do suffix=$(basename $file | cut -d 
 while read line; do awk -v OFS='\t' -v class=$line '{a[$7,$9]+=$8}END{for(i in a) {split (i, sep, SUBSEP); print class, sep[1], sep[2], a[i];}}' chromHMM/TEs/intersect/class/rmsk_$line\.txt_chromHMM.bed >> chromHMM/class/class_state_sample.txt; done < chromHMM/class/classes.txt
 ```
 
+The number of CpGs overlapping each TE class in each methylation state, by sample. From the intersection of CpGs with individual TEs, found the unique CpGs overlapping each TE class, then counted the number in each methylation state (based on methylation level). Includes both old and current Other class definitions. 
+
 ```{bash class WGBS, eval=FALSE}
 # Number of CpGs in each state, TE CpGs, by sample x class
 
@@ -1151,6 +1331,8 @@ awk -v OFS='\t' '{if(($5 == "LINE?") || ($5 == "SINE?") || ($5 == "DNA?") || ($5
 
 awk -v OFS='\t' '{if(($5 == "LINE?") || ($5 == "SINE?") || ($5 == "DNA?") || ($5 == "LTR?") || ($5 == "Unknown?") || ($5 == "Unknown") || ($5 == "RC")) print $0}' TE_CpG_Meth_new.bed | cut -f8- - | sort | uniq | awk -v OFS='\t' '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i=4;i<=NF;i++) {print i, hypo[i], inter[i], hyper[i], miss[i], "Unconfident_RC";}}' - >> class_CpG_Meth_states.txt
 ```
+
+The total width of overlap of TE classes with DHS peaks, by sample. Intersected the merged class file with DHS peaks, then summed the total width of overlap with DHS peaks within the class. 
 
 ```{bash class DHS, eval=FALSE}
 # Merged TE classes
@@ -1163,6 +1345,8 @@ while read line; do grep "Unconfident_RC" ../features/TEs/class/TEother_class_me
 #TE_landscape/DNase/class_DNase_sample.txt
 awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i];}}' rmsk_TEother_class_Dnase.txt > class_DNase_sample.txt
 ```
+
+The total width of overlap of TE classes with H3K27ac peaks, by sample. Intersected the merged class file with DHS peaks, then summed the total width of overlap with H3K27ac peaks within the class. 
 
 ```{bash class H3K27ac, eval=FALSE}
 # Merged TE classes
@@ -1227,20 +1411,6 @@ contribution_composite
 
 # Contribution by class
 dcast(contribution_class,class~State,value.var="Proportion")
-```
-
-### VISTA enhancers
-
-```{bash count vista enhancers, eval=FALSE}
-# Number of positively validated VISTA enhancers from human
-wc -l features/vista_enhancers/vista_enhancers_human.bed
-# 934
-
-# Proportion overlapping TEs
-cat features/intersect_features/vista_enhancers_rmsk_*.txt | awk '{print $1, $2, $3}' - | sort | uniq | wc -l
-# 355
-
-# 355/934
 ```
 
 ### Supplementary Figure 1
@@ -1336,12 +1506,16 @@ sort(apply(aggregate(data=rmsk_TE[,c("class_update",measure_metrics)],.~class_up
 aggregate(data=rmsk_TE,Length~class_update,max)
 ```
 
-## Potential
+## Potential for individual TEs to be epigenetically active
+
+Counts the number of TEs annotated with each chromHMM state by sample. 
 
 ```{bash TE chromHMM counts, eval=FALSE}
 # Number of TEs in state in sample
 awk -v OFS='\t' '{a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit.txt
 ```
+
+Counts the number of TEs annotated with each chromHMM state in each class by sample. First, splits the matrix of TE chromHMM state assignments by sample into by-class files, then counts the number of TEs in each state and sample by file. 
 
 ```{bash class chromHMM counts, eval=FALSE}
 # TEs by class
@@ -1500,6 +1674,8 @@ write.table(always_TEs_90[,c(TE_coordinates,"State")],file="always_TEs_90.bed",s
 dcast(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),State~Class,value.var="TEs.Proportion")
 ```
 
+For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Reports all ties. Also counts TEs overlapping a DHS peak in all samples that are >5kb from the nearest RefSeq gene. 
+
 ```{bash investigate always TEs, eval=FALSE}
 # TEs always in a state
 
@@ -1511,11 +1687,9 @@ sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a
 awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_genes.txt | wc -l
 ```
 
-### Background proportion of genome in active regulatory state
+### Background proportion of the genome in an active regulatory state in any Roadmap sample
 
-Proportion of the genome that is in an active regulatory state in any Roadmap sample. 
-
-From the 200bp window-chromHMM intersections, pulled out those in the 5 active regulatory states. Then, found the number of unique windows that are ever in one of those states.   
+From the 200bp window-chromHMM intersections, pulled out windows in the five active regulatory states. Then, found the number of unique windows that are ever in one of those states.
 
 ```{bash window potential, eval=FALSE}
 # 200bp windows in an active regulatory state
@@ -1525,7 +1699,7 @@ while read line; do awk -v OFS='\t' -v sample=$line '{if(($4 == "1_TssA") || ($4
 cut -f1-3 chromHMM/genome/windows/windows_active_reg.bed | sort | uniq | wc -l
 ```
 
-The number of shuffled TEs (times 10 iterations) that are ever in an active regulatory state.  
+From the files listing the number of samples in which each shuffled TE is annotated with each chromHMM state (10 iterations), found the the number of shuffled TEs that are in an active regulatory state in at least one sample.  
 
 ```{bash shuffled potential, eval=FALSE}
 # Number of shuffled TEs per iteration that are ever in an active regulatory state
@@ -1536,7 +1710,9 @@ for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromH
 
 '''Block/summit'''
 
-TEs that overlap the center of chromHMM blocks.
+Identified TEs that overlap the center of chromHMM annotation blocks. From the intersection files between TEs and chromHMM states, filtered to only TEs that overlap the center of the chromHMM annotation. Then, summed the total length of overlap between the TE and the state in that sample. 
+
+Counted the number of TEs in each state per sample and the number of samples each TE is in each chromHMM state using these annotation rules. 
 
 ```{bash block control, eval=FALSE}
 # Filtered TE x chromHMM state intersections to only those where the TE overlaps the center of the block
@@ -1553,7 +1729,7 @@ awk -v OFS='\t' '{a[$8, $9]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7, $8]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' chromHMM/rmsk_TE_block_summit_sorted.txt > chromHMM/rmsk_TE_block_potential.txt
 ```
 
-As a QC, found the number of TEs per state that are identified using block summit overlap, but not the standard analysis, and compared it to the total number identified using block summit overlap. The proportion is small, usually <1%. There are no subfamily x state combinations that are present in block overlap but not normally.
+As QC, found the number of TEs annotated with each state that are identified using block center overlap, but not the standard analysis, and compared it to the total number identified using block center overlap. First, separated the TEs that overlap the center of chromHMM annotation blocks into files by subfamily and state, then found those that were not also identified using the standard annotation rules. No subfamily x state combination had no entry using the alternative annotation rules. Then, counted the number of TEs identified using the block center overlap rules and the number that are exclusively identified using those rules, by state. The proportion is small, usually <1%. 
 
 ```{bash block QC, eval=FALSE}
 # TEs overlapping a block summit that are not counted in the original analysis
@@ -1571,7 +1747,7 @@ awk -v OFS='\t' '{a[$10]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/bloc
 awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/rmsk_TE_block_summit_sorted.txt
 ```
 
-Repeated the analysis with just TEs that overlap 200bp bin summits. 
+As another alternative annotation rule, counted the number of TEs that overlap 200bp window centers annotated with each state in each sample.
 
 ```{bash summit control, eval=FALSE}
 # TEs per sample, restricted to those overlapping summits
@@ -1598,7 +1774,9 @@ sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 
 '''18-state model'''
 
-The Roadmap project has 98 samples annotated with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model) (which includes H3K27ac). 15,478,375 windows have annotations for most samples, 15,181,508 for the samples without chrY (the same as for the 15-state model). The annotations do not go to the end of the chromosomes.
+The Roadmap project annotated 98 samples with the [https://egg2.wustl.edu/roadmap/web_portal/chr_state_learning.html#exp_18state](18-state model), which includes H3K27ac. I assigned TEs to chromHMM states using this model with the same annotation rules used for the 15-state model. 
+
+First, intersected the 200bp windows with the chromHMM annotations and converted to bed format. 15,478,375 windows have annotations for most samples, 15,181,508 for the samples without chrY, and the annotations do not go to the end of the chromosomes (the same as for the 15-state model). Then, intersected TEs that overlap the center of 200bp windows with the window bedfiles, filtered to intersections that overlap the center of 200bp windows, and summed the overlap of the TE with the state in that sample. For TEs that do not overlap the center of 200bp windows, intersected with the chromHMM annotation bedfiles and found the state that covers the majority of the TE. Combined both sets of TEs and sorted by chromosome.
 
 ```{bash 18 state, eval=FALSE}
 # Intersect 200bp windows with chromHMM, 18-state model
@@ -1619,6 +1797,8 @@ while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"
 awk '{print>$1}' rmsk_TEother_18state.txt
 while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_18state_sorted.txt; rm $line; done < chromosomes.txt
 ```
+
+For TEs assigned to 18-state model chromHMM states, found the number of samples in which each TE is annotated with each state and the number of TEs annotated with the state per sample. 
 
 ```{bash 18 state potential, eval=FALSE}
 # List of states in 18-state model
@@ -1743,6 +1923,8 @@ ddply(rmsk_TE,.(class_update),summarise,Median_CpGs=median(CpGs),Median_CpGs_wCp
 
 ### Supplementary Figure 6
 
+Counted the number of promoters annotated with each chromHMM state in each sample (excluding promoters on contigs). 
+
 ```{bash promoter chromHMM counts, eval=FALSE}
 # Number of promoters in state in sample
 awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt > chromHMM/promoters_state_sample_counts_summit.txt
@@ -1774,6 +1956,8 @@ grid.arrange(a,b,c,d,e,f,nrow = 3,layout_matrix=rbind(c(1,2),c(3,4),c(5,6)),heig
 
 ### Promoter statistics
 
+From the intersection of individual RefSeq promoters with CpG methylation level, found the number of CpGs overlapping each promoter. 
+
 ```{bash promoter CpG count, eval=FALSE}
 # Refseq promoters
 #TE_landscape/WGBS/Refseq_promoters/refseq_promoter_unique_CpG_count.txt
@@ -1802,12 +1986,14 @@ ddply(combine_potential_prom,.(State),summarise,Total=sum(Count[which(Sample.Pro
 
 ### Exon statistics (expression potential control)
 
+Intersected the CpG methylation level bed file with unique individual RefSeq exons, then counted the number of CpGs per exon. 
+
 ```{bash exon CpG count, eval=FALSE}
 # Refseq exons
 split -l 1000000 ~/TE_landscape/WGBS/all_CpG_Meth.bed
 for file in x*; do echo $file; bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_exons_unique.txt -b $file >> ~/TE_landscape/WGBS/refseq_exons_unique_CpG_Meth.bed ; done
 
-# Exons (1/3/18)
+# Exons
 awk -v OFS='\t' '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], a[i];}}' WGBS/refseq_exons_unique_CpG_Meth.bed > WGBS/refseq_exons_unique_CpG_count.txt
 ```
 
@@ -1883,7 +2069,7 @@ combine_boxplot[which(combine_boxplot$Sample == "E017"),]
 
 Identified similar pairs of samples ("pseudo-replicates") using Table S1 from the Roadmap publication. 
 
-Files of all TE x sample in the state by state and subfamily, for each active regulatory state. 
+Created files listing all TEs annotated with a chromHMM state in a sample by state and subfamily, for each active regulatory state. 
 
 ```{bash active reg matrices, eval=FALSE}
 # Lists of individual TEs in each active regulatory state by sample
@@ -2031,16 +2217,17 @@ lapply(states[c(1:3,6:7)],function(x) write.table(TE_pos[[x]][,TE_coordinates[c(
 write.table(TE_neg[,TE_coordinates[c(1:4,6,7,5)]],file="orthogonal/not_active.txt",row.names=FALSE,col.names=FALSE,quote=FALSE,sep='\t')
 ```
 
-Combined the shuffled files together. 
+Combined the files of constitutively active shuffled TEs together by state. 
 
-How many of the shuffled constitutive TEs are redundant? I found the total number of shuffled TEs per state, then compared it to the unique number. There are almost no redundancies, just one in the 2_TssAFlnk state. This is because it is very unlikely for the shuffled TE to land at the same location in different iterations. 
+To determine how much redundancy is present within the combined shuffled TE set, I found the total number of shuffled TEs and the number of unique TEs (collapsing those with the same coordinates) across iterations, per state. There are almost no redundancies (one in the 2_TssAFlnk state), because it is very unlikely for shuffled TE coordinates to be assigned the same location in different iterations. 
 
-Overlapping bp within the sets. This is a large fraction of the total bp in each shuffled set, particularly for the 1_TssA state. 
+However, I also determined the degree of overlap within each TE set by comparing the total TE length to the unique TE length. Redundancy is high in the shuffled sets, particularly for the 1_TssA state, but is much smaller for the non-shuffled sets. 
 
 ```{bash combined shuffle, eval=FALSE}
+# Combine shuffled iterations
 while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt > orthogonal/shuffle_constitutive_$line\.txt; done < sample_lists/chromHMM_states.txt
 
-# Shuffled constitutive QC
+# QC
 ## Redundant TEs
 while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | wc -l; done < sample_lists/chromHMM_states.txt
 while read line; do cat orthogonal/shuffle_*_constitutive_$line\.txt | sort | uniq | wc -l; done < sample_lists/chromHMM_states.txt
@@ -2073,7 +2260,7 @@ ggplot(melt(orthogonal_profile[,c("Set","State","DNA","LINE","LTR","SINE","SVA",
 
 '''VISTA'''
 
-Intersected the VISTA enhancers with each set of TEs. The real TE 1_TssA and 3_TxFlnk constitutive sets overlap no enhancer.  
+Intersected the human VISTA enhancers with each set of TEs. The true TE 1_TssA and 3_TxFlnk constitutive sets overlap no enhancer.  
 
 ```{bash orthogonal vista, eval=FALSE}
 for file in orthogonal/*.txt; do bedtools intersect -wo -a $file -b features/vista_enhancers/vista_enhancers_human_all.bed > orthogonal/vista/$(basename $file .txt)_vista.txt; done
@@ -2113,7 +2300,7 @@ lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista
 
 '''HOMER'''
 
-Ran HOMER (known motifs only) on each of the orthogonal sets. HOMER gives more detail about the motifs [http://homer.ucsd.edu/homer/motif/motifDatabase.html| here].
+Ran HOMER on each of the TE sets to identify transcription factor binding motifs (known motifs only). HOMER provides more detail about the motifs [http://homer.ucsd.edu/homer/motif/motifDatabase.html| here].
 
 ```{bash orthogonal homer, eval=FALSE}
 for file in orthogonal/*.txt; do echo $file; findMotifsGenome.pl $file hg19 orthogonal/homer/$(basename $file .txt) -size given -nomotif 2>> orthogonal/homer/output.txt; done
@@ -2168,14 +2355,14 @@ table(homer_stats[which(homer_stats$p.value < 0.05),c("Comparison","State")])
 
 '''Population'''
 
-Conserved elements generated by phastCons, based on the primate alignment only, from UCSC. Removed the bin field to turn it into a bed file. 
+Downloaded the hg19 conserved elements generated by phastCons, based on the primate alignment only, from UCSC. Removed the bin field (column 1) to convert it into a bed file. 
 
 ```{bash phastCons, eval=FALSE}
 wget http://hgdownload.soe.ucsc.edu/goldenPath/hg19/database/phastConsElements46wayPrimates.txt.gz
 awk -v OFS='\t' '{print $2, $3, $4, $5, $6}' orthogonal/pop/phastConsElements46wayPrimates.txt > orthogonal/pop/phastCons.txt
 ```
 
-Downloaded the hg19 GERP elements and combined into one file. There are 1,044,996 elements. 
+Downloaded the hg19 GERP elements and combined the chromosomes into one file, reformatting the chromosome column. There are 1,044,996 elements. 
 
 ```{bash GERP, eval=FALSE}
 wget http://mendel.stanford.edu/SidowLab/downloads/gerp/hg19.GERP_elements.tar.gz
@@ -2184,14 +2371,14 @@ for file in GERP/*; do awk -v OFS='\t' -v chr=$file '{print chr, $1, $2, $3, $4,
 sed 's/GERP\/hg19_//' GERP_hg19_elems.txt | sed 's/_elems\.txt//' | sort -k1,1 -k2,2n > GERP_hg19_elems_sorted.txt
 ```
 
-Intersection with all sets, found overlapping elements. 
+Intersected the phastCons and GERP elements with each TE set, then counted the length of overlap with each TE. 
 
 ```{bash phastCons intersection, eval=FALSE}
+# Intersect with phastCons
 for file in orthogonal/*.txt; do bedtools intersect -wao -a $file -b orthogonal/pop/phastCons.txt > orthogonal/pop/$(basename $file .txt)_phastCons.txt; done
 for file in orthogonal/pop/*phastCons.txt; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $7, $6]+=$13}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i]}}' $file > orthogonal/pop/$(basename $file .txt)_total.txt; done
-```
 
-```{bash GERP intersection, eval=FALSE}
+# Intersect with GERP
 for file in orthogonal/*.txt; do sort -k1,1 -k2,2n $file | bedtools intersect -wao -a - -b orthogonal/pop/GERP_hg19_elems_sorted.txt -sorted > orthogonal/pop/$(basename $file .txt )_gerp.txt; done
 for file in orthogonal/pop/*gerp.txt; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $7, $6]+=$14}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i]}}' $file > orthogonal/pop/$(basename $file .txt)_total.txt; done
 ```
@@ -2253,21 +2440,25 @@ set_legend = get_legend(ggplot(vista_val_fraction,aes(x=State,y=Fraction,shape=S
 grid.arrange(a,b,c,set_legend,layout_matrix = rbind(c(1,2),c(3),c(4)),widths=c(0.35,0.65),heights=c(0.35,0.6,0.05))
 ```
 
-### Figure 3
+## Epigenetic state dynamics of TEs
+
+For instances of a TE annotated with a chromHMM state in a sample, produces a matrix with the number of instances where the TE is also annotated with another chromHMM state in the same sample. 
 
 ```{bash chromHMM intra, eval=FALSE}
-# Updated 5/17/18 to 6/5/2018 with summit overlap
-
 # State switching intra, chromHMM
 #TE_landscape/chromHMM/state_switching/rmsk_TEother_chromHMM_intra.txt
 python ~/bin/TE_landscape/state_sharing_intra2.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/chromHMM_states.txt chromHMM/state_switching/rmsk_TEother_chromHMM_intra.txt 7 9
 ```
+
+Produces a matrix with the total number of samples in which TEs are annotated with each chromHMM state (column), for TEs annotated with each chromHMM state in any sample (row).
 
 ```{bash chromHMM inter, eval=FALSE}
 # State switching inter, chromHMM
 #TE_landscape/chromHMM/state_switching/rmsk_TEother_chromHMM_inter.txt
 python ~/bin/TE_landscape/state_sharing_inter.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/chromHMM_states.txt chromHMM/state_switching/rmsk_TEother_chromHMM_inter.txt 7 9
 ```
+
+The above analysis, split by TE class.
 
 ```{bash chromHMM inter class, eval=FALSE}
 # State switching inter, chromHMM, by class
@@ -2279,10 +2470,11 @@ python ~/bin/TE_landscape/state_sharing_inter.py chromHMM/chromHMM_summit_SVA.tx
 python ~/bin/TE_landscape/state_sharing_inter.py chromHMM/chromHMM_summit_Other.txt chromHMM/chromHMM_states.txt chromHMM/state_switching/class/rmsk_TEother_chromHMM_inter_Other.txt 7 9
 ```
 
+Using the matrix of TE methylation level per sample, sorted and added methylation states. Then, produces a matrix with the total number of samples in which TEs are annotated with each methylation state (column), for TEs annotated with each methylation state in any sample (row). 
+
 ```{bash WGBS inter, eval=FALSE}
-# Methylation level of each TE x sample	 
-#TE_landscape/WGBS/TE_WGBS_state.txt (from WGBS_TE_avg_methylation.R)
-# Removed header
+# Methylation level of each TE x sample	(produced by WGBS_TE_avg_methylation.R; removed header)
+#TE_landscape/WGBS/TE_WGBS_state.txt 
 
 # Methylation level of each TE x sample, sorted	 
 #TE_landscape/WGBS/TE_WGBS_state_sorted.txt	
@@ -2295,6 +2487,8 @@ awk -v OFS='\t' '{if($9 == "NA") print $0, "Missing"; else if ($9 < 0.3) print $
 #TE_landscape/WGBS/TE_WGBS_state_inter.txt		 
 python ~/bin/TE_landscape/state_sharing_inter.py WGBS/TE_WGBS_state_sorted.txt WGBS/methylation_states.txt WGBS/TE_WGBS_state_inter.txt 7 9
 ```
+
+Split the matrix of TE methylation state per sample by class, then repeated the above analysis by class. 
 
 ```{bash WGBS inter class, eval=FALSE}
 # Methylation level/state of each TE x sample, sorted, by class	 
@@ -2309,6 +2503,8 @@ awk -v OFS='\t' '{if(($5 != "Other") && ($5 != "LINE") && ($5 != "SINE") && ($5 
 #TE_landscape/WGBS/class/[class]_WGBS_state_sorted.txt_inter.txt [6 files]		
 for file in WGBS/class/*WGBS_state_sorted.txt; do python ~/bin/TE_landscape/state_sharing_inter.py $file WGBS/methylation_states.txt $file\_inter.txt 7 9; done &
 ```
+
+### Figure 3
 
 ```{r Figure 3, echo=FALSE, fig.width=7, fig.height=6}
 source("R_scripts/state_switching.R")
@@ -2409,10 +2605,14 @@ ddply(chromHMM_TE_state,.(chromosome,Category),summarise,Max_states_intra=median
 
 ### Number of states per TE x sample
 
+Found the number of chromHMM states with which each instance of a TE in a sample is annotated, for TEs overlapping the center of a 200bp window only. Produces a count matrix.
+
 ```{bash chromHMM states per TE, eval=FALSE}
 # Number of states per TE x sample
 python ~/bin/TE_landscape/state_sharing_intra_lite.py chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/rmsk_TEother_chromHMM_summit_state_counts.txt 7 9
 ```
+
+For each TE, counted the number of CpGs overlapping the TE in each methylation state per sample. Then, counted the number of CpG methylation states overlapping each instance of a TE in a sample. 
 
 ```{bash WGBS states per TE, eval=FALSE}
 # TEs overlapping a CpG in each methylation state by sample
@@ -2488,6 +2688,8 @@ e[2]/sum(e[2:length(e)])
 
 ### Supplementary Figure 9 
 
+For each iteration of shuffled TEs, produces a matrix with the total number of samples in which TEs are annotated with each chromHMM state (column), for TEs annotated with each chromHMM state in any sample (row). Also produces a matrix with the total number of samples in which TEs are annotated with each methylation state (column), for TEs annotated with each methylation state in any sample (row). The methylation matrix also contains a column listing the number of TEs ever in each methylation state. 
+
 ```{bash shuffled dynamics, eval=FALSE}
 # Inter state switching for shuffled TEs
 ## chromHMM
@@ -2542,17 +2744,14 @@ rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average"))
 
 ### Supplementary Figure 10
 
-```{bash compare marks, eval=FALSE}
-# Combine multiple epigenetic marks
-# Updated 5/7/18 and 5/22/18 with pandas script
+Created a combined matrix with multiple epigenetic marks (chromHMM, WGBS, DNase, H3K27ac, and RNA states) for each TE in each sample. First, split the matrices of TE epigenetic states by sample. Then, combined into a single combined matrix by sample. From those matrices, counted the number of TE instances with each state combination. 
 
-# Combined matrix with each TE x sample and chromHMM, WGBS, DNase, H3K27ac, and RNA states, by sample
-# WGBS and RNA matrices are output by WGBS_TE_avg_methylation.R and RNAseq.R
+```{bash compare marks, eval=FALSE}
 ln -s /bar/epehrsson/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/.
 ln -s /bar/epehrsson/TE_landscape/WGBS/TE_WGBS_state_sorted.txt WGBS/.
 ln -s /bar/epehrsson/TE_landscape/DNase/rmsk_TEother_DNase_summit.txt DNase/.
 ln -s /bar/epehrsson/TE_landscape/H3K27ac/rmsk_TEother_H3K27ac_summit.txt H3K27ac/.
-ln -s /bar/epehrsson/TE_landscape/RNAseq/rmsk_TE_rpkm.txt RNA/. 
+ln -s /bar/epehrsson/TE_landscape/RNAseq/rmsk_TE_rpkm.txt RNA/. # Output by RNAseq.R
 
 awk '{print>"chromHMM/"$8}' rmsk_TEother_chromHMM_summit_sorted.txt &
 awk '{print>"WGBS/"$8}' TE_WGBS_state_sorted.txt &
@@ -2668,7 +2867,7 @@ apply(sample_counts,2,function(x) (x[3]*NUM_TE) + ((x[1]-x[3])*NUM_TE_noY))
 apply(compare_marks_unique,2,function(x) sum(compare_marks_unique[which(!is.na(x)),]$TE_sample))
 ```
 
-## By sample
+## Differences in TE activity by tissue classification
 
 ### By-sample analysis
 
@@ -2712,6 +2911,8 @@ test[order(test$State,test$Proportion),]
 ```
 
 ### Figure 4
+
+Finds the total RNA-seq read coverage and the length of the covered region for the entire genome, TEs, and each TE class and subfamily, for the entire genome and over chrY.
 
 ```{bash RNA coverage, eval=FALSE}
 intersect_RNA_features.sh
@@ -2826,7 +3027,7 @@ legend_germline = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$
 grid.arrange(a,legend_anatomy,legend_type,legend_age,legend_cancer,legend_germline,nrow=4,layout_matrix=rbind(c(1,1),c(2,2),c(3,4),c(6,5)),heights=c(0.8,0.1,0.05,0.05),widths=c(0.6,0.4))
 ```
 
-## Subfamily enrichment
+## Tissue-specific subfamily enrichment in epigenetic states
 
 ### Set thresholds 
 
@@ -2844,6 +3045,8 @@ THRESHOLD_IK_CPG = 50
 
 ### Figure 5
 
+Overlap of TE subfamilies with chromHMM states. Intersects the file of merged TE subfamily locations with the chromHMM annotations, then sums the number of bp in the state per subfamily and sample. 
+
 ```{bash subfamily chromHMM, eval=FALSE}
 # Intersect with merged TE subfamilies
 #TE_landscape/chromHMM/subfamily/subfamily_state_sample.bed
@@ -2853,26 +3056,42 @@ for file in ../chromHMM_bedfiles/E*.bed; do suffix=$(basename $file | cut -d '_'
 awk -v OFS='\t' '{a[$4, $8, $10]+=$9;}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' subfamily_state_sample.bed > subfamily_state_sample.txt
 ```
 
+The number of subfamily members in each chromHMM state by sample. 
+
 ```{bash subfamily chromHMM members, eval=FALSE}
 # By subfamily
 awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/subfamily/subfamily_state_sample_summit.txt
 ```
+
+Overlap of TE subfamilies with DHS peaks. From the intersection of individual TEs with DHS peaks, filtered to intersections where the TE overlaps the center of the DHS peak, counts the number of unique peaks overlapping each subfamily. 
 
 ```{bash subfamily DHS, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
 while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt >> DNase/subfamily_DNase_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/DNase_samples.txt
 ```
 
+Overlap of TE subfamilies with H3K27ac peaks. From the intersection of individual TEs with H3K27ac peaks, filtered to intersections where the TE overlaps the center of the H3K27ac peak, counts the number of unique peaks overlapping each subfamily. 
+
 ```{bash subfamily H3K27ac, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
 while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/subfamily_H3K27ac_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/H3K27ac_samples.txt
 ```
+
+Overlap of TE subfamilies with CpGs in each methylation state. From the intersection of individual TEs with CpG methylation levels, finds unique CpGs overlapping each subfamily and counts the number in each methylation state per sample. 
 
 ```{bash subfamily WGBS, eval=FALSE}
 # Number of CpGs in each state, TE CpGs, by sample x subfamily
 #TE_landscape/WGBS/subfamily_CpG_Meth_states.txt	
 while read line; do awk -v OFS='\t' -v subfam=$line '{if($4 == subfam) print $0}' TE_CpG_Meth_new.bed | cut -f8- - | sort | uniq | awk -v OFS='\t' -v subfam=$line '{for (i=4;i<=40;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i=4;i<=40;i++){print i, hypo[i], inter[i], hyper[i], miss[i], subfam;}}' -; done < ../features/TEs/subfamily/subfamilies.txt >> subfamily_CpG_Meth_states.txt
 ```
+
+Overlap of shuffled TE subfamilies with epigenetic states. First, for each iteration of shuffled TEs, created files with unique regions overlapping each shuffled subfamily by merging individual TEs. 
+
+For chromHMM, intersected the merged shuffled subfamily files with chromHMM annotations, then summed the number of bp overlapping the subfamily in each state per sample. Also found the number of subfamily members in the state per sample. 
+
+For WGBS, intersected the merged shuffled subfamily files with CpG methylation levels, then counted the number of unique CpGs in each methylation state overlapping each subfamily per sample. Also found the total number of CpGs overlapping each shuffled subfamily, because it is different than for true TE subfamilies. 
+
+For DHS and H3K27ac, intersected the merged shuffled subfamily files with all peaks, then filtered to intersections where the peak center overlaps the subfamily. Counted the number of peaks overlapping the subfamily per sample. 
 
 ```{bash subfamily shuffle, eval=FALSE}
 # Merged each subfamily and sorted
@@ -2921,7 +3140,7 @@ for i in {1..10}; do python ~/bin/TE_landscape/filter_summit.py H3K27ac/shuffled
 for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$j\_summit.txt > H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_$j\.txt; done
 ```
 
-''enrichment_list.txt'' generated from results of analysis in this section (subfamilies of interest).
+The file ''enrichment_list.txt'' is a list generated from the analysis in this section of subfamilies of interest enriched in a state. HOMER was run to identify transcription factor binding motifs (known motifs only) encoded by members of the subfamily that are annotated with the state in samples where the subfamily is enriched, in comparison to members of the subfamily never in the state (as background). 
 
 ```{bash HOMER, eval=FALSE}
 bash run_homer.sh enrichment/enrichment_list.txt
@@ -3517,7 +3736,7 @@ test$Order = rownames(test)
 lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs","Count_CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
 ```
 
-## Factors influencing potential
+## TE epigenetic profiles as a function of age, chromosome, and feature overlap
 
 ### Figure 6
 
@@ -3600,18 +3819,20 @@ ddply(rmsk_TE_measure[which(rmsk_TE_measure$family == "Alu"),],.(cpgIsland_binar
 
 ### Supplementary Figure 16
 
+Epigenetic state annotations by chromosome. For chromHMM, sums the total length of the chromosome annotated with the state. For WGBS, counts the number of CpGs in each methylation state per chromosome. For DHS and H3K27ac, counts the number of peaks per chromosome. 
+
 ```{bash chromosome epigenetics, eval=FALSE}
-# By chromosome
+# chromHMM
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1,$4]+=$3-$2}END{for(i in a){split(i,sep,SUBSEP); print sample, sep[1], sep[2], a[i];}}' raw_data/chromHMM/$line\_15_coreMarks_mnemonics.bed; done < sample_lists/mnemonics.txt > chromHMM/chromosome_states.txt
 
-## By chromosome
+## WGBS
 awk '{print $0 > $1}' ~/TE_landscape/WGBS/all_CpG_Meth.bed
 for file in chr*; do awk -v chr=$file -v OFS='\t' '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print chr, i, hypo[i], inter[i], hyper[i], miss[i];}' $file >> chr_CpG_meth_states.txt; done &
 
-# Whole genome, number of peaks by chromosome
+# DHS, number of peaks by chromosome
 while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak >> DNase/chr_DNase.txt ; done < sample_lists/DNase_samples.txt
 
-# Whole genome, number of peaks by chromosome
+# H3K27ac, number of peaks by chromosome
 while read line; do awk -v sample=$line '{a[$1]+=1}END{for(i in a){print sample, i, a[i]}}' raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak >> H3K27ac/chr_H3K27ac.txt ; done < sample_lists/H3K27ac_samples.txt
 ```
 
@@ -3735,12 +3956,16 @@ chromHMM_TE_state_dist_stats-test.c
 sort(colMeans(chromHMM_TE_state[which(chromHMM_TE_state$chromosome == "chrY"),8:22]))
 ```
 
-## Mouse
+## Evolutionary conservation of TE regulatory signatures in mouse
+
+Identified corresponding human and mouse sample pairs based on anatomy. 
 
 ```{bash sample pairs, eval=FALSE}
 # Twelve Roadmap samples with corresponding mouse WGBS samples (7) and mouse chromHMM samples (12)
 human_mouse_samples.txt
 ```
+
+Filtered the mm10 RepeatMasker file to remove contigs and include only TE classes (four large classes, plus Other, RC, Unknown, and five ? classes). 
 
 ```{bash mm10 TEs, eval=FALSE}
 # RepeatMasker file for mm10	 
@@ -3751,6 +3976,10 @@ cp /bar/genomes/mm10/rmsk/rmsk.txt.gz rmsk_mm10.txt.gz
 #TE_landscape/features/mouse/TEs/mm10_rmsk_TE.txt	
 awk -v OFS='\t' '{if(($12 == "LTR" || $12 == "DNA" || $12 == "SINE" || $12 == "LINE" || 12 == "Other" || $12 == "RC" || $12 == "Unknown" || $12 == "DNA?" || $12 == "LINE?" || $12 == "LTR?" || $12 == "SINE?" || $12 == "RC?") && ($6 !~ /_/)) print $6, $7, $8, $11, $12, $13, $10}' rmsk_mm10.txt > mm10_rmsk_TE.txt
 ```
+
+Identified orthologous human and mouse TEs. First, gave each of the human TEs a number. Then, lifted the locations from hg19 to mm10, using the minMatch value recommended for inter-species conversions. Pulled out the hg19 TEs that lifted over to mm10 by number, then combined the hg19 and mm10 coordinates for each TE. Then, intersected the mm10 coordinates of the hg19 TEs with the mouse mm10 TEs and identified those with the same subfamily name. 
+
+Confirmed that no orthologs are missed by first filtering the mouse mm10 TEs to TE classes. 
 
 ```{bash human-mouse liftover, eval=FALSE}
 #To load liftOver
@@ -3787,10 +4016,12 @@ bedtools intersect -wo -a rmsk_TE_mm10.bed -b mm10_rmsk_TE.txt > hg19_mm10_TE_in
 #TE_landscape/Mouse/liftover/hg19_mm10_TE_intersect_same.bed	
 awk -v OFS="\t" '{if($8==$15)print $0}' hg19_mm10_TE_intersect.bed > hg19_mm10_TE_intersect_same.bed
 
-# Test to confirm I am not missing orthologs by filtering repeats (1/19/18)
+# Test to confirm I am not missing orthologs by filtering repeats
 awk -v OFS='\t' '{print $6, $7, $8, $11, $12, $13, $10}' features/mouse/rmsk_mm10.txt | bedtools intersect -wo -a Mouse/rmsk_TE_mm10.bed -b - > Mouse/hg19_mm10_repeat_intersect.bed
 awk -v OFS="\t" '{if($8==$15)print $0}' Mouse/hg19_mm10_repeat_intersect.bed > Mouse/hg19_mm10_repeat_intersect_same.bed
 ```
+
+Methylation level of mm10 TEs. Intersected the mm10 TEs with the CpG methylation level in 9 mouse samples, then combined into one file. Calculated the average methylation level per TE over all CpGs overlapping the TE, for each sample. 
 
 ```{bash mm10 WGBS, eval=FALSE}
 # WGBS (mm10)
@@ -3803,29 +4034,35 @@ awk -v OFS='\t' '{print $1, $2, $3, $10, $11}' $file | bedtools intersect -wo -a
 python ~/bin/TE_landscape/average_methylation_stranded.py mm10_rmsk_TE_WGBS.bed mm10_rmsk_TE.txt samples.txt  mm10_rmsk_TE_WGBS_avg.txt
 ```
 
+Counted the number of CpGs per mm10 TE. 
+
 ```{bash mm10 CpG count, eval=FALSE}
-# Mouse TEs (12/7/17)
+# Mouse TEs
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_WGBS.bed > Mouse/WGBS/intersect/TEs/mm10_rmsk_TE_CpG_count.txt
 ```
 
+For the hg19 TEs with an ortholog in mouse, found the chromHMM state of each TE in the 12 human samples used for comparison to mouse. To ensure that only those TEs were pulled out, required complete reciprocal overlap. Confirmed that only TEs with matching subfamily were pulled out, and that the number of unique TEs is 269,096 for each sample. 
+
 ```{bash hg19 ortholog chromHMM, eval=FALSE}
-# chromHMM state for all orthologous hg19 TEs
-# Uses the chromHMM state of TEs, split by sample, used for combine marks analysis
-## Confirmed that it only pulled out TEs with matching subfamily and that the number of unique TEs is 269096 for all
+# Orthologous hg19 TEs
 cut -f5-11 Mouse/liftover/hg19_mm10_TE_intersect_same.bed | uniq | sort -k1,1 -k2,2n > Mouse/hg19_orthologs.txt
 
+# Uses the chromHMM state of TEs, split by sample, used for combine marks analysis
 for file in E066 E071 E081 E083 E084 E086 E088 E092 E094 E096 E105 E106; do tail -n +2 /scratch/ecp/pandas/$file | sort -k1,1 -k2,2n - | bedtools intersect -sorted -wo -a Mouse/hg19_orthologs.txt -b - -f 1 -r > Mouse/hg19_ortholog_chromHMM_$file\.txt; done
 
 for file in Mouse/chromHMM/hg19_ortholog_chromHMM_*.txt; do cut -f8-18 $file >> Mouse/chromHMM/hg19_chromHMM_TE.txt; done
 ```
 
+For the mm10 TEs with an ortholog in human, found the chromHMM state of each TE in the 12 mouse samples used for comparison to human. First, intersected the mm10 TEs with the mm10 chromHMM annotations, then found the total length of overlap with the state in that sample for each TE. Unlike hg19 TEs, any overlap with a chromHMM state was sufficient for the mm10 TE to be assigned to the state. Because some mm10 TEs are orthologs for multiple hg19 TEs, duplicate intersections were removed first.
+
 ```{bash mm10 chromHMM, eval=FALSE}
 ## Intersected with TEs with human orthologs
 while read a b c; do gunzip raw_data/mouse/chromHMM/$c\.bed.gz; cut -f12-18 Mouse/liftover/hg19_mm10_TE_intersect_same.bed | bedtools intersect -wo -a - -b raw_data/mouse/chromHMM/$c\.bed > Mouse/chromHMM/$c\_TE.txt; gzip raw_data/mouse/chromHMM/$c\.bed; done < Mouse/human_mouse_samples.txt
 
-## Any overlap for mm10 TEs with human ortholog
 while read a b c; do uniq Mouse/chromHMM/$c\_TE.txt | awk -v OFS='\t' -v sample=$c '{a[$1, $2, $3, $4, $5, $6, $7, $11]+=$17}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], sample, a[i]}}' - | sort -k1,1V -k2,2V -k3,3n -k9,9 - >> Mouse/chromHMM/mm10_chromHMM_TE_sorted.txt; done < Mouse/human_mouse_samples.txt
 ```
+
+Found the number of members in each mm10 subfamily annotated with each chromHMM state. First, intersected all mm10 TEs, including those without an hg19 ortholog, with the mm10 chromHMM annotations, then found the total overlap with each state for each TE by sample. Then, counted the number of TEs in each subfamily in each state by sample. 
 
 ```{bash mm10 subfamily, eval=FALSE}
 ## Intersected with all mm10 TEs
@@ -3838,11 +4075,14 @@ while read a b c; do awk -v OFS='\t' -v sample=$c '{a[$1, $2, $3, $4, $5, $6, $7
 awk -v OFS='\t' '{a[$4,$8,$9]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' Mouse/chromHMM/mm10_chromHMM_TE_sorted_all.txt > Mouse/chromHMM/mm10_chromHMM_subfamily.txt
 ```
 
+Found the proportion of each hg19 subfamily in an active regulatory chromHMM state. For the 12 samples used for comparison to mouse, pulled out all TEs in any active regulatory state in the sample, then counted the number per subfamily. 
+
 ```{bash hg19 subfamily active, eval=FALSE}
-# Proportion of subfamily in active regulatory state
 # Uses chromHMM state of TEs, split by sample, used for combine marks analysis
 for file in E066 E071 E081 E083 E084 E086 E088 E092 E094 E096 E105 E106; do awk -v OFS='\t' '{if(($10 == "1_TssA") || ($10 == "2_TssAFlnk") || ($10 == "3_TxFlnk") || ($10 == "6_EnhG") || ($10 == "7_Enh")) print $1, $2, $3, $4, $5, $6, $7, $8}' /scratch/ecp/pandas/$file | uniq | awk '{a[$4,$8]+=1}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' - >> Mouse/chromHMM/hg19_chromHMM_subfamily_active.txt; done
 ```
+
+Found the proportion of each mm10 subfamily in an active regulatory chromHMM state. For the 12 samples used for comparison to human, pulled out all TEs in any active regulatory state in the sample, then counted the number per subfamily. 
 
 ```{bash mm10 subfamily active, eval=FALSE}
 ## Proportion in any active regulatory state
@@ -3932,8 +4172,9 @@ grid.arrange(a,b,legend_class,c,d,e,legend,nrow=4,layout_matrix=rbind(c(1,NA,2),
 
 ### Human-mouse ortholog analysis
 
+Counting the number of hg19 TEs that liftover to mm10.
+
 ```{bash count liftover, eval=FALSE}
-# Number of hg19 TEs that liftover to mm10
 wc -l Mouse/liftover/rmsk_TE_hg19tomm10.bed
 ```
 
@@ -3948,7 +4189,7 @@ HG19_TE = dim(unique(human_mouse_orthologs_mm10[,hg19_coordinates]))[1]
 # Number of mouse TEs with orthologs
 MM10_TE = dim(unique(human_mouse_orthologs_mm10[,mm10_coordinates]))[1]
 
-# Number of hg19 TEs that liftover
+# Number of hg19 TEs that liftover to mm10
 1265775
 1265775/NUM_TE
 
@@ -4177,19 +4418,23 @@ write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samp
 write.table(hg19_mm10_chromHMM_active[which(hg19_mm10_chromHMM_active$Human_samples < 2 & hg19_mm10_chromHMM_active$Mouse_samples > 8),],file="Mouse/constitutive_mouse_active.txt",sep='\t',quote=FALSE,row.names=FALSE)
 ```
 
+Identifying orthologous TEs with shared epigenetic profiles that are intergenic. For each, used the hg19 coordinates to find the closest RefSeq gene (reporting all ties). In some cases, filtered to a specific distance to find those far from any gene. 
+
 ```{bash investigate ortholog, eval=FALSE}
-# Tissue-specific orthologs in human and mouse that are intergenic
+# Orthologs with shared tissue-specific promoter annotation, intergenic
 bedtools closest -a <(cut -f8-31 Mouse/tissue_specific_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
 
-## >50kb from the nearest gene
+# Orthologs with shared tissue-specific active state annotation, >50kb from the nearest gene
 bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 50000) || ($37 < -50000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
 
-## >100kb from the nearest gene
+# Orthologs with shared tissue-specific active state annotation, >100kb from the nearest gene
 bedtools closest -a <(cat Mouse/tissue_specific_active_*.txt | cut -f8-31 | awk '{if($1 != "human_chr_hg19") print $0}' -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if(($37 > 100000) || ($37 < -100000)) print $1, $2, $3, $4, $37}' | sort | uniq | wc -l
 
-# Constitutively active TEs in one or both species, intergenic
+# Orthologs with shared constitutive promoter activity, intergenic
 bedtools closest -a <(cut -f8-31 Mouse/constitutive_both_promoter.txt | tail -n +2 -  | sort -k1,1 -k2,2n - ) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | awk -v OFS='\t' '{if($37 != 0) print $1, $2, $3, $4, $37}' | sort | uniq
 ```
+
+Processed the mm10 tracks for display on the Wash U Epigenome Browser. For chromHMM, converted each of the chromHMM states to an integer, sorted, zipped, and indexed. For the WGBS methylation files, separated read depth and methylation level for each CpG, sorted, zipped, and indexed. 
 
 ```{bash make browser, eval=FALSE}
 # Process tracks for display on the Browser (in public_html/mouseENCODE)
@@ -4227,6 +4472,8 @@ ALL_CPGS
 
 # Supplement
 
+Found the width of all chromHMM annotation blocks, DHS peaks, and H3K27ac peaks, by sample.  
+
 ```{bash peak widths, eval=FALSE}
 # ChromHMM, block size by state and sample
 #TE_landscape/chromHMM/chromHMM_blocks.txt
@@ -4239,9 +4486,9 @@ while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' ../r
 while read line; do awk -v OFS='\t' -v sample=$line '{print $3-$2, sample}' $line\-H3K27ac.narrowPeak >> peak_widths.txt; done < ../../../sample_lists/H3K27ac_samples.txt
 ```
 
-```{bash histone profile, eval=FALSE}
-# Updated with summit TEs 5/29/18 to 6/19/18 (should be run on htcf)
+Profiling TEs assigned to each chromHMM state. First, extended each TE from the center to 5kb in each direction, then combined the extended and original coordinates into one bedfile. Split TEs by sample and state; then, for each instance of a TE in a state in a sample, found the average fold enrichment over input for histone modifications and DHS in 50bp bins over the 10kb extended region, as well as the average level of DNA methylation. Combined all into one file. 
 
+```{bash histone profile, eval=FALSE}
 # Each TE extended from center to 10kb region, excluding those that would extend past the ends of the chromosomes.	 
 
 #TE_landscape/features/TEs/rmsk_TE_10kb.txt	
@@ -4273,7 +4520,7 @@ intersect_meth.sh
 
 # Epigenetic profiles by state and mark
 #TE_landscape/compare_marks/profile_histone/rmsk_TEother_[state]_[mark]_average.txt [108 files]
-# marks.txt is a list of 9 
+# marks.txt is a list of 9 epigenetic marks
 while read state; do while read mark; do echo $state $mark; cat averages/rmsk_TEother_E*_$state\_$mark\_average.txt > rmsk_TEother_$state\_$mark\_average.tmp; python calculate_bin_average_all.py rmsk_TEother_$state\_$mark\_average.tmp rmsk_TEother_$state\_$mark\_average.txt; rm rmsk_TEother_$state\_$mark\_average.tmp; done < marks.txt; done < chromHMM_states.txt
 
 # Combined histone profiles
@@ -4322,33 +4569,9 @@ all_lengths_blocks_corr[order(as.numeric(all_lengths_blocks_corr$Cor)),]
 rm(all_lengths)
 ```
 
-### Mappability of genome/TE bases
-
-```{bash average mappability, eval=FALSE}
-# 36bp mappability, genome-wide	 
-#TE_landscape/mappability/wgEncodeCrgMapabilityAlign36mer.bedGraph	
-wget hgdownload.cse.ucsc.edu/gbdb/hg19/bbi/wgEncodeCrgMapabilityAlign36mer.bw
-
-# From raw file
-~/bin/bigWigToBedGraph wgEncodeCrgMapabilityAlign36mer.bw.2 wgEncodeCrgMapabilityAlign36mer.bedGraph
-
-# Average mappability, whole genome
-awk '{sum+=($4*($3-$2));total+=$3-$2;}END{print sum/total}' wgEncodeCrgMapabilityAlign36mer.bedGraph
-
-# Average mappability, TEs 	 
-split -l 5000000 ~/TE_landscape/mappability/wgEncodeCrgMapabilityAlign36mer.bedGraph
-for file in x*; do bedtools intersect -wo -a rmsk_TEother_merge.txt -b $file >> rmsk_TEother_merge_map.txt; done
-awk '{sum+=($7*$8);total+=$8;}END{print sum/total}' rmsk_TEother_merge_map.txt
-```
+### Mappability of TEs
 
 ```{r mappability}
-# Mappability whole genome, TEs (8/27/17)
-GENOME_MAP=0.789192
-GENOME_MAP
-
-TE_MAP=0.624207
-TE_MAP
-
 # Mappability vs. length by class
 cor.test(rmsk_TE$Length,rmsk_TE$mappability,method="spearman")
 by(rmsk_TE,rmsk_TE$class_update,function(x) cor.test(x$Length,x$mappability,method="spearman"))
