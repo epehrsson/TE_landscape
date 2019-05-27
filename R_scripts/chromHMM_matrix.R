@@ -1,7 +1,4 @@
 # Load matrices of TE x number of samples in each state (all samples and no cancer cell lines/IMR90)
-# See 4/25/2016, 4/26/2016, 4/27/2016, 5/3/2016, 5/11/2016, 5/12/2016, 6/27/2016, 8/30/2016, 9/20/2016, 9/28/2016, 2/3/2017, 
-# 2/6/2017, 5/10/2017, 6/14/2017, 8/1/2017, 8/2/2017
-# Switched to TEs in summit only 5/1/18
 
 # Number of samples each TE is in each chromHMM state
 print("Load chromHMM")
