@@ -1526,7 +1526,10 @@ for file in chromHMM/chromHMM_summit_*.txt; do awk -v OFS='\t' -v class=$(basena
 ```
 
 ```{r Figure 2 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+# Number of samples each TE is in each epigenetic state
 source("R_scripts/potential.R")
+
+# By class
 source("R_scripts/potential_class.R")
 ```
 
@@ -1551,9 +1554,10 @@ grid.arrange(a,b,c,d,e,f,legend_class, nrow = 3, layout_matrix=rbind(c(1,2,3),c(
 ### Potential analysis
 
 ```{r analysis Fig 2a, cache=TRUE}
+# Average proportion of TEs in the state per sample
 ddply(combine_boxplot,.(State),summarise,Median=median(Proportion),Mean=mean(Proportion))
 
-# Number of TEs ever in composite states
+# Proportion of TEs ever in state categories
 ## Roadmap Active (states 1-8)
 sum(apply(chromHMM_TE_state[8:15],1,function(x) sum(x > 0)) > 0)/NUM_TE
 ## Roadmap Inactive (states 9-15)
@@ -1567,9 +1571,11 @@ sum(apply(chromHMM_TE_state[17:19],1,function(x) sum(x > 0)) > 0)/NUM_TE
 ## Repressed states (states 9, 13-14)
 sum(apply(chromHMM_TE_state[c(16,20,21)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 
-# Number of TEs ever in each state
+# Number and proportion of TEs ever in each state
 ddply(combine_potential,.(State),summarise,Count=sum(Count[which(Samples != 0)]))
 combine_stats
+
+# By class
 ddply(rmsk_TE_class,.(class_update,Count),summarise,TE_prop=Count/NUM_TE)
 dcast(combine_class_ever,Class~State,value.var="Proportion")
 combine_potential_class[which(combine_potential_class$Sample.Proportion == 1),]
@@ -1929,7 +1935,10 @@ awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBS
 ```
 
 ```{r Figure S6 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+# Number of samples each promoter is in each state
 source("R_scripts/potential_promoter.R")
+
+# Number of samples each exon is transcribed RPKM > 1
 source("R_scripts/potential_exon.R")
 ```
 
@@ -2035,7 +2044,7 @@ tail(RNA_refseq_exon[order(RNA_refseq_exon$Max_expression),],n=20)
 
 cor.test(RNA_TE$Max_expression,RNA_TE$Expressed_samples,method="spearman")
 
-# Max expression by class
+# Maximum expression by class
 merge(ddply(RNA_TE,.(class_update),summarise,Proportion_expressed=sum(Expressed_samples > 0)/length(Expressed_samples),Max_median=median(Max_expression)),
       ddply(RNA_TE[which(RNA_TE$Expressed_samples > 0),],.(class_update),summarise,Max_median_expressed=median(Max_expression)),by="class_update")
 
@@ -2745,6 +2754,8 @@ sum(test$Proportion[3:4])/sum(test$Proportion)
 ### DNase/H3K27ac peak analysis
 
 ```{r peak analysis, cache=TRUE}
+# Analysis of TE-peak overlap
+
 # Number of DNase peaks per TE
 d = table(unlist(TE_DNase_peaks[,8:60]))
 d
@@ -3226,9 +3237,16 @@ bash run_homer.sh enrichment/enrichment_list.txt
 ```
 
 ```{r Figure 5 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+# Enrichment of TE subfamilies in epigenetic states
 source("R_scripts/subfamily_enrichment.R") #Requires proportion.R
+
+# Number of samples each subfamily is in each state
 source("R_scripts/subfamily_potential.R")
+
+# PCA on subfamily enrichment
 source("R_scripts/subfamily_PCA.R")
+
+# Enrichment of shuffled TE subfamilies in epigenetic states
 source("R_scripts/shuffled_subfamily_enrichment.R")
 ```
 

@@ -74,7 +74,7 @@ colnames(DNase_stats) = c("Peaks","Sample","Total_width","Peaks_in_TE")
 test = read.table("DNase/rmsk_TEother_merge_DNase_contribution.txt",sep='\t')
 colnames(test) = c("Sample","Total_width_in_TE")
 DNase_stats = merge(DNase_stats,test,by=c("Sample"))[,c(1:2,4,3,5)]
-DNase_stats$Summit_in_TE = read.table("DNase/rmsk_TEother_DNase_summit_stats.txt",sep='\t')$V1
+DNase_stats$Summit_in_TE = read.table("DNase/true_summit/rmsk_TEother_DNase_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of DNase peak in Refseq genic features, by sample
@@ -101,7 +101,7 @@ H3K27ac_stats = read.table("H3K27ac/H3K27ac_stats.txt",sep='\t',header=TRUE)
 test = read.table("H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt",sep='\t')
 colnames(test) = c("Sample","Total_width_in_TE")
 H3K27ac_stats = merge(H3K27ac_stats,test,by=c("Sample"))
-H3K27ac_stats$Summit_in_TE = read.table("H3K27ac/rmsk_TEother_H3K27ac_summit_stats.txt",sep='\t')$V1
+H3K27ac_stats$Summit_in_TE = read.table("H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of H3K27ac peak in Refseq genic features, by sample

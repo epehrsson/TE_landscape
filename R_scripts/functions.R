@@ -138,7 +138,7 @@ get_subfamily_in_state = function(subfamily,state,metric){
     subfamily_in_state = read.table(paste("WGBS/subfamily/by_state/",subfamily,"_",state,".txt",sep=""),sep='\t')
     colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap","State")
   } else if (metric=="DNase" | metric=="H3K27ac"){
-    subfamily_in_state = read.table(paste(metric,"/subfamily/",subfamily,"_",state,".txt",sep=""),sep='\t')
+    subfamily_in_state = read.table(paste(metric,"/subfamily/true_summit/",subfamily,"_",state,".txt",sep=""),sep='\t')
     colnames(subfamily_in_state) = c(TE_coordinates[c(1:4,6,5,7)],"Sample","Overlap")
   }
   print("Loaded matrix")

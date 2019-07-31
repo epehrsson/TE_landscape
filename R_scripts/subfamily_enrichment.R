@@ -1,8 +1,4 @@
 # Subfamily enrichment
-# See 4/27/2016, 4/28/2016, 5/4/2016, 5/24/2016, 6/29/2016, 7/6/2016, 7/7/2016, 7/8/2016, 7/10/2016, 7/11/2016, 8/28/2016, 8/29/2016, 9/8/2016, 9/9/2016, 9/17/2016, 9/18/2016, 9/27/2016, 9/29/2016, 11/9/2016, 11/10/2016, 11/15/2016, 11/16/2016, 11/22/2016, 11/27/2016, 
-# 1/13/2017, 1/19/2017, 1/20/2017, 1/26/2017, 2/6/2017, 2/9/2017, 2/10/2017, 2/13/2017, 2/14/2017, 2/16/2017, 2/21/2017, 3/16/2017, 5/15/2017, 5/16/2017, 5/23/2017, 5/24/2017, 5/29/2017, 5/30/2017, 6/5/17, 6/6/17, 6/7/17, 6/9/17, 6/15/2017, 7/4/2017, 7/21/2017, 7/23/2017, 7/24/2017, 7/26/2017, 8/2/2017
-
-# Updated with peak summit overlap 5/2/18
 
 # chromHMM/DNase/H3K27ac
 
@@ -18,12 +14,12 @@ subfamily_chromHMM_sample[is.na(subfamily_chromHMM_sample)] = 0
 rm(subfamily_chromHMM_sample_expand)
 
 # DNase
-subfamily_DNase_sample = read.table("DNase/subfamily_DNase_sample_summit.txt",sep='\t')
+subfamily_DNase_sample = read.table("DNase/true_summit/subfamily_DNase_sample_summit.txt",sep='\t')
 colnames(subfamily_DNase_sample) = c("Sample","subfamily","Length_ijk")
 subfamily_DNase_sample$State = rep("DNase",dim(subfamily_DNase_sample)[1])
 
 # H3K27ac
-subfamily_H3K27ac_sample = read.table("H3K27ac/subfamily_H3K27ac_sample_summit.txt",sep='\t')
+subfamily_H3K27ac_sample = read.table("H3K27ac/true_summit/subfamily_H3K27ac_sample_summit.txt",sep='\t')
 colnames(subfamily_H3K27ac_sample) = c("Sample","subfamily","Length_ijk")
 subfamily_H3K27ac_sample$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample)[1])
 

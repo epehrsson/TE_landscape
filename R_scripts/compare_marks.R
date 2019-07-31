@@ -1,8 +1,7 @@
 # Correlation between chromHMM, WGBS, DNase, and H3K27ac
-# See 1/20/2017, 2/9/2017, 5/16/2017, 6/7/2017, 7/31/2017
 
 # Number of TEs x sample in each WGBS x DNase x H3K27ac state
-compare_marks_unique = read.table(file="compare_marks/combine_marks_counts_unique.txt",sep='\t',header=TRUE,na.strings = "missing")[,2:6]
+compare_marks_unique = read.table(file="compare_marks/true_summit/combine_marks_counts_unique.txt",sep='\t',header=TRUE,na.strings = "missing")[,2:6]
 colnames(compare_marks_unique) = c("H3K27ac","DNase","RNA","WGBS","TE_sample")
 compare_marks_unique$DNase = factor(compare_marks_unique$DNase,levels=c("True","False"))
 compare_marks_unique$H3K27ac = factor(compare_marks_unique$H3K27ac,levels=c("True","False"))
@@ -20,7 +19,7 @@ compare_marks_unique[which(is.na(compare_marks_unique$H3K27ac) & is.na(compare_m
   compare_marks_unique[which(is.na(compare_marks_unique$H3K27ac) & is.na(compare_marks_unique$DNase) & is.na(compare_marks_unique$WGBS) & compare_marks_unique$RNA == "False"),]$TE_sample - 126306
 
 # Number of TEs x sample in each WGBS x DNase x H3K27ac x chromHMM state
-compare_marks_all = read.table(file="compare_marks/combine_marks_counts.txt",sep='\t',header=TRUE,na.strings = "missing")[,2:7]
+compare_marks_all = read.table(file="compare_marks/true_summit/combine_marks_counts.txt",sep='\t',header=TRUE,na.strings = "missing")[,2:7]
 colnames(compare_marks_all) = c("chromHMM","H3K27ac","DNase","RNA","WGBS","TE_sample")
 compare_marks_all$DNase = factor(compare_marks_all$DNase,levels=c("True","False"))
 compare_marks_all$H3K27ac = factor(compare_marks_all$H3K27ac,levels=c("True","False"))

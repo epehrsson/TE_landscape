@@ -20,14 +20,14 @@ shuffled_enrichment = lapply(seq(1,10,1),function(i) {
    
   # DNase
   print("Load DNase ijk")
-  subfamily_DNase_sample_shuffle = read.table(paste("DNase/shuffled/subfamily/subfamily_DNase_sample_summit_",i,".txt",sep=""),sep='\t')
+  subfamily_DNase_sample_shuffle = read.table(paste("DNase/shuffled/subfamily/true_summit/subfamily_DNase_sample_summit_",i,".txt",sep=""),sep='\t')
   colnames(subfamily_DNase_sample_shuffle) = c("subfamily","Sample","Length_ijk")
   subfamily_DNase_sample_shuffle = merge(subfamily_DNase_sample_shuffle,subfamily_DNase_expand,by=c("subfamily","Sample"),all=TRUE)
   subfamily_DNase_sample_shuffle$State = rep("DNase",dim(subfamily_DNase_sample_shuffle)[1])
 
   # H3K27ac
   print("Load H3K27ac ijk")
-  subfamily_H3K27ac_sample_shuffle = read.table(paste("H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_",i,".txt",sep=""),sep='\t')
+  subfamily_H3K27ac_sample_shuffle = read.table(paste("H3K27ac/shuffled/subfamily/true_summit/subfamily_H3K27ac_sample_summit_",i,".txt",sep=""),sep='\t')
   colnames(subfamily_H3K27ac_sample_shuffle) = c("subfamily","Sample","Length_ijk")
   subfamily_H3K27ac_sample_shuffle = merge(subfamily_H3K27ac_sample_shuffle,subfamily_H3K27ac_expand,by=c("subfamily","Sample"),all=TRUE)
   subfamily_H3K27ac_sample_shuffle$State = rep("H3K27ac",dim(subfamily_H3K27ac_sample_shuffle)[1])
