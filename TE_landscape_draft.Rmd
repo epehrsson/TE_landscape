@@ -2160,6 +2160,82 @@ by(replicates_count,replicates_count$Feature,function(x) wilcox.test(Fraction~Se
 ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
 ```
 
+Above analysis, updated to include only TEs/windows that are not in an active regulatory state outside the pair. 
+
+```{r replicates restricted, cache=TRUE, cache.lazy=FALSE}
+## TEs in an active regulatory state in each sample
+chromHMM_active_unique = unique(chromHMM_active_matrix[,c(TE_coordinates,"Sample")])
+
+## Total number of samples the TE is in an active regulatory state
+replicates_total = ddply(chromHMM_active_unique,.(chromosome,start,stop,subfamily,family,class,strand),summarise,Total=length(Sample))
+
+## Filter TEs to those in an active regulatory state in no more than 2 samples
+replicates_exclusive = merge(chromHMM_active_unique,replicates_total[which(replicates_total$Total <= 2),],by=TE_coordinates)
+
+## Number of samples the TE in in an active regulatory state, for each pair
+replicates_restricted = apply(replicates,1,function(z) 
+  ddply(replicates_exclusive[which(replicates_exclusive$Sample %in% as.vector(z[1:2])),],
+        .(chromosome,start,stop,subfamily,family,class,strand,Total),summarise,Samples=length(Sample)))
+
+names(replicates_restricted) = replicates$Pair
+replicates_restricted = ldply(replicates_restricted,.id="Pair")
+
+## Restrict to TEs exclusive to that sample pair
+replicates_restricted = replicates_restricted[which(replicates_restricted$Samples == replicates_restricted$Total),]
+```
+
+```{r replicates restricted count}
+# Merge with counts from original analysis
+chromHMM_replicates_active_restricted = merge(chromHMM_replicates_active,replicates_restricted[,c("Pair",TE_coordinates)],by=c("Pair",TE_coordinates))
+
+# Fraction of TEs in either sample found in both
+chromHMM_replicates_restricted_count = ddply(chromHMM_replicates_active_restricted,.(Pair,Set,Samples),summarise,Count=length(Samples))
+chromHMM_replicates_restricted_count = dcast(chromHMM_replicates_restricted_count,Pair+Set~Samples,value.var="Count")
+chromHMM_replicates_restricted_count[is.na(chromHMM_replicates_restricted_count)] = 0
+chromHMM_replicates_restricted_count$Fraction = chromHMM_replicates_restricted_count$`2`/(chromHMM_replicates_restricted_count$`1`+chromHMM_replicates_restricted_count$`2`)
+```
+
+```{r replicates restricted window, cache=TRUE, cache.lazy=FALSE}
+## Windows in an active regulatory state in each sample
+windows_active_unique = unique(windows_active[,c("chr","start","stop","Sample")])
+
+## Total number of samples the window is in an active regulatory state
+window_replicates_total = ddply(windows_active_unique,.(chr,start,stop),summarise,Total=length(Sample))
+
+## Filter windows to those in an active regulatory state in no more than 2 samples
+window_replicates_exclusive = merge(windows_active_unique,window_replicates_total[which(window_replicates_total$Total <= 2),],by=c("chr","start","stop"))
+
+## Number of samples the window in in an active regulatory state, for each pair
+window_replicates_restricted = apply(replicates,1,function(z) 
+  ddply(window_replicates_exclusive[which(window_replicates_exclusive$Sample %in% as.vector(z[1:2])),],
+        .(chr,start,stop,Total),summarise,Samples=length(Sample)))
+
+names(window_replicates_restricted) = replicates$Pair
+window_replicates_restricted = ldply(window_replicates_restricted,.id="Pair")
+
+## Restrict to windows exclusive to that sample pair
+window_replicates_restricted = window_replicates_restricted[which(window_replicates_restricted$Samples == window_replicates_restricted$Total),]
+```
+
+```{r replicates restricted window count}
+# Merge with counts from original analysis
+window_replicates_active_restricted = merge(window_replicates_active,window_replicates_restricted[,c("Pair","chr","start","stop")],by=c("Pair","chr","start","stop"))
+
+# Fraction of windows in either sample found in both
+window_replicates_restricted_count = ddply(window_replicates_active_restricted,.(Pair,Set,Samples),summarise,Count=length(Samples))
+window_replicates_restricted_count = dcast(window_replicates_restricted_count,Pair+Set~Samples,value.var="Count")
+window_replicates_restricted_count[is.na(window_replicates_restricted_count)] = 0
+window_replicates_restricted_count$Fraction = window_replicates_restricted_count$`2`/(window_replicates_restricted_count$`1`+window_replicates_restricted_count$`2`)
+```
+
+```{r replicates restricted analysis}
+chromHMM_replicates_restricted_count$Feature = rep("TE",dim(chromHMM_replicates_restricted_count)[1])
+window_replicates_restricted_count$Feature = rep("Bin",dim(window_replicates_restricted_count)[1])
+replicates_restricted_count = rbind(window_replicates_restricted_count,chromHMM_replicates_restricted_count)
+
+ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+```
+
 ### Supplementary Figure 7 
 
 Creates sets for analysis of TEs with restricted active regulatory activity versus constitutively active, non-TE bases. 
