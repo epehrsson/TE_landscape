@@ -407,6 +407,9 @@ http://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/c
 # 18-state chromHMM bedfiles
 wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/core_K27ac/jointModel/final/all.mnemonics.bedFiles.tgz
 
+# Individual 50-state chromHMM bedfiles
+for sample in E003 E004 E005 E006 E007 E008 E017; do wget https://egg2.wustl.edu/roadmap/data/byFileType/chromhmmSegmentations/ChmmModels/class1Models_50states/$sample/$sample\_50_segments.bed.gz .; done
+
 # WGBS
 # By-chromosome WGBS fractional methylation matrices of CpG x sample 	
 #/bar/mchoudhary/2chromTE/Meth/FractionalMethylation_Removed_E027_E064_Fixed_E012/
@@ -574,10 +577,10 @@ Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS pe
 bash TE_landscape/DNase/intersect_sample_list_DNase_peak.sh
 
 # Filtering to summit
-for file in DNase/intersect/TEs/rmsk_TEother_E*-DNase.macs2.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 DNase/summit/TEs/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
+for file in DNase/intersect/TEs/rmsk_TEother_E*-DNase.macs2.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > DNase/true_summit/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
 
 # Matrix of TE x sample x state
-while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt >> DNase/rmsk_TEother_DNase_summit.txt; done < sample_lists/DNase_samples.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt >> DNase/true_summit/rmsk_TEother_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
 Overlap of individual TEs with H3K27ac peaks. Intersected individual TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file. 
@@ -588,10 +591,10 @@ Overlap of individual TEs with H3K27ac peaks. Intersected individual TEs with H3
 while read line; do bedtools intersect -wo -a ../rmsk_TEother.txt -b H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > H3K27ac_TEs/rmsk_TEother_$line\-H3K27ac.narrowPeak; done < H3K27ac_samples.txt
 
 # Filtering to summit
-for file in H3K27ac/intersect/TEs/rmsk_TEother_E*-H3K27ac.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 H3K27ac/summit/TEs/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
+for file in H3K27ac/intersect/TEs/rmsk_TEother_E*-H3K27ac.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > H3K27ac/true_summit/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
 
 # Matrix of TE x sample x state
-while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/rmsk_TEother_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/true_summit/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
 Average RNA-seq read coverage for individual TEs. Intersected individual TEs with unnormalized, strand-agnostic RNA-seq read coverage, then calculated the average read coverage per TE. Combined values for all samples into a single matrix with a row for each TE and a column per sample. 
@@ -616,10 +619,10 @@ awk '{if($10 != "8_ZNF/Rpts") print > "chromHMM/subfamily/by_state/"$4"_"$10".tx
 awk '{print > "WGBS/subfamily/by_state/"$4"_"$10".txt"}' WGBS/TE_WGBS_state_sorted.txt
 
 # TEs by subfamily and state
-awk '{print $0 > "DNase/subfamily/"$4"_DNase.txt"}' DNase/rmsk_TEother_DNase_summit.txt
+awk '{print $0 > "DNase/subfamily/true_summit/"$4"_DNase.txt"}' DNase/true_summit/rmsk_TEother_DNase_summit.txt
 
 # TEs by subfamily and state
-awk '{print $0 > "H3K27ac/subfamily/"$4"_H3K27ac.txt"}' H3K27ac/rmsk_TEother_H3K27ac_summit.txt
+awk '{print $0 > "H3K27ac/subfamily/true_summit/"$4"_H3K27ac.txt"}' H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt
 ```
 
 ### RefSeq exons and intersection with RNA-seq read coverage
@@ -720,9 +723,9 @@ Overlap of individual promoters with DHS peaks. Intersected individual promoters
 while read line; do bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b ../../raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak > refseq_promoter_unique_$line\-DNase.macs2.narrowPeak; done < ../../sample_lists/DNase_samples.txt
 
 # Filter to summit
-for file in DNase/Refseq_promoters/refseq_promoter_unique_E*-DNase.macs2.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 5 DNase/summit/promoters/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
+for file in DNase/Refseq_promoters/refseq_promoter_unique_E*-DNase.macs2.narrowPeak; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' $file > DNase/true_summit/promoters/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
 
-while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' DNase/summit/promoters/refseq_promoter_unique_$line\_DNase_summit.txt >> DNase/refseq_promoter_unique_DNase_summit.txt; done < sample_lists/DNase_samples.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' DNase/true_summit/promoters/refseq_promoter_unique_$line\_DNase_summit.txt >> DNase/true_summit/promoters/refseq_promoter_unique_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
 Overlap of individual promoters with H3K27ac peaks. Intersected individual promoters with H3K27ac peaks by sample, then filtered to only intersections where the promoter overlaps the center of the H3K27ac peak. Counted the number of intersections per promoter and combined into one file. 
@@ -733,9 +736,9 @@ Overlap of individual promoters with H3K27ac peaks. Intersected individual promo
 while read line; do bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b ../../raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > refseq_promoter_unique_$line\-H3K27ac.narrowPeak; done < ../../sample_lists/H3K27ac_samples.txt
 
 # Filter summit
-for file in H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 5 H3K27ac/summit/promoters/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
+for file in H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPeak; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' $file > H3K27ac/true_summit/promoters/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
 
-while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' H3K27ac/summit/promoters/refseq_promoter_unique_$line\_H3K27ac_summit.txt >> H3K27ac/refseq_promoter_unique_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
+while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' H3K27ac/true_summit/promoters/refseq_promoter_unique_$line\_H3K27ac_summit.txt >> H3K27ac/true_summit/promoters/refseq_promoter_unique_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
 Creates dataframes of individual promoter assignment to epigenetic states. 
@@ -853,9 +856,9 @@ Overlap of shuffled TEs with DHS peaks. Intersected individual shuffled TEs with
 ```{bash shuffled DHS, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak > DNase/shuffled/rmsk_TE_$line\_$i\-DNase.narrowPeak; done < sample_lists/DNase_samples.txt; done
 
-for file in DNase/shuffled/rmsk_TE_E*-DNase.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 DNase/shuffled/$( basename $file -DNase.narrowPeak)_DNase_summit.txt DNase; done
+for file in DNase/shuffled/rmsk_TE_E*-DNase.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > DNase/shuffled/true_summit/$( basename $file -DNase.narrowPeak)_DNase_summit.txt; done
 
-for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/rmsk_TE_$line\_$j\_DNase_summit.txt >> DNase/shuffled/rmsk_TE_$j\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done &
+for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/true_summit/rmsk_TE_$line\_$j\_DNase_summit.txt >> DNase/shuffled/true_summit/rmsk_TE_$j\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done
 ```
 
 Overlap of shuffled TEs with H3K27ac peaks. Intersected individual shuffled TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file per iteration. 
@@ -863,9 +866,9 @@ Overlap of shuffled TEs with H3K27ac peaks. Intersected individual shuffled TEs 
 ```{bash shuffled H3K27ac, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > H3K27ac/shuffled/rmsk_TE_$line\_$i\-H3K27ac.narrowPeak; done < sample_lists/H3K27ac_samples.txt; done
 
-for file in H3K27ac/shuffled/rmsk_TE_E*-H3K27ac.narrowPeak; do python ~/bin/TE_landscape/filter_summit.py $file 1 8 H3K27ac/shuffled/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt H3K27ac; done
+for file in H3K27ac/shuffled/rmsk_TE_E*-H3K27ac.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > H3K27ac/shuffled/true_summit/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
 
-for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/shuffled/rmsk_TE_$line\_$j\_H3K27ac_summit.txt >> H3K27ac/shuffled/rmsk_TE_$j\_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt; done
+for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' H3K27ac/shuffled/true_summit/rmsk_TE_$line\_$j\_H3K27ac_summit.txt >> H3K27ac/shuffled/true_summit/rmsk_TE_$j\_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt; done
 ```
 
 Creates dataframes of shuffled TEs and the epigenetic state assignments for each shuffled TE, across 4 techniques. 
@@ -1247,7 +1250,7 @@ while read line; do bedtools intersect -wo -a DNase_narrow_peaks/$line\-DNase.ma
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_DNase.txt | sort > rmsk_TEother_merge_DNase_contribution.txt
 
 # Peaks overlapping TEs per sample, including summit rules
-while read line; do awk -v OFS='\t' '{print $8, $9, $10}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt | sort | uniq | wc -l >> DNase/rmsk_TEother_DNase_summit_stats.txt; done < sample_lists/DNase_samples.txt
+while read line; do awk -v OFS='\t' '{print $8, $9, $10}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt | sort | uniq | wc -l >> DNase/true_summit/rmsk_TEother_DNase_summit_stats.txt; done < sample_lists/DNase_samples.txt
 ```
 
 The total width of DHS peaks overlapping RefSeq genic features and intergenic regions, by sample. Intersected DHS peaks with merged feature regions, then summed the total length of overlap. 
@@ -1284,7 +1287,7 @@ while read line; do bedtools intersect -wo -a H3K27ac_narrow_peaks/$line\-H3K27a
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_H3K27ac.txt | sort > rmsk_TEother_merge_H3K27ac_contribution.txt
 
 # Peaks overlapping TEs per sample, including summit rules
-while read line; do awk -v OFS='\t' '{print $8, $9, $10}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt | sort | uniq | wc -l >> H3K27ac/rmsk_TEother_H3K27ac_summit_stats.txt; done < sample_lists/H3K27ac_samples.txt
+while read line; do awk -v OFS='\t' '{print $8, $9, $10}' H3K27ac/true_summit/rmsk_TEother_$line\_H3K27ac_summit.txt | sort | uniq | wc -l >> H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit_stats.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
 The total width of H3K27ac peaks overlapping RefSeq genic features and intergenic regions, by sample. Intersected H3K27ac peaks with merged feature regions, then summed the total length of overlap. 
@@ -1660,7 +1663,7 @@ always_TE_subfamily = always_TE_subfamily[order(always_TE_subfamily$State,always
 always_TE_subfamily[which(always_TE_subfamily$Enrichment > 0.5 & always_TE_subfamily$Count > 10),]
 
 ## Print out TEs
-write.table(always_TEs[,c(TE_coordinates,"State")],file="always_TEs.bed",sep='\t',row.names=FALSE,quote=FALSE,col.names = FALSE)
+write.table(always_TEs[,c(TE_coordinates,"State")],file="always_TEs_true.bed",sep='\t',row.names=FALSE,quote=FALSE,col.names = FALSE)
 
 # 90% TEs
 always_TEs_90 = c(setNames(lapply(chromHMM_states,function(x) chromHMM_TE_state[which(chromHMM_TE_state[[x]] >= sample_counts["All","chromHMM"]*.9),TE_coordinates]),chromHMM_states),
@@ -1672,7 +1675,7 @@ always_TEs_90 = ldply(always_TEs_90)
 colnames(always_TEs_90)[1] = "State"
 
 ## Print out TEs
-write.table(always_TEs_90[,c(TE_coordinates,"State")],file="always_TEs_90.bed",sep='\t',row.names=FALSE,quote=FALSE,col.names = FALSE)
+write.table(always_TEs_90[,c(TE_coordinates,"State")],file="always_TEs_90_true.bed",sep='\t',row.names=FALSE,quote=FALSE,col.names = FALSE)
 
 # Proportion in each state
 dcast(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),State~Class,value.var="TEs.Proportion")
@@ -1684,11 +1687,11 @@ For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Re
 # TEs always in a state
 
 # Find the nearest gene
-sort -k1,1 -k2,2n always_TEs.bed > always_TEs_sorted.bed
-sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a always_TEs_sorted.bed -b - -D b -t all > always_TEs_genes.txt
+sort -k1,1 -k2,2n always_TEs_true.bed > always_TEs_true_sorted.bed
+sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a always_TEs_true_sorted.bed -b - -D b -t all > always_TEs_true_genes.txt
 
 # Find the distance to the nearest gene
-awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_genes.txt | wc -l
+awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_true_genes.txt | wc -l
 ```
 
 ### Background proportion of the genome in an active regulatory state in any Roadmap sample
@@ -1878,6 +1881,57 @@ c = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_box
 d = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 grid.arrange(a,b,category_legend,c,d,nrow=3,layout_matrix=rbind(c(1,2),c(3),c(4,5)),heights=c(0.5,0.05,0.45),widths=c(0.55,0.45))
+```
+
+'''50-state models'''
+
+The Roadmap Epigenomics Project also generated independent 50-state chromHMM models for 7 reference epigenomes that were broadly profiled: E003 through E008 and E017. They are H1 and H9 cells (ESCs), H1 derived cells (ES-derived), and IMR90. Each sample had an average of 24 epigenetic marks profiled, and all available marks were included in the model for each state.
+
+Each of the files has chromosomes 1-22, X, Y, and M, and the windows do not go to the edge of the chromosome, as in the 15-state and 18-state models. I assigned TEs to chromHMM states using this model with the same annotation rules used for the 15-state model.
+
+```{bash, eval=FALSE}
+# Intersect 200bp windows with chromHMM
+for file in raw_data/chromHMM_50state/E0*_50_segments.bed; do bedtools intersect -wo -a $file -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - >chromHMM/genome/windows/windows_50state_$(basename $file _50_segments.bed ).bed; done
+
+# Summit TEs
+for file in chromHMM/genome/windows/windows_50state_E0*.bed; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b $file > /scratch/ecp/TE_landscape/state50/rmsk_TEother_summit_$(basename $file .bed).txt; done
+for file in rmsk_TEother_summit_windows_50state_E*.txt; do  awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
+for file in rmsk_TEother_summit_windows_50state_E0[0-1][3-8] ; do mv $file $file\.txt; done
+
+# Majority TEs
+for file in raw_data/chromHMM_50state/*bed; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b $file > /scratch/ecp/TE_landscape/state50/rmsk_TEother_majority_$(basename $file .bed).txt; done &
+for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
+for file in rmsk_TEother_majority_E[0-9][0-9][0-9]_50_segments; do mv $file $file\.txt; done
+
+# Combine and sort
+for sample in E003 E004 E005 E006 E007 E008 E017; do awk -v OFS='\t' -v sample=$sample '{print $0, sample, "summit"}' rmsk_TEother_summit_windows_50state_$sample\.txt >> rmsk_TEother_50state_$sample\.txt; awk -v OFS='\t' -v sample=$sample '{print $0, sample, "majority"}' rmsk_TEother_majority_$sample\_50_segments.txt >> rmsk_TEother_50state_$sample\.txt; done &
+for file in rmsk_TEother_50state_*.txt; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $file > $(basename $file .txt)_sorted.txt; done
+```
+
+```{bash 50 state potential, eval=FALSE}
+# List of states in 50-state model
+/sample_lists/chromHMM_50state.txt
+
+# TEs in state per sample
+for file in rmsk_TEother_50state_E0*_sorted.txt; do awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' $file > state_sample_counts_$(basename $file _sorted.txt).txt; done
+```
+
+Identified TEs in an active regulatory state in each sample (based on the corresponding 18-state model state).
+
+```{bash 50-state active reg, eval=FALSE}
+awk '{if(($8 == "E1") || ($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31")) print $0}' rmsk_TEother_50state_E003_sorted.txt | cut -f1-7 | sort | uniq | wc -l 
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E12") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E004_sorted.txt | cut -f1-7 | sort | uniq | wc -l
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37") ||($8 == "E38") ||($8 == "E39")) print $0}' rmsk_TEother_50state_E005_sorted.txt | cut -f1-7 | sort | uniq | wc -l
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}' rmsk_TEother_50state_E006_sorted.txt | cut -f1-7 | sort | uniq | wc -l
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28")) print $0}' rmsk_TEother_50state_E007_sorted.txt | cut -f1-7 | sort | uniq | wc -l
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}'  rmsk_TEother_50state_E008_sorted.txt | cut -f1-7 | sort | uniq | wc -l
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E017_sorted.txt | cut -f1-7 | sort | uniq | wc -l
 ```
 
 ### Supplementary Figure 5
@@ -2832,27 +2886,25 @@ rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average"))
 Created a combined matrix with multiple epigenetic marks (chromHMM, WGBS, DNase, H3K27ac, and RNA states) for each TE in each sample. First, split the matrices of TE epigenetic states by sample. Then, combined into a single combined matrix by sample. From those matrices, counted the number of TE instances with each state combination. 
 
 ```{bash compare marks, eval=FALSE}
-ln -s /bar/epehrsson/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt chromHMM/.
-ln -s /bar/epehrsson/TE_landscape/WGBS/TE_WGBS_state_sorted.txt WGBS/.
-ln -s /bar/epehrsson/TE_landscape/DNase/rmsk_TEother_DNase_summit.txt DNase/.
-ln -s /bar/epehrsson/TE_landscape/H3K27ac/rmsk_TEother_H3K27ac_summit.txt H3K27ac/.
-ln -s /bar/epehrsson/TE_landscape/RNAseq/rmsk_TE_rpkm.txt RNA/. # Output by RNAseq.R
+ln -s /bar/epehrsson/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt .
+ln -s /bar/epehrsson/TE_landscape/WGBS/TE_WGBS_state_sorted.txt .
+ln -s /bar/epehrsson/TE_landscape/DNase/true_summit/rmsk_TEother_DNase_summit.txt .
+ln -s /bar/epehrsson/TE_landscape/H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt .
+ln -s /bar/epehrsson/TE_landscape/RNAseq/rmsk_TE_rpkm.txt .
 
 awk '{print>"chromHMM/"$8}' rmsk_TEother_chromHMM_summit_sorted.txt &
 awk '{print>"WGBS/"$8}' TE_WGBS_state_sorted.txt &
 awk '{print>"H3K27ac/"$8}' rmsk_TEother_H3K27ac_summit.txt &
 awk '{print>"DNase/"$8}' rmsk_TEother_DNase_summit.txt &
-awk '{print>"RNA/"$8}' rmsk_TE_rpkm.txt & 
+awk '{print>"RNA/"$8}' rmsk_TE_rpkm.txt &
 
 # Input: TE states by sample, split into a folder for each metric
 # Output: Single combined file per sample
-python combine_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
+python ~/bin/TE_landscape/combine_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
 
 # Count number of TEs x sample in each state combination (all, unique)
-# Python script outputs two files (hardcoded)
-#TE_landscape/compare_marks/combine_marks_counts.txt
-#TE_landscape/compare_marks/combine_marks_counts_unique.txt
-python aggregate_marks_pandas.py mnemonics.txt
+# Python script outputs two files (hardcoded): combine_marks_counts.txt and combine_marks_counts_unique.txt
+python ~/bin/TE_landscape/aggregate_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
 ```
 
 ```{r Figure S10, echo=FALSE}
@@ -3157,14 +3209,14 @@ Overlap of TE subfamilies with DHS peaks. From the intersection of individual TE
 
 ```{bash subfamily DHS, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
-while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' DNase/summit/TEs/rmsk_TEother_$line\_DNase_summit.txt >> DNase/subfamily_DNase_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/DNase_samples.txt
+while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt >> DNase/true_summit/subfamily_DNase_sample_summit.txt; done < sample_lists/subfamilies.txt; done < sample_lists/DNase_samples.txt
 ```
 
 Overlap of TE subfamilies with H3K27ac peaks. From the intersection of individual TEs with H3K27ac peaks, filtered to intersections where the TE overlaps the center of the H3K27ac peak, counts the number of unique peaks overlapping each subfamily. 
 
 ```{bash subfamily H3K27ac, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
-while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' H3K27ac/summit/TEs/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/subfamily_H3K27ac_sample_summit.txt; done < features/TEs/subfamily/subfamilies.txt; done < sample_lists/H3K27ac_samples.txt
+while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' H3K27ac/true_summit/rmsk_TEother_$line\_H3K27ac_summit.txt >> H3K27ac/true_summit/subfamily_H3K27ac_sample_summit.txt; done < sample_lists/subfamilies.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
 Overlap of TE subfamilies with CpGs in each methylation state. From the intersection of individual TEs with CpG methylation levels, finds unique CpGs overlapping each subfamily and counts the number in each methylation state per sample. 
@@ -3214,20 +3266,36 @@ for j in {1..10}; do awk -v OFS='\t' '{a[$4]+=1}END{for(i in a){print i, a[i]}}'
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/subfamily/subfamily_merge_$i\.txt -b raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak | awk -v OFS='\t' -v sample=$line '{print $0, sample}' - >> DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\.txt ; done < sample_lists/DNase_samples.txt; done
 
 # Filtered to only peaks where the summit overlaps the subfamily
-for i in {1..10}; do python ~/bin/TE_landscape/filter_summit.py DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\.txt 1 5 DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\_summit.txt DNase; done
+for i in {1..10}; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$i\.txt > DNase/shuffled/subfamily/true_summit/rmsk_TEother_subfamily_DNase_$i\_summit.txt; done
 
 # Number of peaks per subfamily x sample
-for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' DNase/shuffled/subfamily/rmsk_TEother_subfamily_DNase_$j\_summit.txt > DNase/shuffled/subfamily/subfamily_DNase_sample_summit_$j\.txt; done
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' DNase/shuffled/subfamily/true_summit/rmsk_TEother_subfamily_DNase_$j\_summit.txt > DNase/shuffled/subfamily/true_summit/subfamily_DNase_sample_summit_$j\.txt; done
 
 ## H3K27ac
 # Intersect with epigenetic data
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/subfamily/subfamily_merge_$i\.txt -b raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak | awk -v OFS='\t' -v sample=$line '{print $0, sample}' - >> H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\.txt ; done < sample_lists/H3K27ac_samples.txt; done
 
 # Filtered to only peaks where the summit overlaps the subfamily
-for i in {1..10}; do python ~/bin/TE_landscape/filter_summit.py H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\.txt 1 5 H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\_summit.txt H3K27ac; done
+for i in {1..10}; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$i\.txt > H3K27ac/shuffled/subfamily/true_summit/rmsk_TEother_subfamily_H3K27ac_$i\_summit.txt; done
 
 # Number of peaks per subfamily x sample
-for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/rmsk_TEother_subfamily_H3K27ac_$j\_summit.txt > H3K27ac/shuffled/subfamily/subfamily_H3K27ac_sample_summit_$j\.txt; done
+for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/true_summit/rmsk_TEother_subfamily_H3K27ac_$j\_summit.txt > H3K27ac/shuffled/subfamily/true_summit/subfamily_H3K27ac_sample_summit_$j\.txt; done
+```
+
+Enrichment of TE subfamilies in epigenetic states using the separate 50-state models trained on 7 samples.
+
+```{bash 50-state enrichment, eval=FALSE}
+# Intersected bedfiles with merged subfamily files
+for file in raw_data/chromHMM_50state/*.bed; do suffix=$(basename $file | cut -d '_' -f1); bedtools intersect -wo -a features/TEs/subfamily/TEother_subfamily_merge.txt -b $file | awk -v OFS='\t' -v tag=$suffix '{print $0, tag}' - > chromHMM/subfamily/50state/subfamily_state_$suffix\.bed; done
+
+# Length of overlap between chromHMM state and subfamily
+for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > chromHMM/subfamily/50state/$(basename $file .bed).txt; done
+
+# Number of TEs in each state in each sample
+for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
+
+# Number of bases in each state in each sample
+for file in raw_data/chromHMM_50state/*.bed; do awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' $file > chromHMM/genome/state50/$(basename $file .bed)_genome.txt; done
 ```
 
 The file ''enrichment_list.txt'' is a list generated from the analysis in this section of subfamilies of interest enriched in a state. HOMER was run to identify transcription factor binding motifs (known motifs only) encoded by members of the subfamily that are annotated with the state in samples where the subfamily is enriched, in comparison to members of the subfamily never in the state (as background). 
@@ -3694,7 +3762,7 @@ Looks for subfamily x state x sample group combinations enriched in more samples
 
 MHC on only subfamilies x states x categories/groupings ever enriched in state, active states only, categories with 1+ enrichments. 
 
-```{r subfam permutation, cache=TRUE, cache.lazy=FALSE, eval=FALSE}
+```{r subfam permutation, cache=TRUE, cache.lazy=FALSE}
 # Subfamilies ever enriched in a state
 subfamily_state_ever = subfamily_state_sample_counts[which(subfamily_state_sample_counts$V1 > 0 & subfamily_state_sample_counts$State %in% states[c(1:7,16:17,20:21)]),c("subfamily","State")]
 permutation_input = merge(subfamily_state_sample_combined[which(subfamily_state_sample_combined$Count > THRESHOLD_IK_MEMBER),],subfamily_state_ever,by=c("subfamily","State"))
@@ -3707,10 +3775,10 @@ dim(permute_subfam[which(permute_subfam$Padjust < 0.05),])
 
 permute_subfam_wide = dcast(aggregate(data = permute_subfam[which(permute_subfam$Padjust < 0.05),],Grouping~State+subfamily+Category, paste, collapse = ','),State+subfamily~Category,value.var="Grouping")
 permute_subfam_wide = merge(permute_subfam_wide,subfamily_state_sample_counts,by=c("subfamily","State"))[,c(1,10,9,2:8,11)]
-write.table(permute_subfam_wide,file="enrichment/state_subfamily_clusters_enriched.txt",sep='\t',row.names = FALSE,quote = FALSE)
+write.table(permute_subfam_wide,file="enrichment/state_subfamily_clusters_enriched_true.txt",sep='\t',row.names = FALSE,quote = FALSE)
 ```
 
-```{r subfam permutation pc, cache=TRUE, cache.lazy=FALSE, eval=FALSE}
+```{r subfam permutation pc, cache=TRUE, cache.lazy=FALSE}
 # Subfamilies ever enriched in a state
 subfamily_state_ever_pc = subfamily_state_sample_counts_pc[which(subfamily_state_sample_counts_pc$V1 > 0 & subfamily_state_sample_counts_pc$State %in% states[c(1:7,16:17,20:21)]),c("subfamily","State")]
 permutation_input_pc = merge(subfamily_state_sample_combined,subfamily_state_ever_pc,by=c("subfamily","State"))
@@ -3723,7 +3791,7 @@ dim(permute_subfam_pc[which(permute_subfam_pc$Padjust < 0.05),])
 
 permute_subfam_pc_wide = dcast(aggregate(data = permute_subfam_pc[which(permute_subfam_pc$Padjust < 0.05),],Grouping~State+subfamily+Category, paste, collapse = ','),State+subfamily~Category,value.var="Grouping")
 permute_subfam_pc_wide = merge(permute_subfam_pc_wide,subfamily_state_sample_counts_pc,by=c("subfamily","State"))[,c(1,10,9,2:8,11)]
-write.table(permute_subfam_pc_wide,file="enrichment/state_subfamily_clusters_pc.txt",sep='\t',row.names = FALSE,quote = FALSE)
+write.table(permute_subfam_pc_wide,file="enrichment/state_subfamily_clusters_pc_true.txt",sep='\t',row.names = FALSE,quote = FALSE)
 ```
 
 Prints bedfiles for TEs in the state when the subfamily is enriched and those never in the state. ''enrichment_candidates.txt'' is a list of subfamilies of interst, generated from above analysis. 
