@@ -49,7 +49,7 @@ subfamily_50state_sample = merge(subfamily_50state_sample,subfamily_50state_memb
 subfamily_50state_sample[which(is.na(subfamily_50state_sample$Members)),]$Members = 0
 rm(subfamily_50state_members)
 
-# Number of subfamily members
+# Number of subfamily members total
 subfamily_50state_sample$Count = ifelse(metadata[match(subfamily_50state_sample$Sample,metadata$Sample),]$chrY == "Yes",
                                       rmsk_TE_subfamily[match(subfamily_50state_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count,
                                       rmsk_TE_subfamily[match(subfamily_50state_sample$subfamily,rmsk_TE_subfamily$subfamily),]$Count_noY)
@@ -61,8 +61,3 @@ subfamily_50state_sample$State = factor(subfamily_50state_sample$State,levels=un
 # Filter matrix
 subfamily_50state_sample_filter = subfamily_50state_sample[which(subfamily_50state_sample$Members > THRESHOLD_IJK_MEMBER &
                                                                    subfamily_50state_sample$Count > THRESHOLD_IK_MEMBER),]
-
-# Plot number of enrichments
-ggplot(subfamily_50state_sample_filter,aes(x=State,fill=State18)) + geom_bar(color="black") + 
-  facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + ylab("Enrichments LOR > 1.5") + 
-  theme(axis.text.x=element_blank(),axis.ticks.x = element_blank())

@@ -569,7 +569,7 @@ Counted the number of CpGs overlapping each TE.
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[i];}}' TE_CpG_Meth_new.bed > TE_CpG_count.txt
 ```
 
-Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the center of the DHS peak. Counted the number of intersections per TE and combined into one file. 
+Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the summit of the DHS peak (see https://genome.ucsc.edu/FAQ/FAQformat.html#format12). Counted the number of intersections per TE and combined into one file. 
 
 ```{bash TE DHS matrix, eval=FALSE}
 # Intersect with individual TEs
@@ -1916,7 +1916,33 @@ for file in rmsk_TEother_50state_*.txt; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,
 for file in rmsk_TEother_50state_E0*_sorted.txt; do awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' $file > state_sample_counts_$(basename $file _sorted.txt).txt; done
 ```
 
-Identified TEs in an active regulatory state in each sample (based on the corresponding 18-state model state).
+Using Roadmap 2015 Supplementary Fig. 4, for all 7 samples, I determined which of 18-state model states is most enriched for each of the 50 states.
+
+```{r 50 state potential}
+# 50-state chromHMM models
+
+# Number of TEs in each chromHMM state by sample
+state50_files = list.files(path="/scratch/ecp/TE_landscape/state50",pattern="state_sample_counts_rmsk_TEother_50state_",full.names = TRUE)
+state_sample_50state = lapply(state50_files,function(x) read.table(x,sep='\t',quote=""))
+names(state_sample_50state) = gsub(".txt","",gsub("/scratch/ecp/TE_landscape/state50/state_sample_counts_rmsk_TEother_50state_","",state50_files))
+state_sample_50state = ldply(state_sample_50state)
+colnames(state_sample_50state) = c("Sample","State50","Count")
+
+# Corresponding 18-state model state
+state50_state18 = read.table("sample_lists/chromHMM_50state.txt",sep='\t',quote="",header=TRUE)
+state50_state18$State50 = paste("E",state50_state18$State50,sep="")
+
+# Combine
+state_sample_50state = merge(state_sample_50state,state50_state18,by=c("Sample","State50"))
+state_sample_50state$Proportion = state_sample_50state$Count/NUM_TE
+state_sample_50state$State50 = factor(state_sample_50state$State50,levels=paste("E",seq(1,50,1),sep=""))
+
+# Plot proportion of TEs in each of the 50 states, by sample
+# Colored by the corresponding 18-state model state
+ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom_bar(stat="identity",color="black") + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + coord_flip() + facet_wrap(~Sample) + labs(x="State with 50-state model",y="Proportion of TEs in state") + scale_x_discrete(limits=rev(levels(state_sample_50state$State50)))
+```
+
+The number of TEs in an active regulatory state in each sample (based on the corresponding 18-state model state, states 1-4 and 7-11). 
 
 ```{bash 50-state active reg, eval=FALSE}
 awk '{if(($8 == "E1") || ($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31")) print $0}' rmsk_TEother_50state_E003_sorted.txt | cut -f1-7 | sort | uniq | wc -l 
@@ -2219,11 +2245,9 @@ replicates_median
 by(replicates_count,replicates_count$Feature,function(x) wilcox.test(Fraction~Set,data=x))
 ```
 
-```{r Figure R1, echo=FALSE,fig.height=4}
-ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
-```
-
 Above analysis, updated to include only TEs/windows that are not in an active regulatory state outside the pair. 
+
+Generates a matrix of TEs that are in an active state in each sample pair, but are not in an active state outside the pair. 
 
 ```{r replicates restricted, cache=TRUE, cache.lazy=FALSE}
 ## TEs in an active regulatory state in each sample
@@ -2245,17 +2269,6 @@ replicates_restricted = ldply(replicates_restricted,.id="Pair")
 
 ## Restrict to TEs exclusive to that sample pair
 replicates_restricted = replicates_restricted[which(replicates_restricted$Samples == replicates_restricted$Total),]
-```
-
-```{r replicates restricted count}
-# Merge with counts from original analysis
-chromHMM_replicates_active_restricted = merge(chromHMM_replicates_active,replicates_restricted[,c("Pair",TE_coordinates)],by=c("Pair",TE_coordinates))
-
-# Fraction of TEs in either sample found in both
-chromHMM_replicates_restricted_count = ddply(chromHMM_replicates_active_restricted,.(Pair,Set,Samples),summarise,Count=length(Samples))
-chromHMM_replicates_restricted_count = dcast(chromHMM_replicates_restricted_count,Pair+Set~Samples,value.var="Count")
-chromHMM_replicates_restricted_count[is.na(chromHMM_replicates_restricted_count)] = 0
-chromHMM_replicates_restricted_count$Fraction = chromHMM_replicates_restricted_count$`2`/(chromHMM_replicates_restricted_count$`1`+chromHMM_replicates_restricted_count$`2`)
 ```
 
 ```{r replicates restricted window, cache=TRUE, cache.lazy=FALSE}
@@ -2280,6 +2293,19 @@ window_replicates_restricted = ldply(window_replicates_restricted,.id="Pair")
 window_replicates_restricted = window_replicates_restricted[which(window_replicates_restricted$Samples == window_replicates_restricted$Total),]
 ```
 
+Filters the original matrices, which require the TE to be in the '''same''' active state in each pair member, to TEs that are not in any active regulatory state outside the sample pair.
+
+```{r replicates restricted count}
+# Merge with counts from original analysis
+chromHMM_replicates_active_restricted = merge(chromHMM_replicates_active,replicates_restricted[,c("Pair",TE_coordinates)],by=c("Pair",TE_coordinates))
+
+# Fraction of TEs in either sample found in both
+chromHMM_replicates_restricted_count = ddply(chromHMM_replicates_active_restricted,.(Pair,Set,Samples),summarise,Count=length(Samples))
+chromHMM_replicates_restricted_count = dcast(chromHMM_replicates_restricted_count,Pair+Set~Samples,value.var="Count")
+chromHMM_replicates_restricted_count[is.na(chromHMM_replicates_restricted_count)] = 0
+chromHMM_replicates_restricted_count$Fraction = chromHMM_replicates_restricted_count$`2`/(chromHMM_replicates_restricted_count$`1`+chromHMM_replicates_restricted_count$`2`)
+```
+
 ```{r replicates restricted window count}
 # Merge with counts from original analysis
 window_replicates_active_restricted = merge(window_replicates_active,window_replicates_restricted[,c("Pair","chr","start","stop")],by=c("Pair","chr","start","stop"))
@@ -2295,8 +2321,46 @@ window_replicates_restricted_count$Fraction = window_replicates_restricted_count
 chromHMM_replicates_restricted_count$Feature = rep("TE",dim(chromHMM_replicates_restricted_count)[1])
 window_replicates_restricted_count$Feature = rep("Bin",dim(window_replicates_restricted_count)[1])
 replicates_restricted_count = rbind(window_replicates_restricted_count,chromHMM_replicates_restricted_count)
+```
 
-ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+Epigenetic correlation between samples. 
+
+```{r replicate matrix correlation}
+# Load correlation matrices from Roadmap
+cor_matrices_files = list.files(path="raw_data/correlation_matrices",pattern=".RData", full.names = TRUE)
+cor_marks = lapply(cor_matrices_files,function(x) mget(load(x)))
+names(cor_marks) = gsub(".RData","",gsub("raw_data/correlation_matrices/cor_","",cor_matrices_files))
+
+# Reformat
+cor_marks = lapply(cor_marks,function(x) {y = melt(as.matrix(x$markcor)); return(y)})
+cor_marks = ldply(cor_marks,.id="Mark")
+colnames(cor_marks)[2:4] = c("Sample1","Sample2","Correlation")
+
+# Remove self correlations
+cor_marks = cor_marks[which(cor_marks$Sample1 != cor_marks$Sample2),]
+
+# Correlations where Sample 1 is in a replicate pair
+cor_marks_replicates = cor_marks[which(cor_marks$Sample1 %in% as.vector(unique(replicates$`Sample 1`))),]
+
+# Assign rank to each correlation
+cor_marks_replicates = ddply(cor_marks_replicates,.(Sample1,Mark),transform,Rank=rank(Correlation))
+
+# Identify replicate/different tissue pairs
+cor_marks_replicates = merge(cor_marks_replicates,replicates[,c("Sample 1","Sample 2","Set")],by.x=c("Sample1","Sample2"),by.y=c("Sample 1","Sample 2"),all.x=TRUE)
+cor_marks_replicates[is.na(cor_marks_replicates)] = "Other"
+cor_marks_replicates$Set = factor(cor_marks_replicates$Set,levels=c("Replicate","Tissue","Other"))
+```
+
+Combined figure. 
+
+```{r Figure R1, echo=FALSE,fig.height=4}
+a = ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+
+b = ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+
+c = ggplot(cor_marks_replicates[which(cor_marks_replicates$Mark %in% c("H3K4me1_7","H3K4me3_1")),],aes(x=Sample1,y=Correlation,color=Set)) + geom_jitter(width = 0.2) + facet_wrap(~Mark) + scale_color_manual(values=c("red","blue","grey"),name="Pair type") + xlab("Sample 1")
+
+grid.arrange(a,b,c,layout_matrix=rbind(c(1,2),c(3)))
 ```
 
 ### Supplementary Figure 7 
@@ -2433,6 +2497,21 @@ lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")]))
 lapply(states[c(2,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State == x & vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")]))
 lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista_val_fraction$State %in% c(x,NA) & vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")]))
+```
+
+VISTA with pooled states (response). Identifies the proportion of unique VISTA enhancers that are positively validated that overlap a TE within each set, regardless of state.
+
+```{r vista pooled, eval=FALSE}
+source("R_scripts/vista_pooled.R")
+
+# Fisher's exact test
+fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")])
+fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")])
+fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")])
+fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")])
+
+# Plot
+ggplot(vista_val_fraction,aes(x=1,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.title.x = element_blank()) + scale_shape_discrete(labels=orthogonal_labels)
 ```
 
 '''HOMER'''
@@ -3282,22 +3361,6 @@ for i in {1..10}; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) pr
 for j in {1..10}; do awk -v OFS='\t' '{a[$4, $16]+=1}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], a[i]}}' H3K27ac/shuffled/subfamily/true_summit/rmsk_TEother_subfamily_H3K27ac_$j\_summit.txt > H3K27ac/shuffled/subfamily/true_summit/subfamily_H3K27ac_sample_summit_$j\.txt; done
 ```
 
-Enrichment of TE subfamilies in epigenetic states using the separate 50-state models trained on 7 samples.
-
-```{bash 50-state enrichment, eval=FALSE}
-# Intersected bedfiles with merged subfamily files
-for file in raw_data/chromHMM_50state/*.bed; do suffix=$(basename $file | cut -d '_' -f1); bedtools intersect -wo -a features/TEs/subfamily/TEother_subfamily_merge.txt -b $file | awk -v OFS='\t' -v tag=$suffix '{print $0, tag}' - > chromHMM/subfamily/50state/subfamily_state_$suffix\.bed; done
-
-# Length of overlap between chromHMM state and subfamily
-for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > chromHMM/subfamily/50state/$(basename $file .bed).txt; done
-
-# Number of TEs in each state in each sample
-for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
-
-# Number of bases in each state in each sample
-for file in raw_data/chromHMM_50state/*.bed; do awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' $file > chromHMM/genome/state50/$(basename $file .bed)_genome.txt; done
-```
-
 The file ''enrichment_list.txt'' is a list generated from the analysis in this section of subfamilies of interest enriched in a state. HOMER was run to identify transcription factor binding motifs (known motifs only) encoded by members of the subfamily that are annotated with the state in samples where the subfamily is enriched, in comparison to members of the subfamily never in the state (as background). 
 
 ```{bash HOMER, eval=FALSE}
@@ -3899,6 +3962,31 @@ test = test[order(test$CpGs,decreasing=TRUE),]
 rownames(test) <- NULL
 test$Order = rownames(test)
 lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched_Instances > 0) {join(test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs","Count_CpGs",x)],aggregate(data=subfamily_state_sample_combined[which(subfamily_state_sample_combined$State == x & subfamily_state_sample_combined$Length_percent_jk > THRESHOLD_PC),],Enrichment~subfamily,function(y) sum(y > THRESHOLD_LOR)),by="subfamily",type="left")} else{test[which(test[,x] > 0),c("Order","subfamily","family","class_update","Count","Total_length","CpGs",x)]})
+```
+
+#### 50-state model enrichment
+
+Enrichment of TE subfamilies in epigenetic states using the separate 50-state models trained on 7 samples. Uses the same filters as for the 15-state model.
+
+```{bash 50-state enrichment, eval=FALSE}
+# Intersected bedfiles with merged subfamily files
+for file in raw_data/chromHMM_50state/*.bed; do suffix=$(basename $file | cut -d '_' -f1); bedtools intersect -wo -a features/TEs/subfamily/TEother_subfamily_merge.txt -b $file | awk -v OFS='\t' -v tag=$suffix '{print $0, tag}' - > chromHMM/subfamily/50state/subfamily_state_$suffix\.bed; done
+
+# Length of overlap between chromHMM state and subfamily
+for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > chromHMM/subfamily/50state/$(basename $file .bed).txt; done
+
+# Number of TEs in each state in each sample
+for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
+
+# Number of bases in each state in each sample
+for file in raw_data/chromHMM_50state/*.bed; do awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' $file > chromHMM/genome/state50/$(basename $file .bed)_genome.txt; done
+```
+
+```{r 50-state subfam enrichment}
+source("R_scripts/subfamily_enrichment_50state.R")
+
+# Plot number of enrichments
+ggplot(subfamily_50state_sample_filter,aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank())
 ```
 
 ## TE epigenetic profiles as a function of age, chromosome, and feature overlap

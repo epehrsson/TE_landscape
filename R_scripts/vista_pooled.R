@@ -20,13 +20,3 @@ vista_val_fraction = ddply(vista_val,.(Set),summarise,Total=length(unique(elemen
                            Pos=length(unique(element[which(Validation == "positive")])),
                            Neg=length(unique(element[which(Validation == "negative")])),
                            Fraction=Pos/Total)
-
-# Fisher's exact test
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")])
-
-# Plot
-ggplot(vista_val_fraction,aes(x=1,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") +
-   theme(axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.title.x = element_blank()) + scale_shape_discrete(labels=orthogonal_labels)
