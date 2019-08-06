@@ -469,12 +469,12 @@ Assignment of individual TEs to chromHMM states. First, intersected TEs with 200
 # Intersect TEs with 200bp windows
 bedtools intersect -wo -a features/TEs/rmsk_TEother.txt -b features/hg19_standard.windows > features/TEs/rmsk_TEother_windows.txt
 
-# Identify summit TEs (span the center of a 200bp chromHMM annotation)
+# Identify TEs that span the center of a 200bp chromHMM annotation ("summit")
 awk '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) print $0}' features/TEs/rmsk_TEother_windows.txt > features/TEs/rmsk_TEother_summit.txt
 cut -f1-7 features/TEs/rmsk_TEother_summit.txt | sort -k1,1 -k2,2n | uniq > features/TEs/rmsk_TEother_summit
 mv features/TEs/rmsk_TEother_summit features/TEs/rmsk_TEother_summit.txt
 
-# Identify majority TEs
+# Identify TEs that do not ("majority")
 comm -23 <(sort features/TEs/rmsk_TEother.txt) <(sort features/TEs/rmsk_TEother_summit.txt) > features/TEs/rmsk_TEother_majority.txt
 sort -k1,1 -k2,2n features/TEs/rmsk_TEother_majority.txt > features/TEs/rmsk_TEother_majority
 mv features/TEs/rmsk_TEother_majority features/TEs/rmsk_TEother_majority.txt
@@ -507,10 +507,10 @@ sort -k1,1V -k2,2n -k3,3n -k6,6 -k10,10 all_chromHMM_other.txt > all_chromHMM_ot
 
 # Combined into one file
 
-# Filtering to summit
+# Filtering by overlap with 200bp window centers ("summit")
 while read line; do python ~/bin/TE_landscape/filter_summit.py chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_TE 1 8 chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed chromHMM; python ~/bin/TE_landscape/filter_summit.py chromHMM/TEs/intersect/$line\_15_coreMarks_mnemonics.bed_other 1 8 chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed chromHMM; cat chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed > chromHMM/summit/TEs/rmsk_TEother_$line\_chromHMM.bed; rm chromHMM/summit/TEs/rmsk_TE_$line\_chromHMM.bed; rm chromHMM/summit/TEs/rmsk_other_$line\_chromHMM.bed; done < sample_lists/mnemonics.txt
 
-# Including those with no summit
+# Including those that do not overlap window center ("majority")
 ## From original TE x sample x state file, split by sample
 while read line; do python identify_no_summit.py $line rmsk_TEother_$line\_chromHMM.bed rmsk_TEother_$line\_chromHMM_noSummit.txt 7 8; done < mnemonics.txt
 
@@ -576,21 +576,21 @@ Overlap of individual TEs with DHS peaks. Intersected individual TEs with DHS pe
 #TE_landscape/DNase/intersect/TEs/rmsk_TEother_E#-DNase.macs2.narrowPeak [53 files]
 bash TE_landscape/DNase/intersect_sample_list_DNase_peak.sh
 
-# Filtering to summit
+# Filtering to TEs overlapping peak summit
 for file in DNase/intersect/TEs/rmsk_TEother_E*-DNase.macs2.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > DNase/true_summit/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
 
 # Matrix of TE x sample x state
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt >> DNase/true_summit/rmsk_TEother_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
-Overlap of individual TEs with H3K27ac peaks. Intersected individual TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file. 
+Overlap of individual TEs with H3K27ac peaks. Intersected individual TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the summit of the H3K27ac peak. Counted the number of intersections per TE and combined into one file. 
 
 ```{bash TE H3K27ac matrix, eval=FALSE}
 # Intersect with individual TEs
 #TE_landscape/H3K27ac/intersect/TEs/rmsk_TEother_E#-H3K27ac.narrowPeak [98 files]
 while read line; do bedtools intersect -wo -a ../rmsk_TEother.txt -b H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > H3K27ac_TEs/rmsk_TEother_$line\-H3K27ac.narrowPeak; done < H3K27ac_samples.txt
 
-# Filtering to summit
+# Filtering to TEs overlapping peak summit
 for file in H3K27ac/intersect/TEs/rmsk_TEother_E*-H3K27ac.narrowPeak; do awk '{summit=$9+$17; if((summit >= $2) && (summit < $3)) print $0}' $file > H3K27ac/true_summit/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
 
 # Matrix of TE x sample x state
@@ -657,7 +657,7 @@ For chromHMM, the dataframe includes the number of samples each TE is annotated 
 
 For WGBS, the dataframe lists the average methylation per TE for each sample, for only TEs that overlap at least one CpG. It also includes the number of CpGs per TE, the number of samples in which the TE is annotated with each methylation state (for all samples with WGBS data and excluding IMR90), and the total number of states with which the TE is annotated across samples (all and excluding IMR90). 
 
-For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample. They also include the total number of samples in which the TE overlaps a peak center, across all samples and excluding cancer cell lines and IMR90. Each dataframe includes only TEs overlapping a peak in at least one sample.
+For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample. They also include the total number of samples in which the TE overlaps a peak summit, across all samples and excluding cancer cell lines and IMR90. Each dataframe includes only TEs overlapping a peak in at least one sample.
 
 For expression, the read length and normalization factor provided by the Roadmap project for each epigenome are used to normalize the average read coverage per TE and create a dataframe with the average RPKM per TE in each sample. The dataframe also includes the total number of samples in which the TE is expressed RPKM > 1 (in all samples or excluding cancer cell lines/IMR90) and the maximum expression across samples. The same information is provided for unique RefSeq exons in a separate dataframe. 
 
@@ -690,7 +690,7 @@ Assignment of individual promoters to chromHMM states. Intersected each promoter
 #TE_landscape/chromHMM/Refseq_promoters/chromHMM_refseq_promoters_unique.txt
 for file in ../../raw_data/chromHMM/E*.bed; do suffix=$(basename $file | cut -d '_' -f1); bedtools intersect -wo -a refseq_promoters_unique.txt -b $file | awk -v OFS='\t' -v sample=$suffix '{print $0, sample}' - >> chromHMM_refseq_promoters_unique.txt; done
 
-# Filtering to summit
+# Filtering by overlap with 200bp window centers ("summit")
 python ~/bin/TE_landscape/filter_summit.py chromHMM/Refseq_promoters/chromHMM_refseq_promoters_unique.txt 1 5 chromHMM/summit/promoters/chromHMM_refseq_promoters_unique_summit.txt chromHMM
 
 awk -v OFS='\t' '{a[$1, $2, $3, $4, $8, $10]+=$9}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[6], a[i], sep[5]}}' chromHMM/summit/promoters/chromHMM_refseq_promoters_unique_summit.txt | sort -k1,1V -k2,2n -k3,3n -k5,5 - > chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt
@@ -715,29 +715,31 @@ bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b
 python ~/bin/TE_landscape/average_methylation_promoter.py refseq_promoter_unique_CpG_Meth.bed ~/genic_features/RefSeq/refseq_promoters_unique_std.txt ../../sample_lists/WGBS_samples.txt refseq_promoter_unique_CpG_Meth_average.txt
 ```
 
-Overlap of individual promoters with DHS peaks. Intersected individual promoters with DHS peaks by sample, then filtered to only intersections where the promoter overlaps the center of the DHS peak. Counted the number of intersections per promoter and combined into one file. 
+Overlap of individual promoters with DHS peaks. Intersected individual promoters with DHS peaks by sample, then filtered to only intersections where the promoter overlaps the summit of the DHS peak. Counted the number of intersections per promoter and combined into one file. 
 
 ```{bash promoter DHS matrix, eval=FALSE}
 # Intersect with Refseq promoters
 #TE_landscape/DNase/Refseq_promoters/refseq_promoter_unique_E*-DNase.macs2.narrowPeak [53 files]
 while read line; do bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b ../../raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak > refseq_promoter_unique_$line\-DNase.macs2.narrowPeak; done < ../../sample_lists/DNase_samples.txt
 
-# Filter to summit
+# Filter to promoters overlapping peak summit
 for file in DNase/Refseq_promoters/refseq_promoter_unique_E*-DNase.macs2.narrowPeak; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' $file > DNase/true_summit/promoters/$( basename $file -DNase.macs2.narrowPeak)_DNase_summit.txt; done
 
+# Number of peak summits overlapping each promoter x sample
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' DNase/true_summit/promoters/refseq_promoter_unique_$line\_DNase_summit.txt >> DNase/true_summit/promoters/refseq_promoter_unique_DNase_summit.txt; done < sample_lists/DNase_samples.txt
 ```
 
-Overlap of individual promoters with H3K27ac peaks. Intersected individual promoters with H3K27ac peaks by sample, then filtered to only intersections where the promoter overlaps the center of the H3K27ac peak. Counted the number of intersections per promoter and combined into one file. 
+Overlap of individual promoters with H3K27ac peaks. Intersected individual promoters with H3K27ac peaks by sample, then filtered to only intersections where the promoter overlaps the summit of the H3K27ac peak. Counted the number of intersections per promoter and combined into one file. 
 
 ```{bash promoter H3K27ac matrix, eval=FALSE}
 # Intersect with Refseq promoters
 #TE_landscape/H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPeak [98 files]
 while read line; do bedtools intersect -wo -a ~/genic_features/RefSeq/refseq_promoters_unique.txt -b ../../raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > refseq_promoter_unique_$line\-H3K27ac.narrowPeak; done < ../../sample_lists/H3K27ac_samples.txt
 
-# Filter summit
+# Filter to promoters overlapping peak summit
 for file in H3K27ac/Refseq_promoters/refseq_promoter_unique_E*-H3K27ac.narrowPeak; do awk '{summit=$6+$14; if((summit >= $2) && (summit < $3)) print $0}' $file > H3K27ac/true_summit/promoters/$( basename $file -H3K27ac.narrowPeak)_H3K27ac_summit.txt; done
 
+# Number of peak summits overlapping each promoter x sample
 while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sample, a[i]}}' H3K27ac/true_summit/promoters/refseq_promoter_unique_$line\_H3K27ac_summit.txt >> H3K27ac/true_summit/promoters/refseq_promoter_unique_H3K27ac_summit.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
@@ -747,7 +749,7 @@ For chromHMM states, the dataframe includes the number of samples in which each 
 
 For methlyation states, the dataframe includes the average methylation level for each promoter in each sample, as well as the number of samples in which the promoter is annotated with each methylation state. 
 
-For DHS and H3K27ac peak overlap, the dataframe includes the number of peaks overlapping the promoter in each sample. Promoters on contigs are removed at this stage, and all promoters, regardless of whether they overlap a peak in any sample, are included in the dataframe. The total number of samples in which each promoter overlaps a peak center is also provided.
+For DHS and H3K27ac peak overlap, the dataframe includes the number of peaks overlapping the promoter in each sample. Promoters on contigs are removed at this stage, and all promoters, regardless of whether they overlap a peak in any sample, are included in the dataframe. The total number of samples in which each promoter overlaps a peak summit is also provided.
 
 ```{r create promoter epigenetics, eval=FALSE}
 source("R_scripts/promoter_matrices.R")
@@ -791,23 +793,23 @@ Shuffled TEs that are between 200bp window centers were also identified and inte
 The two sets of TEs were combined for each iteration and sorted within each chromosome. 
 
 ```{bash shuffled chromHMM matrix, eval=FALSE}
-# Summit
-## Identify summit TEs by intersecting with 200bp windows
+# TEs overlapping the center of 200bp windows ("summit")
+## Intersect TEs with 200bp windows
 for i in {1..10}; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b features/hg19_standard.windows > features/shuffled_TEs/rmsk_TE_shuffle_$i\_windows.txt; done
 
-## Unique shuffled TEs that overlap any chromHMM bin summit (i.e., center of 200bp windows)
+## Unique shuffled TEs that overlap any chromHMM 200bp window center ("summit")
 for i in {1..10}; do awk '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) print $0}' features/shuffled_TEs/rmsk_TE_shuffle_$i\_windows.txt > features/shuffled_TEs/rmsk_TE_shuffle_$i\_summit.txt; done
 for file in features/shuffled_TEs/rmsk_TE_shuffle_*_summit.txt; do cut -f1-7 $file | sort -k1,1 -k2,2n | uniq > features/shuffled_TEs/$(basename $file .txt); mv features/shuffled_TEs/$(basename $file .txt) $file; done
 
 ## Intersect with 200bp chromHMM windows 
 for i in {1..10}; do while read line; do bedtools intersect -wo -sorted -a features/shuffled_TEs/rmsk_TE_shuffle_$i\_summit.txt -b chromHMM/genome/windows/windows_$line\.bed > /scratch/ecp/shuffled/rmsk_TE_shuffle_$i\_$line\_summit.txt; done < sample_lists/mnemonics.txt; done
 
-## Filter to bin summit overlap and sum state within TE
+## Filter to bin center overlap and sum state within TE
 for file in rmsk_TE_shuffle_1_E*_summit.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done &
 for i in {1..10}; do for file in rmsk_TE_shuffle_$i\_E*_summit; do mv $file $file\.txt; done; done
 
 # Majority
-## TEs that are not summit overlapping (majority), sorted
+## TEs that are not center overlapping ("majority"), sorted
 for i in {1..10}; do comm -23 <(sort features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt) <(cut -f1-7 features/shuffled_TEs/rmsk_TE_shuffle_$i\_summit.txt | sort) > features/shuffled_TEs/rmsk_TE_shuffle_$i\_majority.txt; done
 for file in features/shuffled_TEs/rmsk_TE_shuffle_*_majority.txt; do sort -k1,1 -k2,2n $file > features/shuffled_TEs/$(basename $file .txt); mv features/shuffled_TEs/$(basename $file .txt) $file; done
 
@@ -851,7 +853,7 @@ Counted the number of CpGs overlapping each shuffled TE.
 for j in {1..10}; do awk -v OFS='\t' '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(k in a){split(k,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], a[k];}}' rmsk_TE_shuffle_$j\_Meth.bed > TE_CpG_count_$j.txt; done
 ```
 
-Overlap of shuffled TEs with DHS peaks. Intersected individual shuffled TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the center of the DHS peak. Counted the number of intersections per TE and combined into one file per iteration. 
+Overlap of shuffled TEs with DHS peaks. Intersected individual shuffled TEs with DHS peaks by sample, then filtered to only intersections where the TE overlaps the summit of the DHS peak. Counted the number of intersections per TE and combined into one file per iteration. 
 
 ```{bash shuffled DHS, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/DNase/DNase_narrow_peaks/$line\-DNase.macs2.narrowPeak > DNase/shuffled/rmsk_TE_$line\_$i\-DNase.narrowPeak; done < sample_lists/DNase_samples.txt; done
@@ -861,7 +863,7 @@ for file in DNase/shuffled/rmsk_TE_E*-DNase.narrowPeak; do awk '{summit=$9+$17; 
 for j in {1..10}; do while read line; do awk -v OFS='\t' -v sample=$line '{a[$1, $2, $3, $4, $5, $6, $7]+=1}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sample, a[i]}}' DNase/shuffled/true_summit/rmsk_TE_$line\_$j\_DNase_summit.txt >> DNase/shuffled/true_summit/rmsk_TE_$j\_DNase_summit.txt; done < sample_lists/DNase_samples.txt; done
 ```
 
-Overlap of shuffled TEs with H3K27ac peaks. Intersected individual shuffled TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the center of the H3K27ac peak. Counted the number of intersections per TE and combined into one file per iteration. 
+Overlap of shuffled TEs with H3K27ac peaks. Intersected individual shuffled TEs with H3K27ac peaks by sample, then filtered to only intersections where the TE overlaps the summit of the H3K27ac peak. Counted the number of intersections per TE and combined into one file per iteration. 
 
 ```{bash shuffled H3K27ac, eval=FALSE}
 for i in {1..10}; do while read line; do bedtools intersect -wo -a features/shuffled_TEs/rmsk_TE_shuffle_$i\.txt -b raw_data/H3K27ac/H3K27ac_narrow_peaks/$line\-H3K27ac.narrowPeak > H3K27ac/shuffled/rmsk_TE_$line\_$i\-H3K27ac.narrowPeak; done < sample_lists/H3K27ac_samples.txt; done
@@ -879,7 +881,7 @@ For chromHMM, the dataframes include the number of samples in which each shuffle
 
 For WGBS, the dataframes list the average methylation per shuffled TE for each sample, for only TEs that overlap at least one CpG. It also includes the number of CpGs per TE, the number of samples in which the TE is annotated with each methylation state, and the total number of methylation states with which the TE is annotated across samples. 
 
-For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample and the total number of samples in which each TE overlaps a peak center. Each dataframe includes only TEs overlapping a peak in at least one sample.
+For DHS and H3K27ac, the dataframes provide the number of peaks each TE overlaps per sample and the total number of samples in which each TE overlaps a peak summit. Each dataframe includes only TEs overlapping a peak in at least one sample.
 
 ```{r create shuffled matrices, eval=FALSE}
 source("R_scripts/shuffled_matrix.R")
@@ -1227,7 +1229,7 @@ bedtools intersect -a WGBS/all_CpG_Meth.bed -b ~/genic_features/RefSeq/refseq_in
 awk -v OFS='\t' '{for (i=5;i<=NF;i++){if($i == -1) miss[$1, i]+=1; else if ($i < 0.3) hypo[$1, i]+=1; else if ($i > 0.7) hyper[$1, i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[$1, i]+=1}}END{for(i in hypo){split(i,sep,SUBSEP); print "Hypomethylated", sep[1], sep[2], hypo[i]}; for(i in hyper){split(i,sep,SUBSEP); print "Hypermethylated", sep[1], sep[2], hyper[i]}; for(i in inter){split(i,sep,SUBSEP); print "Intermediate", sep[1], sep[2], inter[i]}; for(i in miss){split(i,sep,SUBSEP); print "Missing", sep[1], sep[2], miss[i]}}' WGBS/feature_CpG_Meth.bed > WGBS/feature_CpG_Meth_states.txt
 ```
 
-The number of and total width of DHS peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the center overlaps the TE). 
+The number of and total width of DHS peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the summit overlaps the TE). 
 
 ```{bash genome DHS, eval=FALSE}
 #TE_landscape/DNase/DNase_stats.txt	
@@ -1239,7 +1241,7 @@ while read line; do wget http://egg2.wustl.edu/roadmap/data/byFileType/peaks/con
 while read line; do awk '{print $8, $9, $10}' rmsk_TEother_$line\-DNase.macs2.narrowPeak | sort | uniq | wc -l >> test; done < ../DNase_samples.txt
 ```
 
-The total width of DHS peaks overlapping TEs and the number of DHS peaks whose center overlaps a TE, by sample. Intersected DHS peaks with merged TE regions and summed the length of overlap. Using the intersection of DHS peaks with individual TEs that was filtered to only those that overlap the center of a peak, counted the number of unique DHS peaks whose center overlaps a TE. 
+The total width of DHS peak overlap with TEs and the number of DHS peaks whose summit overlaps a TE, by sample. Intersected DHS peaks with merged TE regions and summed the length of overlap. Using the intersection of DHS peaks with individual TEs that was filtered to only those that overlap the summit of a peak, counted the number of unique DHS peaks whose summit overlaps a TE. 
 
 ```{bash TE DHS, eval=FALSE}
 # Intersect with merged TEs
@@ -1249,7 +1251,7 @@ while read line; do bedtools intersect -wo -a DNase_narrow_peaks/$line\-DNase.ma
 #TE_landscape/DNase/rmsk_TEother_merge_DNase_contribution.txt
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_DNase.txt | sort > rmsk_TEother_merge_DNase_contribution.txt
 
-# Peaks overlapping TEs per sample, including summit rules
+# Peaks with summits overlapping TEs per sample
 while read line; do awk -v OFS='\t' '{print $8, $9, $10}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt | sort | uniq | wc -l >> DNase/true_summit/rmsk_TEother_DNase_summit_stats.txt; done < sample_lists/DNase_samples.txt
 ```
 
@@ -1264,7 +1266,7 @@ while read line; do echo $line; bedtools intersect -wo -a raw_data/DNase/DNase_n
 awk -v OFS='\t' '{a[$1, $2]+=$16}END{for(i in a){split(i,sep,SUBSEP); print sep[1], sep[2], a[i]}}' DNase/refseq_features_DNase_intersect.txt > DNase/refseq_features_DNase.txt
 ```
 
-The number of and total width of H3K27ac peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the center overlaps the TE). 
+The number of and total width of H3K27ac peaks per sample, plus the number of peaks overlapping TEs (regardless of whether the summit overlaps the TE). 
 
 ```{bash genome H3K27ac, eval=FALSE}
 #TE_landscape/H3K27ac/H3K27ac_stats.txt	
@@ -1276,7 +1278,7 @@ while read line; do echo $line >> H3K27ac_stats.txt; wc -l H3K27ac_narrow_peaks/
 while read line; do awk '{print $8, $9, $10}' H3K27ac_TEs/rmsk_TEother_$line\-H3K27ac.narrowPeak | sort | uniq | wc -l >> test; done < ../H3K27ac_samples.txt #Combine in Excel
 ```
 
-The total width of H3K27ac peaks overlapping TEs and the number of H3K27ac peaks whose center overlaps a TE, by sample. Intersected H3K27ac peaks with merged TE regions and summed the length of overlap. Using the intersection of H3K27ac peaks with individual TEs that was filtered to only those that overlap the center of a peak, counted the number of unique H3K27ac peaks whose center overlaps a TE. 
+The total width of H3K27ac peak overlap with TEs and the number of H3K27ac peaks whose summit overlaps a TE, by sample. Intersected H3K27ac peaks with merged TE regions and summed the length of overlap. Using the intersection of H3K27ac peaks with individual TEs that was filtered to only those that overlap the summit of a peak, counted the number of unique H3K27ac peaks whose summit overlaps a TE. 
 
 ```{bash TE H3K27ac, eval=FALSE}
 # Intersect with merged TEs
@@ -1286,7 +1288,7 @@ while read line; do bedtools intersect -wo -a H3K27ac_narrow_peaks/$line\-H3K27a
 #TE_landscape/H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt
 awk -v OFS='\t' '{a[$15]+=$14}END{for(i in a){print i, a[i]}}' rmsk_TEother_merge_H3K27ac.txt | sort > rmsk_TEother_merge_H3K27ac_contribution.txt
 
-# Peaks overlapping TEs per sample, including summit rules
+# Peaks with summits overlapping TEs per sample
 while read line; do awk -v OFS='\t' '{print $8, $9, $10}' H3K27ac/true_summit/rmsk_TEother_$line\_H3K27ac_summit.txt | sort | uniq | wc -l >> H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit_stats.txt; done < sample_lists/H3K27ac_samples.txt
 ```
 
@@ -1600,7 +1602,7 @@ ddply(combine_potential,.(State),summarise,In_100=sum(Count[which(Sample.Proport
 
 ### TEs always in single state
 
-```{r analysis Fig 2c}
+```{r always TEs}
 always_TEs = c(setNames(lapply(chromHMM_states,function(x) chromHMM_TE_state[which(chromHMM_TE_state[[x]] == sample_counts["All","chromHMM"]),TE_coordinates]),chromHMM_states),
                   setNames(lapply(meth_states,function(x) TE_meth_average[which(TE_meth_average[[x]] == sample_counts["All","WGBS"]),TE_coordinates]),meth_states))
 always_TEs$DNase = TE_DNase_peaks[which(TE_DNase_peaks$Samples == sample_counts["All","DNase"]),TE_coordinates]
@@ -1681,7 +1683,7 @@ write.table(always_TEs_90[,c(TE_coordinates,"State")],file="always_TEs_90_true.b
 dcast(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),State~Class,value.var="TEs.Proportion")
 ```
 
-For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Reports all ties. Also counts TEs overlapping a DHS peak in all samples that are >5kb from the nearest RefSeq gene. 
+For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Reports all ties. Also counts TEs overlapping a DHS peak summit in all samples that are >5kb from the nearest RefSeq gene. 
 
 ```{bash investigate always TEs, eval=FALSE}
 # TEs always in a state
@@ -1690,7 +1692,7 @@ For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Re
 sort -k1,1 -k2,2n always_TEs_true.bed > always_TEs_true_sorted.bed
 sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a always_TEs_true_sorted.bed -b - -D b -t all > always_TEs_true_genes.txt
 
-# Find the distance to the nearest gene
+# TEs always overlapping a DHS peak summit that are >5kb from the nearest RefSeq gene
 awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_true_genes.txt | wc -l
 ```
 
@@ -1715,7 +1717,7 @@ for i in {1..10}; do tail -n +2 chromHMM/shuffled_TEs/rmsk_TE_shuffle_$i\_chromH
 
 ### Supplementary Figure 4 
 
-'''Block/summit'''
+'''Block/window'''
 
 Identified TEs that overlap the center of chromHMM annotation blocks. From the intersection files between TEs and chromHMM states, filtered to only TEs that overlap the center of the chromHMM annotation. Then, summed the total length of overlap between the TE and the state in that sample. 
 
@@ -1757,7 +1759,7 @@ awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' chromHMM/block/rmsk_
 As another alternative annotation rule, counted the number of TEs that overlap 200bp window centers annotated with each state in each sample.
 
 ```{bash summit control, eval=FALSE}
-# TEs per sample, restricted to those overlapping summits
+# TEs per sample, restricted to those overlapping 200bp window centers
 awk -v OFS='\t' '{if($11 == "summit") a[$8,$10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/state_sample_counts_summit_only.txt
 ```
 
@@ -1775,9 +1777,30 @@ potential_ever[order(potential_ever$Ratio),]
 ## Overlapping block centers
 dim(unique(block_potential[which(block_potential$State %in% chromHMM_states[c(1:3,6:7)]),TE_coordinates]))[1]/NUM_TE
 
-## Overlapping bin summits
+## Overlapping bin centers
 sum(apply(summit_potential[c(8:10,13:14)],1,function(x) sum(x > 0)) > 0)/NUM_TE
 ```
+
+```{r Figure S4, echo=FALSE, fig.height=5}
+# Plot (x-axis in increasing order of median block size)
+a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
+  ylab("TEs in state per sample\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_fill_discrete(guide=FALSE) + coord_flip()
+
+b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
+  theme(axis.text.y = element_blank(),axis.title.y = element_blank(),axis.ticks.y = element_blank()) + 
+  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),guide=FALSE) + coord_flip()
+
+category_legend = get_legend(ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
+  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position = "bottom") + 
+  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
+  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),name="Overlap") + coord_flip())
+
+grid.arrange(a,b,category_legend,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.9,0.1),widths=c(0.55,0.45))
+```
+
+### Supplementary Figure 5
 
 '''18-state model'''
 
@@ -1789,12 +1812,12 @@ First, intersected the 200bp windows with the chromHMM annotations and converted
 # Intersect 200bp windows with chromHMM, 18-state model
 while read line; do bedtools intersect -wo -a raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - > chromHMM/genome/windows/windows_18state_$line\.bed; done < sample_lists/H3K27ac_samples.txt
 
-# Summit TEs
+# TEs overlapping the center of 200bp windows ("summit")
 while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b chromHMM/genome/windows/windows_18state_$line\.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_$line\.txt; done < sample_lists/H3K27ac_samples.txt
 for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
 for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
 
-# Majority TEs
+# TEs that do not ("majority")
 while read line; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_majority_$line\.txt; done < sample_lists/H3K27ac_samples.txt
 for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
 for file in rmsk_TEother_majority_E[0-9][0-9][0-9]; do mv $file $file\.txt; done
@@ -1858,47 +1881,22 @@ ddply(chromHMM_18state_potential,.(State),summarise,Count=sum(Count[which(Sample
 chromHMM_18state_stats
 ```
 
-Block/summit analysis and potential analysis (Fig 2A/C) using 18-state chromHMM model.  
-
-```{r Figure S4, echo=FALSE}
-# Plot (x-axis in increasing order of median block size)
-a = ggplot(test,aes(x=State,y=Ratio,fill=Category)) + geom_boxplot() + ylim(0,1) + 
-  ylab("TEs in state per sample\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed") + scale_fill_discrete(guide=FALSE) + coord_flip()
-
-b = ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
-  theme(axis.text.y = element_blank(),axis.title.y = element_blank(),axis.ticks.y = element_blank()) + 
-  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[rev(c(2,10:12,3,6:8,1,13,9,4:5,14:15))]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),guide=FALSE) + coord_flip()
-
-category_legend = get_legend(ggplot(potential_ever,aes(x=State,y=Ratio,color=Category)) + geom_point(size=4) + ylim(0,1) +
-  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),legend.position = "bottom") + 
-  ylab("TEs ever in state\n(proportion of Fig. 2a TEs)") + scale_x_discrete(limits=chromHMM_states[c(2,10:12,3,6:8,1,13,9,4:5,14:15)]) + 
-  geom_hline(yintercept = 0.82,linetype="dashed") + scale_color_discrete(labels=setNames(c("Center of chromHMM block","Center of 200bp bin"),c("Block","Summit")),name="Overlap") + coord_flip())
-
-c = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
-
-d = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
-
-grid.arrange(a,b,category_legend,c,d,nrow=3,layout_matrix=rbind(c(1,2),c(3),c(4,5)),heights=c(0.5,0.05,0.45),widths=c(0.55,0.45))
-```
-
 '''50-state models'''
 
 The Roadmap Epigenomics Project also generated independent 50-state chromHMM models for 7 reference epigenomes that were broadly profiled: E003 through E008 and E017. They are H1 and H9 cells (ESCs), H1 derived cells (ES-derived), and IMR90. Each sample had an average of 24 epigenetic marks profiled, and all available marks were included in the model for each state.
 
 Each of the files has chromosomes 1-22, X, Y, and M, and the windows do not go to the edge of the chromosome, as in the 15-state and 18-state models. I assigned TEs to chromHMM states using this model with the same annotation rules used for the 15-state model.
 
-```{bash, eval=FALSE}
-# Intersect 200bp windows with chromHMM
+```{bash 50-state chromHMM, eval=FALSE}
+# Intersect 200bp windows with 50-state chromHMM annotations
 for file in raw_data/chromHMM_50state/E0*_50_segments.bed; do bedtools intersect -wo -a $file -b features/hg19_standard.windows | awk -v OFS='\t' '{print $5, $6, $7, $4}' - | sort -k1,1 -k2,2n - >chromHMM/genome/windows/windows_50state_$(basename $file _50_segments.bed ).bed; done
 
-# Summit TEs
+# TEs overlapping the center of 200bp windows ("summit")
 for file in chromHMM/genome/windows/windows_50state_E0*.bed; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_summit.txt -b $file > /scratch/ecp/TE_landscape/state50/rmsk_TEother_summit_$(basename $file .bed).txt; done
 for file in rmsk_TEother_summit_windows_50state_E*.txt; do  awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
 for file in rmsk_TEother_summit_windows_50state_E0[0-1][3-8] ; do mv $file $file\.txt; done
 
-# Majority TEs
+# TEs that do not ("majority")
 for file in raw_data/chromHMM_50state/*bed; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b $file > /scratch/ecp/TE_landscape/state50/rmsk_TEother_majority_$(basename $file .bed).txt; done &
 for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
 for file in rmsk_TEother_majority_E[0-9][0-9][0-9]_50_segments; do mv $file $file\.txt; done
@@ -1908,11 +1906,13 @@ for sample in E003 E004 E005 E006 E007 E008 E017; do awk -v OFS='\t' -v sample=$
 for file in rmsk_TEother_50state_*.txt; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $file > $(basename $file .txt)_sorted.txt; done
 ```
 
-```{bash 50 state potential, eval=FALSE}
+Then, I found the number of TEs that are annotated with each chromHMM state per sample. 
+
+```{bash 50-state potential, eval=FALSE}
 # List of states in 50-state model
 /sample_lists/chromHMM_50state.txt
 
-# TEs in state per sample
+# Number of TEs in state per sample
 for file in rmsk_TEother_50state_E0*_sorted.txt; do awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' $file > state_sample_counts_$(basename $file _sorted.txt).txt; done
 ```
 
@@ -1928,7 +1928,7 @@ names(state_sample_50state) = gsub(".txt","",gsub("/scratch/ecp/TE_landscape/sta
 state_sample_50state = ldply(state_sample_50state)
 colnames(state_sample_50state) = c("Sample","State50","Count")
 
-# Corresponding 18-state model state
+# Corresponding 18-state model state for each 50-state model state, by sample
 state50_state18 = read.table("sample_lists/chromHMM_50state.txt",sep='\t',quote="",header=TRUE)
 state50_state18$State50 = paste("E",state50_state18$State50,sep="")
 
@@ -1936,33 +1936,66 @@ state50_state18$State50 = paste("E",state50_state18$State50,sep="")
 state_sample_50state = merge(state_sample_50state,state50_state18,by=c("Sample","State50"))
 state_sample_50state$Proportion = state_sample_50state$Count/NUM_TE
 state_sample_50state$State50 = factor(state_sample_50state$State50,levels=paste("E",seq(1,50,1),sep=""))
+```
+
+The number of TEs in an active regulatory state in each sample, based on the corresponding 18-state model state (states 1-4 and 7-11), for each sample. 
+
+```{bash 50-state active reg, eval=FALSE}
+awk '{if(($8 == "E1") || ($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31")) print $0}' rmsk_TEother_50state_E003_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E12") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E004_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37") ||($8 == "E38") ||($8 == "E39")) print $0}' rmsk_TEother_50state_E005_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}' rmsk_TEother_50state_E006_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28")) print $0}' rmsk_TEother_50state_E007_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}'  rmsk_TEother_50state_E008_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+
+awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E017_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
+```
+
+The number of TEs in an active regulatory state per sample, using the 15-state model. 
+
+```{bash active reg 15, eval=FALSE}
+for file in E*; do awk '{if(($10 == "1_TssA") || ($10 == "2_TssAFlnk") || ($10 == "3_TxFlnk") || ($10 == "6_EnhG") || ($10 == "7_Enh")) print $0}' $file | cut -f1-7 | uniq | wc -l >> count_active.txt ; done
+```
+
+```{r active reg by sample}
+# 15-state
+count_active_15 = cbind(metadata[,c("Sample","chrY")],read.table("/scratch/ecp/TE_landscape/combine_marks/true_summit/count_active.txt"))
+colnames(count_active_15)[3] = "Count"
+count_active_15$Proportion = count_active_15$Count/ifelse(count_active_15$chrY == "Yes",NUM_TE,NUM_TE_noY)
+
+summary(count_active_15$Proportion)
+summary(count_active_15[which(count_active_15$Sample %in% c("E003","E004","E005","E006","E007","E008","E017")),]$Proportion)
+
+# 50-state
+count_active_50 = cbind(c("E003","E004","E005","E006","E007","E008","E017"),read.table("/scratch/ecp/TE_landscape/state50/count_active.txt"))
+colnames(count_active_50) = c("Sample","Count")
+count_active_50$Proportion = count_active_50$Count/NUM_TE
+
+summary(count_active_50$Proportion)
+```
+
+Potential analysis (Fig 2A/C) using 18-state and 50-state chromHMM models.  
+
+```{r Figure S5, echo=FALSE}
+a = ggplot(state_sample_18state,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + theme(axis.title.y = element_text(margin = margin(r = -5))) + labs(y="Proportion of TEs in state") + ylim(0,1) + coord_flip() + geom_point(data=chromHMM_18state_stats,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.01,0.01))
+
+b = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits=rev(names(chromHMM_states_18))) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 # Plot proportion of TEs in each of the 50 states, by sample
 # Colored by the corresponding 18-state model state
-ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom_bar(stat="identity",color="black") + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + coord_flip() + facet_wrap(~Sample) + labs(x="State with 50-state model",y="Proportion of TEs in state") + scale_x_discrete(limits=rev(levels(state_sample_50state$State50)))
+c = ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom_bar(stat="identity",color="black") + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + coord_flip() + facet_wrap(~Sample) + labs(x="State with 50-state model",y="Proportion of TEs in state") + scale_x_discrete(limits=rev(levels(state_sample_50state$State50)))
+
+grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),widths=c(0.55,0.45))
 ```
 
-The number of TEs in an active regulatory state in each sample (based on the corresponding 18-state model state, states 1-4 and 7-11). 
+### Supplementary Figure 6
 
-```{bash 50-state active reg, eval=FALSE}
-awk '{if(($8 == "E1") || ($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31")) print $0}' rmsk_TEother_50state_E003_sorted.txt | cut -f1-7 | sort | uniq | wc -l 
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E12") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E004_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E11") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37") ||($8 == "E38") ||($8 == "E39")) print $0}' rmsk_TEother_50state_E005_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}' rmsk_TEother_50state_E006_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28")) print $0}' rmsk_TEother_50state_E007_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E9") ||($8 == "E10") ||($8 == "E14") ||($8 == "E15") ||($8 == "E16") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35")) print $0}'  rmsk_TEother_50state_E008_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-
-awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E017_sorted.txt | cut -f1-7 | sort | uniq | wc -l
-```
-
-### Supplementary Figure 5
-
-```{r Figure S5, echo=FALSE}
+```{r Figure S6, echo=FALSE}
 a = ggplot(combine_boxplot_class,aes(x=State,y=Proportion,fill=Class)) + geom_boxplot() + scale_fill_manual(values=class_colors,guide=FALSE) + coord_flip() + ylab("Proportion of TEs in state") + scale_x_discrete(labels=rev(all_state_labels),limits=rev(levels(combine_boxplot_class$State))) + geom_point(data=combine_stats_class,aes(x=State,y=Proportion_ever,color=Class),position=position_dodge(width=0.5)) + scale_color_manual(values=class_colors) + theme(legend.position="bottom",axis.title.y = element_text(margin = margin(r = -5)),legend.key.size = unit(1,'mm'),legend.box.margin = margin(t=-10)) + guides(color = guide_legend(nrow = 2)) 
 
 state_order = ddply(combine_stats_class,"State",summarise,CV=sd(Samples_avg_all)/mean(Samples_avg_all), Range=max(Samples_avg_all)-min(Samples_avg_all))
@@ -2005,7 +2038,7 @@ median(rmsk_TE$CpGs)
 ddply(rmsk_TE,.(class_update),summarise,Median_CpGs=median(CpGs),Median_CpGs_wCpGs=median(CpGs[which(CpGs > 0)]))
 ```
 
-### Supplementary Figure 6
+### Supplementary Figure 7
 
 Counted the number of promoters annotated with each chromHMM state in each sample (excluding promoters on contigs). 
 
@@ -2014,7 +2047,7 @@ Counted the number of promoters annotated with each chromHMM state in each sampl
 awk -v OFS='\t' '{if($1 !~ /_/) a[$5, $7]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], a[i];}}' chromHMM/refseq_promoters_unique_chromHMM_summit_sorted.txt > chromHMM/promoters_state_sample_counts_summit.txt
 ```
 
-```{r Figure S6 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
+```{r Figure S7 scripts, echo=FALSE, cache=TRUE, cache.lazy=FALSE}
 # Number of samples each promoter is in each state
 source("R_scripts/potential_promoter.R")
 
@@ -2022,7 +2055,7 @@ source("R_scripts/potential_promoter.R")
 source("R_scripts/potential_exon.R")
 ```
 
-```{r Figure S6, echo=FALSE}
+```{r Figure S7, echo=FALSE}
 # Promoters
 a = ggplot(combine_boxplot_prom,aes(x=State,y=Proportion,fill=State)) + geom_boxplot() +scale_fill_manual(values=all_state_colors[1:21],guide=FALSE) + theme(axis.title.y = element_text(margin = margin(r = -10))) + labs(y="Proportion of promoters in state") + coord_flip() + scale_x_discrete(limits=rev(states[1:21]),labels=all_state_labels[1:21]) + geom_point(data=combine_stats_prom,aes(x=State,y=Proportion_ever),color="red",size=2) + scale_y_continuous(limits=c(0,1),expand=c(0.05,0.05))
 
@@ -2141,7 +2174,7 @@ rm(exon_express)
 
 ### Cancer/IMR90 outlier analysis
 
-```{r analysis Fig S5a}
+```{r no cancer analysis}
 combine_stats_noCancer_IMR90
 
 # Average proportion of TEs in each state per sample, no IMR90
@@ -2353,7 +2386,7 @@ cor_marks_replicates$Set = factor(cor_marks_replicates$Set,levels=c("Replicate",
 
 Combined figure. 
 
-```{r Figure R1, echo=FALSE,fig.height=4}
+```{r Figure R1, echo=FALSE, fig.height=4}
 a = ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
 
 b = ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
@@ -2363,7 +2396,7 @@ c = ggplot(cor_marks_replicates[which(cor_marks_replicates$Mark %in% c("H3K4me1_
 grid.arrange(a,b,c,layout_matrix=rbind(c(1,2),c(3)))
 ```
 
-### Supplementary Figure 7 
+### Response Figure 2 
 
 Creates sets for analysis of TEs with restricted active regulatory activity versus constitutively active, non-TE bases. 
 
@@ -2501,17 +2534,17 @@ lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista
 
 VISTA with pooled states (response). Identifies the proportion of unique VISTA enhancers that are positively validated that overlap a TE within each set, regardless of state.
 
-```{r vista pooled, eval=FALSE}
+```{r vista pooled}
 source("R_scripts/vista_pooled.R")
 
 # Fisher's exact test
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")])
-fisher.test(vista_val_fraction[which(vista_val_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")])
+fisher.test(vista_val_pooled_fraction[which(vista_val_pooled_fraction$Set %in% c("restricted","shuffle_constitutive")),c("Pos","Neg")])
+fisher.test(vista_val_pooled_fraction[which(vista_val_pooled_fraction$Set %in% c("constitutive","shuffle_constitutive")),c("Pos","Neg")])
+fisher.test(vista_val_pooled_fraction[which(vista_val_pooled_fraction$Set %in% c("constitutive","restricted")),c("Pos","Neg")])
+fisher.test(vista_val_pooled_fraction[which(vista_val_pooled_fraction$Set %in% c("restricted","not_active")),c("Pos","Neg")])
 
 # Plot
-ggplot(vista_val_fraction,aes(x=1,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.title.x = element_blank()) + scale_shape_discrete(labels=orthogonal_labels)
+ggplot(vista_val_pooled_fraction,aes(x=1,y=Fraction,shape=Set)) + geom_point() + ylim(0,1) + ylab("Proportion of VISTA enhancers\npositively validated") + theme(axis.text.x = element_blank(),axis.ticks.x = element_blank(),axis.title.x = element_blank()) + scale_shape_discrete(labels=orthogonal_labels)
 ```
 
 '''HOMER'''
@@ -2860,7 +2893,7 @@ write.table(max_intra_outlier[,c(TE_coordinates,"class_update",cohorts)],file="S
 # Number of TEs per category
 table(chromHMM_TE_state$Category)/NUM_TE
 
-# Number of TEs overlapping bin summits by class
+# Number of TEs overlapping bin centers by class
 table(chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),]$class_update)
 
 ## Max states per TE
@@ -2965,12 +2998,14 @@ rm(list=c("shuffled_chromHMM_potential","shuffled_WGBS_average"))
 Created a combined matrix with multiple epigenetic marks (chromHMM, WGBS, DNase, H3K27ac, and RNA states) for each TE in each sample. First, split the matrices of TE epigenetic states by sample. Then, combined into a single combined matrix by sample. From those matrices, counted the number of TE instances with each state combination. 
 
 ```{bash compare marks, eval=FALSE}
+# Link to matrices of TE x sample x state
 ln -s /bar/epehrsson/TE_landscape/chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt .
 ln -s /bar/epehrsson/TE_landscape/WGBS/TE_WGBS_state_sorted.txt .
 ln -s /bar/epehrsson/TE_landscape/DNase/true_summit/rmsk_TEother_DNase_summit.txt .
 ln -s /bar/epehrsson/TE_landscape/H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt .
 ln -s /bar/epehrsson/TE_landscape/RNAseq/rmsk_TE_rpkm.txt .
 
+# Split each matrix by sample
 awk '{print>"chromHMM/"$8}' rmsk_TEother_chromHMM_summit_sorted.txt &
 awk '{print>"WGBS/"$8}' TE_WGBS_state_sorted.txt &
 awk '{print>"H3K27ac/"$8}' rmsk_TEother_H3K27ac_summit.txt &
@@ -3284,14 +3319,14 @@ The number of subfamily members in each chromHMM state by sample.
 awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i];}}' chromHMM/rmsk_TEother_chromHMM_summit_sorted.txt > chromHMM/subfamily/subfamily_state_sample_summit.txt
 ```
 
-Overlap of TE subfamilies with DHS peaks. From the intersection of individual TEs with DHS peaks, filtered to intersections where the TE overlaps the center of the DHS peak, counts the number of unique peaks overlapping each subfamily. 
+Overlap of TE subfamilies with DHS peaks. From the intersection of individual TEs with DHS peaks, filtered to intersections where the TE overlaps the summit of the DHS peak, counts the number of unique peaks overlapping each subfamily. 
 
 ```{bash subfamily DHS, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
 while read line; do while read line2; do awk -v sample=$line -v subfam=$line2 -v OFS='\t' '{if($4 == subfam) a[$8, $9, $10]+=1}END{print sample, subfam, length(a)}' DNase/true_summit/rmsk_TEother_$line\_DNase_summit.txt >> DNase/true_summit/subfamily_DNase_sample_summit.txt; done < sample_lists/subfamilies.txt; done < sample_lists/DNase_samples.txt
 ```
 
-Overlap of TE subfamilies with H3K27ac peaks. From the intersection of individual TEs with H3K27ac peaks, filtered to intersections where the TE overlaps the center of the H3K27ac peak, counts the number of unique peaks overlapping each subfamily. 
+Overlap of TE subfamilies with H3K27ac peaks. From the intersection of individual TEs with H3K27ac peaks, filtered to intersections where the TE overlaps the summit of the H3K27ac peak, counts the number of unique peaks overlapping each subfamily. 
 
 ```{bash subfamily H3K27ac, eval=FALSE}
 # Merged TE subfamilies (unique peaks overlapping subfamily)
@@ -3312,7 +3347,7 @@ For chromHMM, intersected the merged shuffled subfamily files with chromHMM anno
 
 For WGBS, intersected the merged shuffled subfamily files with CpG methylation levels, then counted the number of unique CpGs in each methylation state overlapping each subfamily per sample. Also found the total number of CpGs overlapping each shuffled subfamily, because it is different than for true TE subfamilies. 
 
-For DHS and H3K27ac, intersected the merged shuffled subfamily files with all peaks, then filtered to intersections where the peak center overlaps the subfamily. Counted the number of peaks overlapping the subfamily per sample. 
+For DHS and H3K27ac, intersected the merged shuffled subfamily files with all peaks, then filtered to intersections where the peak summit overlaps the subfamily. Counted the number of peaks overlapping the subfamily per sample. 
 
 ```{bash subfamily shuffle, eval=FALSE}
 # Merged each subfamily and sorted
@@ -3634,13 +3669,11 @@ colnames(great) = c("set","Term Name","Binom Rank","Binom Raw P-Value","Binom FD
 
 c = ggplot(great[which(great$set == "AmnSINE1_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE1, 7_Enh")
 
-d = ggplot(great[which(great$set == "AmnSINE2_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("AmnSINE2, DHS")
+d = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER121, 7_Enh")
 
-e = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER121, 7_Enh")
+e = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
 
-f = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
-
-grid.arrange(a,b,c,d,e,f,nrow=5,layout_matrix=rbind(c(1,2),c(3),c(4),c(5),c(6)),heights=c(0.25,0.2,0.2,0.2,0.15),widths=c(0.45,0.55))
+grid.arrange(a,b,c,d,e,nrow=4,layout_matrix=rbind(c(1,2),c(3),c(4),c(5)),widths=c(0.45,0.55))
 ```
 
 ### Subfamily enrichment correlation
@@ -3966,21 +3999,23 @@ lapply(meth_states,function(x) if(pc_table[which(pc_table$State == x),]$Enriched
 
 #### 50-state model enrichment
 
-Enrichment of TE subfamilies in epigenetic states using the separate 50-state models trained on 7 samples. Uses the same filters as for the 15-state model.
+Enrichment of TE subfamilies in epigenetic states using the separate 50-state models trained on 7 samples. 
 
 ```{bash 50-state enrichment, eval=FALSE}
-# Intersected bedfiles with merged subfamily files
+# Intersected chromHMM bedfiles with merged subfamily files
 for file in raw_data/chromHMM_50state/*.bed; do suffix=$(basename $file | cut -d '_' -f1); bedtools intersect -wo -a features/TEs/subfamily/TEother_subfamily_merge.txt -b $file | awk -v OFS='\t' -v tag=$suffix '{print $0, tag}' - > chromHMM/subfamily/50state/subfamily_state_$suffix\.bed; done
 
 # Length of overlap between chromHMM state and subfamily
 for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > chromHMM/subfamily/50state/$(basename $file .bed).txt; done
 
-# Number of TEs in each state in each sample
+# Number of TEs annotated with each state in each sample
 for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
 
-# Number of bases in each state in each sample
+# Number of genomic bp in each state in each sample
 for file in raw_data/chromHMM_50state/*.bed; do awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' $file > chromHMM/genome/state50/$(basename $file .bed)_genome.txt; done
 ```
+
+Uses the same filters as for the 15-state model.
 
 ```{r 50-state subfam enrichment}
 source("R_scripts/subfamily_enrichment_50state.R")
