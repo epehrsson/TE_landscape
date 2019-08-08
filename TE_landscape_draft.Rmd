@@ -1933,8 +1933,15 @@ For TEs in each state in 100% of samples, identifies the closest RefSeq gene. Re
 sort -k1,1 -k2,2n always_TEs_true.bed > always_TEs_true_sorted.bed
 sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt | bedtools closest -a always_TEs_true_sorted.bed -b - -D b -t all > always_TEs_true_genes.txt
 
-# TEs always overlapping a DHS peak summit that are >5kb from the nearest RefSeq gene
-awk -v FS='\t' '{if(($8 == "DNase") && ($21 > 5000)) print $0}' always_TEs_true_genes.txt | wc -l
+# TEs always overlapping a DHS peak summit that are >50kb from the nearest RefSeq gene
+## And do not overlap a GENCODE v19 comprehensive gene
+awk -v FS='\t' '{if(($8 == "DNase") && (($21 > 50000)||($21 < -50000))) print $0}' always_TEs_true_genes.txt | bedtools intersect -v -a - -b ~/genic_features/Gencode/v19/GENCODE_v19_comp_genes.bed | cut -f1-7 | sort | uniq
+
+## And do overlap a GENCODE v19 comprehensive gene
+awk -v FS='\t' '{if(($8 == "DNase") && (($21 > 50000)||($21 < -50000))) print $0}' always_TEs_true_genes.txt | bedtools intersect -wo -a - -b ~/genic_features/Gencode/v19/GENCODE_v19_comp_genes.bed | cut -f1-7 | sort | uniq
+
+# Number of TEs always overlapping a DHS peak that are intergenic
+grep "DNase" always_TEs_true.bed | bedtools intersect -v -a - -b ~/genic_features/RefSeq/refseq_genes.txt  | wc -l
 ```
 
 ### Background proportion of the genome in an active regulatory state in any Roadmap sample
@@ -2198,11 +2205,13 @@ awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5"
 awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E017_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
 ```
 
-The number of TEs in an active regulatory state per sample, using the 15-state model. 
+The number of TEs in an active regulatory state per sample, using the 15-state model. Input is the by-sample matrices produced by the Figure S10 analysis (combine marks).
 
 ```{bash active reg 15, eval=FALSE}
 for file in E*; do awk '{if(($10 == "1_TssA") || ($10 == "2_TssAFlnk") || ($10 == "3_TxFlnk") || ($10 == "6_EnhG") || ($10 == "7_Enh")) print $0}' $file | cut -f1-7 | uniq | wc -l >> count_active.txt ; done
 ```
+
+Comparison of the number of TEs in an active regulatory state per sample using the 15-state and 50-state models.
 
 ```{r active reg by sample}
 # 15-state
@@ -4159,6 +4168,11 @@ colnames(candidates_individual)[1] = "State"
 apply(candidates_all,1,function(x) write.table(rmsk_TE_measure[which(rmsk_TE_measure$subfamily == x[2] & rmsk_TE_measure[[x[1]]] == 0),c(colnames(rmsk_TE_measure)[1:4],x[1],"strand")],sep='\t',row.names=FALSE,col.names=FALSE,quote=FALSE,file=paste("enrichment/bedfiles/",x[2],"_never_",x[1],".bed",sep="")))
 
 write.table(candidates_individual,file="enrichment/enrichment_candidates_indv.txt",sep='\t',row.names = FALSE,quote = FALSE)
+
+# Write out enrichment bedfiles for updated subfamily x state combinations
+get_subfamily_enriched("MER131","DNase")
+get_subfamily_enriched("LTR22A","DNase")
+get_subfamily_enriched("LTR22A","H3K27ac")
 ```
 
 Overlap of candidates with RefSeq features.
@@ -4171,6 +4185,12 @@ candidates_features_summary = ddply(candidates_features,.(subfamily,class_update
 
 # Percent overlap of each candidate subfamily with RefSeq features (only members in state when enriched)
 write.table(candidates_features_summary,file="enrichment/candidates_features_summary.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
+Number of LTR22A elements in the state when the subfamily is enriched in overlap with DHS peaks that are intergenic. 
+
+```{bash ltr22a stats, eval=FALSE}
+bedtools intersect -v -a LTR22A_DNase_enriched.bed -b ~/genic_features/RefSeq/refseq_genes.txt | wc -l
 ```
 
 ### Supplementary Figure 15
@@ -4198,6 +4218,33 @@ source("R_scripts/subfamily_enrichment_50state.R")
 
 # Plot number of enrichments
 ggplot(subfamily_50state_sample_filter,aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,name="State (18-state model)") + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank(),legend.position="bottom",legend.key.size = unit(2,'mm'))
+```
+
+Compare enrichments with the 15-state and 50-state models.
+
+Merge the 15-state and 50-state model enrichments, LOR > 1.5 and active states only.
+
+```{r compare 50 15 state}
+subfamily_state_sample_compare = merge(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > 1.5 & subfamily_50state_sample_filter$State18 %in% names(chromHMM_states_18)[1:11]),c("subfamily","Sample","State","Members","State18")],subfamily_state_sample_filter[which(subfamily_state_sample_filter$State %in% chromHMM_states[1:7] & subfamily_state_sample_filter$Enrichment > 1.5),c("subfamily","family","class_update","Sample",sample_categories,"State","Members")],by=c("subfamily","Sample"))
+
+write.table(subfamily_state_sample_compare,file="enrichment/compare_models.txt",sep='\t',quote=FALSE,row.names=FALSE)
+```
+
+Compare MER121 x E017 enrichment in 7_Enh and 50-state enhancer states. Pulled out MER121 elements in the states (based on corresponding 18-state state for 50-state) in E017, then combined. 
+
+```{bash compare MER121 50 15, eval=FALSE}
+# MER121 E017 in enhancer states, 50-state
+awk '{if(($4 == "MER121") && (($8 == "E26") || ($8 == "E30") || ($8 == "E31") || ($8 == "E32") || ($8 == "E37"))) print $0}' rmsk_TEother_50state_E017_sorted.txt > MER121_E017_7_Enh.txt
+
+# MER121 E017 in 7_Enh, 15-state
+awk '{if($8 == "E017") print $0}' chromHMM/subfamily/by_state/MER121_7_Enh.txt
+
+# Combine
+awk '{if($8 == "E017") print $0}' chromHMM/subfamily/by_state/MER121_7_Enh.txt | bedtools intersect -wo -f 1 -r -a /scratch/ecp/TE_landscape/state50/MER121_E017_7_Enh.txt -b - > MER121_7_Enh_50state.txt
+cut -f1-11,20-21,23 MER121_7_Enh_50state.txt
+
+# Nearest gene for each TE
+bedtools closest -a <(sort -k1,1 -k2,2n MER121_7_Enh_50state.txt) -b <(sort -k1,1 -k2,2n ~/genic_features/RefSeq/refseq_genes.txt) -D b -t all | cut -f 2,36 | sort | uniq
 ```
 
 ### Supplementary Figure 16
