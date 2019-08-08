@@ -2177,6 +2177,7 @@ state50_state18$State50 = paste("E",state50_state18$State50,sep="")
 state_sample_50state = merge(state_sample_50state,state50_state18,by=c("Sample","State50"))
 state_sample_50state$Proportion = state_sample_50state$Count/NUM_TE
 state_sample_50state$State50 = factor(state_sample_50state$State50,levels=paste("E",seq(1,50,1),sep=""))
+state_sample_50state$State18 = factor(state_sample_50state$State18,levels=names(chromHMM_states_18))
 ```
 
 The number of TEs in an active regulatory state in each sample, based on the corresponding 18-state model state (states 1-4 and 7-11), for each sample. 
@@ -2229,9 +2230,9 @@ b = ggplot(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples !
 
 # Plot proportion of TEs in each of the 50 states, by sample
 # Colored by the corresponding 18-state model state
-c = ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom_bar(stat="identity",color="black") + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + coord_flip() + facet_wrap(~Sample) + labs(x="State with 50-state model",y="Proportion of TEs in state") + scale_x_discrete(limits=rev(levels(state_sample_50state$State50)))
+c = ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom_bar(stat="identity",color="black",size=0.1) + scale_fill_manual(values=chromHMM_states_18,name="State\n(18-state model)") + coord_flip() + facet_wrap(~Sample) + labs(x="State (50-state model)",y="Proportion of TEs in state") + scale_x_discrete(limits=rev(levels(state_sample_50state$State50))) + theme(axis.text.y=element_blank(),axis.ticks.y = element_blank(),legend.key.size = unit(2,'mm'))
 
-grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),widths=c(0.55,0.45))
+grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),widths=c(0.55,0.45),heights=c(0.4,0.6))
 ```
 
 ### Supplementary Figure 6
@@ -2628,13 +2629,15 @@ cor_marks_replicates$Set = factor(cor_marks_replicates$Set,levels=c("Replicate",
 Combined figure. 
 
 ```{r Figure R1, echo=FALSE}
-a = ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+a = ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(values=c("maroon4","lightseagreen"),guide=FALSE) + ylab("Fraction of TEs in both samples / either sample") + ylim(0,0.5)
 
-b = ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen")) + ylab("Fraction of TEs in both samples / either sample")
+b = ggplot(replicates_restricted_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + theme(axis.title.x=element_blank()) + scale_x_discrete(labels=c("200bp windows","TEs")) + scale_fill_manual(values=c("maroon4","lightseagreen"),guide=FALSE) + ylab("Fraction of TEs in both samples / either sample") + ylim(0,0.5)
 
-c = ggplot(cor_marks_replicates[which(cor_marks_replicates$Mark %in% c("H3K4me1_7","H3K4me3_1")),],aes(x=Sample1,y=Correlation,color=Set)) + geom_jitter(width = 0.2) + facet_wrap(~Mark) + scale_color_manual(values=c("red","blue","grey"),name="Pair type") + xlab("Sample 1")
+replicate_legend = get_legend(ggplot(replicates_count,aes(x=Feature,y=Fraction,fill=Set)) + geom_boxplot() + scale_fill_manual(labels=setNames(c("Replicates","Different tissue"),c("Replicate","Tissue")),values=c("maroon4","lightseagreen"),name="Pair type"))
 
-grid.arrange(a,b,c,layout_matrix=rbind(c(1,2),c(3)))
+c = ggplot(cor_marks_replicates[which(cor_marks_replicates$Mark %in% c("H3K4me1_7","H3K4me3_1")),],aes(x=Sample1,y=Correlation,color=Set)) + geom_jitter(width = 0.2) + facet_wrap(~Mark) + scale_color_manual(labels=setNames(c("Replicates","Different tissue","Other"),c("Replicate","Tissue","Other")),values=c("maroon4","lightseagreen","grey"),name="Pair type") + xlab("Sample 1") + ylab("Pearson correlation")
+
+grid.arrange(a,b,replicate_legend,c,layout_matrix=rbind(c(1,2,3),c(4)),widths=c(0.4,0.4,0.2))
 ```
 
 ### Response Figure 2 
@@ -2775,7 +2778,7 @@ lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista
 
 VISTA with pooled states (response). Identifies the proportion of unique VISTA enhancers that are positively validated that overlap a TE within each set, regardless of state.
 
-```{r vista pooled, fig.height=3}
+```{r vista pooled, fig.height=3, fig.width=4}
 source("R_scripts/vista_pooled.R")
 
 # Fisher's exact test
@@ -3914,7 +3917,7 @@ d = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,
 
 e = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
 
-grid.arrange(a,b,c,d,e,nrow=4,layout_matrix=rbind(c(1,2),c(3),c(4),c(5)),widths=c(0.45,0.55))
+grid.arrange(a,b,c,d,e,nrow=4,layout_matrix=rbind(c(1,2),c(3),c(4),c(5)),widths=c(0.45,0.55),heights=c(0.35,0.25,0.25,0.15))
 ```
 
 ### Subfamily enrichment correlation
@@ -4194,7 +4197,7 @@ Uses the same filters as for the 15-state model.
 source("R_scripts/subfamily_enrichment_50state.R")
 
 # Plot number of enrichments
-ggplot(subfamily_50state_sample_filter,aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,guide=FALSE) + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank())
+ggplot(subfamily_50state_sample_filter,aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,name="State (18-state model)") + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank(),legend.position="bottom",legend.key.size = unit(2,'mm'))
 ```
 
 ### Supplementary Figure 16

@@ -57,6 +57,7 @@ subfamily_50state_sample$Count = ifelse(metadata[match(subfamily_50state_sample$
 # Add corresponding 18-state model state
 subfamily_50state_sample = merge(subfamily_50state_sample,state50_state18,by.x=c("Sample","State"),by.y=c("Sample","State50"))
 subfamily_50state_sample$State = factor(subfamily_50state_sample$State,levels=unique(state50_state18$State50))
+subfamily_50state_sample$State18 = factor(subfamily_50state_sample$State18,levels=names(chromHMM_states_18))
 
 # Filter matrix
 subfamily_50state_sample_filter = subfamily_50state_sample[which(subfamily_50state_sample$Members > THRESHOLD_IJK_MEMBER &
