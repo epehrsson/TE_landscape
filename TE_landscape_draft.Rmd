@@ -2605,9 +2605,27 @@ window_replicates_restricted_count$Fraction = window_replicates_restricted_count
 chromHMM_replicates_restricted_count$Feature = rep("TE",dim(chromHMM_replicates_restricted_count)[1])
 window_replicates_restricted_count$Feature = rep("Bin",dim(window_replicates_restricted_count)[1])
 replicates_restricted_count = rbind(window_replicates_restricted_count,chromHMM_replicates_restricted_count)
+
+replicates_restricted_median = dcast(ddply(replicates_restricted_count,.(Feature,Set),summarise,Median=median(Fraction)),Feature~Set,value.var="Median")
+replicates_restricted_median$Ratio = replicates_restricted_median$Replicate/replicates_restricted_median$Tissue
+replicates_restricted_median
+
+by(replicates_restricted_count,replicates_restricted_count$Feature,function(x) wilcox.test(Fraction~Set,data=x))
+
+# Number of TEs under consideration 
+ddply(replicates_count,.(Feature,Set),function(x) sum(x[,c("1","2")]))
+ddply(replicates_restricted_count,.(Feature,Set),function(x) sum(x[,c("1","2")]))
 ```
 
 Epigenetic correlation between samples. 
+
+```{bash download correlation matrix, eval=FALSE}
+wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K4me1_7.RData
+wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K4me3_1.RData 
+wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K9me3_9.RData 
+wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K27me3_13.RData 
+wget https://egg2.wustl.edu/roadmap/data/byDataType/celltype_clustering/correlation_matrices/cor_H3K36me3_4.RData
+```
 
 ```{r replicate matrix correlation}
 # Load correlation matrices from Roadmap
@@ -2787,7 +2805,7 @@ lapply(states[c(1:3,6:7)],function(x) fisher.test(vista_val_fraction[which(vista
 
 VISTA with pooled states (response). Identifies the proportion of unique VISTA enhancers that are positively validated that overlap a TE within each set, regardless of state.
 
-```{r vista pooled, fig.height=3, fig.width=4}
+```{r Figure R3, fig.height=3, fig.width=4}
 source("R_scripts/vista_pooled.R")
 
 # Fisher's exact test
@@ -4204,7 +4222,7 @@ for file in raw_data/chromHMM_50state/*.bed; do suffix=$(basename $file | cut -d
 # Length of overlap between chromHMM state and subfamily
 for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t' '{a[$4, $8, $10]+=$9}END{for(i in a) {split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > chromHMM/subfamily/50state/$(basename $file .bed).txt; done
 
-# Number of TEs annotated with each state in each sample
+# Number of subfamily TEs annotated with each state in each sample
 for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
 
 # Number of genomic bp in each state in each sample
