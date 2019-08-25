@@ -1,9 +1,15 @@
-# Create matrix of TEs with age, mappability, and feature overlaps
+# Creates a matrix of individual hg19 TEs ("rmsk_TE")
+# Where rows are TEs (n=4,430,788) and columns are TE characteristics such as age, mappability, and feature overlap
 
-# RepeatMasker file restricted to TEs
+# Load RepeatMasker file, restricted to TEs
+# Columns are TE chromosome, start, stop and strand, plus subfamily, family, and class
 rmsk_TE = read.table(file="features/TEs/rmsk_TEother.txt",sep='\t')
 colnames(rmsk_TE) = TE_coordinates[c(1:4,6,5,7)]
+
+# Add length of TE
 rmsk_TE$Length = rmsk_TE$stop-rmsk_TE$start
+
+# Update class assignment
 rmsk_TE$class_update = convert_class(rmsk_TE$class)
 
 # Add mappability per TE
@@ -12,7 +18,7 @@ colnames(rmsk_TE_map36) = c("chromosome","start","stop","subfamily","mappability
 rmsk_TE = merge(rmsk_TE,rmsk_TE_map36,by=c("chromosome","start","stop","subfamily"))
 rm(rmsk_TE_map36)
 
-# Add age (JC evolutionary distance) per TE
+# Add age (Jukes-Cantor evolutionary distance) per TE
 rmsk_TE_age = rbind(read.table("age/rmsk_TE_JCage.txt",sep='\t'),rmsk_other_age = read.table("age/rmsk_other_JCage.txt",sep='\t'))
 colnames(rmsk_TE_age) = c("chromosome","start","stop","subfamily","family","class","strand","substitutions","JC_distance")
 rmsk_TE = merge(rmsk_TE,rmsk_TE_age,by=TE_coordinates)
@@ -29,7 +35,7 @@ rm(TE_CpG_count)
 # Add CpG density
 rmsk_TE$CpGs_per_length = rmsk_TE$CpGs/rmsk_TE$Length
 
-# Overlap between TEs and Refseq features
+# Add length of overlap between TEs and RefSeq gene features
 feature_files = list.files(path="features/intersect_features/",pattern="rmsk_TEother_",full.names=TRUE)
 features = lapply(feature_files,function(x) read.table(x,sep='\t'))
 features = lapply(features, setNames, nm =TE_coordinates[c(1:4,6,5,7)])
@@ -40,23 +46,25 @@ feature_files = gsub(".txt","",feature_files)
 for (i in 1:length(feature_files)){
   colnames(features[[i]])[8] = feature_files[i]
 }
+## Combine matrices
 features_merge = reshape::merge_recurse(features,by=TE_coordinates,all.x=TRUE)
 
-# Convert to matrix
+## Add to TE matrix
 rmsk_TE = merge(rmsk_TE,features_merge,by=TE_coordinates,all.x=TRUE)
 rm(list=c("feature_files","features","features_merge"))
 
-# Add TEs overlapping the hg19 blacklist
+# Add length of overlap with hg19 blacklist
 TE_blacklist = read.table("features/intersect_features/TE_blacklist.bed",sep='\t')
 colnames(TE_blacklist) = c(TE_coordinates[c(1:4,6,5,7)],"chromosome_blacklist","start_blacklist","stop_blacklist","blacklist")
 TE_blacklist = aggregate(data=TE_blacklist,blacklist~chromosome+start+stop+subfamily+class+family+strand,sum)
 rmsk_TE = merge(rmsk_TE,TE_blacklist,by=TE_coordinates,all.x=TRUE)
 rm(TE_blacklist)
 
-# Add TEs overlapping VISTA enhancers
+# Add overlap with VISTA enhancers
 vista_TE = read.table("features/intersect_features/vista_enhancers_TE.txt",sep='\t')
 colnames(vista_TE) = c(TE_coordinates[c(1:4,6,5,7)],"Vista_enhancers")
 rmsk_TE = merge(rmsk_TE,vista_TE,by=TE_coordinates,all.x=TRUE)
 rm(vista_TE)
 
+# Save dataframe
 save(rmsk_TE,file="R_datasets/rmsk_TE.RData")

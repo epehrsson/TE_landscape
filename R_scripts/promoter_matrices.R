@@ -1,5 +1,9 @@
 # Loads data frames of promoter x number of samples in each state
 # For chromHMM state, average methylation, and overlap with DHS and H3K27ac peaks
+## chromHMM_promoter_state: promoters, chromHMM state
+## promoter_meth_average: promoters, average methylation level/WGBS state
+## promoter_DNase_peaks: promoters, DHS peak overlap
+## promoter_H3K27ac_peaks: promoters, H3K27ac peak overlap
 
 # Data frame of unique promoter locations, standard chromosomes only
 refseq_promoters = read.table("~/genic_features/RefSeq/refseq_promoters_unique_std.txt",sep='\t',col.names=c("chromosome","start","stop","strand"))

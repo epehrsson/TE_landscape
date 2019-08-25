@@ -1,4 +1,4 @@
-# Loads data frames of shuffled TE x sample DHS peak overlap, for all 53 samples with DHS data
+# Loads data frames of shuffled TE x sample DHS peak overlap, for all 53 samples with DHS data ("shuffled_DNase_potential")
 # For 10 iterations of shuffled TEs
 
 # Load data frames listing shuffled TE, sample, and number of overlapping peaks

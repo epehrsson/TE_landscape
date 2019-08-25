@@ -1,7 +1,8 @@
-# Overlap with features (bp)
-# See 8/24/2016, 8/25/2016, 9/28/2016, 2/6/2017, 2/9/2017, 6/15/2017
+# From the matrix of RefSeq feature lengths and lengths of overlap with TEs,
+# calculates the proportion of the genome within each feature, 
+# the proportion of TE length overlapping each feature (same and either strand), and
+# the proportion of each feature overlapping TEs
 
-# Proportion of genome, TEs overlapping each RefSeq feature and vice-versa
 feature_overlap$Genome_percent_genome = feature_overlap$Genome/GENOME_WIDTH
 feature_overlap$TEs_percent_TE = feature_overlap$TEs/MERGED_TE_WIDTH
 feature_overlap$TEs_strand_percent_TE = feature_overlap$TEs_strand/MERGED_TE_WIDTH

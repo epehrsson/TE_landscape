@@ -1,4 +1,4 @@
-# Loads data frames of shuffled TE x sample H3K27ac peak overlap, for all 98 samples with H3K27ac data
+# Loads data frames of shuffled TE x sample H3K27ac peak overlap, for all 98 samples with H3K27ac data ("shuffled_H3K27ac_potential")
 # For 10 iterations of shuffled TEs
 
 # Load data frames listing shuffled TE, sample, and number of overlapping peaks

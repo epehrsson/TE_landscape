@@ -1,10 +1,13 @@
-# Load shuffled TE matrices
+# Creates matrices of shuffled hg19 TEs, for 10 iterations of shuffling ("rmsk_TE_shuffled")
+# Where row is TE and column is TE location, phylogeny, and overlap with genic features
+
+# Load matrices of shuffled TEs
 
 print("Loading shuffled matrices")
 rmsk_TE_shuffled = lapply(seq(1,10,1),function(x) read.table(paste("features/shuffled_TEs/rmsk_TE_shuffle_",x,".txt",sep=""),sep='\t',
                                                              col.names=TE_coordinates[c(1:4,6,5,7)]))
 
-# Add shuffled TE features
+# Add length of overlap with RefSeq genic features
 print("Adding features")
 
 for (i in 1:10){
@@ -20,13 +23,16 @@ for (i in 1:10){
     colnames(features[[j]])[8] = feature_files[j]
   }
   
+  # Combine matrices
   print("Merging features")
   features_merge = reshape::merge_recurse(features,by=TE_coordinates,all.x=TRUE)
   
+  # Add to TEs
   print("Adding feature overlap")
   rmsk_TE_shuffled[[i]] = merge(rmsk_TE_shuffled[[i]],features_merge,by=TE_coordinates,all.x=TRUE)
   
   rm(list=c("feature_files","features","features_merge"))
 }
 
+# Save list of dataframes
 save(rmsk_TE_shuffled,file="R_datasets/shuffled_TEs.RData")

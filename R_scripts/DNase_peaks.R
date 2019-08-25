@@ -1,4 +1,4 @@
-# Loads a data frame of TE x sample DHS peak overlap, for all 53 samples with DHS data
+# Loads a data frame of TE x sample DHS peak overlap, for all 53 samples with DHS data ("TE_DNase_peaks")
 
 # Load data frame listing TE, sample, and number of overlapping peaks
 # Restricted to peaks where the summit overlaps the TE

@@ -1,4 +1,4 @@
-# Loads a data frame of TE x sample H3K27ac peak overlap, for all 98 samples with H3K27ac data
+# Loads a data frame of TE x sample H3K27ac peak overlap, for all 98 samples with H3K27ac data ("TE_H3K27ac_peaks")
 
 # Load data frame listing TE, sample, and number of overlapping peaks
 # Restricted to peaks where the summit overlaps the TE
