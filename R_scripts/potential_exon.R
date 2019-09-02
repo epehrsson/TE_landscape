@@ -25,6 +25,5 @@ RNA_exon_sample$Sample = rownames(RNA_exon_sample)
 RNA_exon_sample$State = rep("Expressed_samples",sample_counts["All","RNA"])
 
 # Number of exons expressed RPKM > 1 in each number/proportion of samples
-RNA_potential_exon = melt(RNA_potential_exon,id.var="Samples")
-colnames(RNA_potential_exon) = c("Samples","State","Count")
+RNA_potential_exon = melt(RNA_potential_exon,id.var="Samples",variable.name="State",value.name="Count")
 RNA_potential_exon$Sample.Proportion = RNA_potential_exon$Samples/(length(RNA_potential_exon$Samples)-1)

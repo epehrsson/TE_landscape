@@ -20,8 +20,7 @@ rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_length,by="subfamily")
 rm(subfamily_length)
 
 # Total number of CpGs per subfamily
-TE_subfamily_CpG_count = read.table("WGBS/subfamily/TE_CpG_subfamily.txt",sep='\t')
-colnames(TE_subfamily_CpG_count) = c("subfamily","CpGs")
+TE_subfamily_CpG_count = read.table("WGBS/subfamily/TE_CpG_subfamily.txt",sep='\t',col.names=c("subfamily","CpGs"))
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,TE_subfamily_CpG_count,by="subfamily",all.x=TRUE)
 rmsk_TE_subfamily[which(is.na(rmsk_TE_subfamily$CpGs)),]$CpGs = 0
 rmsk_TE_subfamily$CpGs = rmsk_TE_subfamily$CpGs/2
@@ -32,8 +31,7 @@ rmsk_TE_subfamily$CpGs_per_TE = rmsk_TE_subfamily$CpGs/rmsk_TE_subfamily$Count
 rmsk_TE_subfamily$CpGs_per_kbp = rmsk_TE_subfamily$CpGs/(rmsk_TE_subfamily$Total_length/1000)
 
 # Number of TEs with CpGs
-TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
-colnames(TE_CpG_count) = c(TE_coordinates[c(1:4,6,5,7)],"CpGs")
+TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"CpGs"))
 subfamily_wCpG_count = aggregate(data=TE_CpG_count,CpGs~subfamily,length)
 colnames(subfamily_wCpG_count)[2] = "Count_CpGs"
 rmsk_TE_subfamily = merge(rmsk_TE_subfamily,subfamily_wCpG_count,by="subfamily",all.x=TRUE)

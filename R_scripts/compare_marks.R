@@ -53,8 +53,7 @@ RNA_norm = aggregate(data=compare_marks_unique,TE_sample~RNA,function(x) sum(x))
 # normalizes by the number of unique TE x sample instances in the non-chromHMM state
 
 ## chromHMM
-by_chromHMM = melt(compare_marks_all,id.vars=c("chromHMM","TE_sample"))
-colnames(by_chromHMM)[3:4] = c("Mark","State")
+by_chromHMM = melt(compare_marks_all,id.vars=c("chromHMM","TE_sample"),variable.name="Mark",value.name="State")
 by_chromHMM = ddply(na.omit(by_chromHMM),.(chromHMM,Mark,State),summarise,TE_sample=sum(TE_sample))
 by_chromHMM = ddply(by_chromHMM,.(chromHMM,Mark),transform,Proportion=TE_sample/sum(TE_sample))
 by_chromHMM$State = factor(by_chromHMM$State,levels=c(chromHMM_states,meth_states,"True","False"))

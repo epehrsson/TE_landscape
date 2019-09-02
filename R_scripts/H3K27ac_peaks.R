@@ -4,8 +4,8 @@
 # Restricted to peaks where the summit overlaps the TE
 print("Load H3K27ac")
 
-TE_H3K27ac_peaks = read.table(file="H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt",sep='\t')
-colnames(TE_H3K27ac_peaks) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks")
+TE_H3K27ac_peaks = read.table(file="H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit.txt",sep='\t',
+                              col.names=c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks"))
 
 # Reformat data frame (rows: TEs, columns: samples, values: number of overlapping peaks)
 # Replacing missing values with 0

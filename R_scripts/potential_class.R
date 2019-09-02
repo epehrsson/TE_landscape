@@ -21,8 +21,7 @@ chromHMM_TE_state_class_stats$class_update = factor(chromHMM_TE_state_class_stat
 chromHMM_TE_state_class_stats[,2:4] = apply(chromHMM_TE_state_class_stats[,2:4],2,function(x) as.numeric(x))
 
 # Number/proportion of TEs in each chromHMM state by class by sample
-class_state_sample = read.table("chromHMM/class_state_sample_summit.txt",sep='\t')
-colnames(class_state_sample) = c("Class","Sample","State","Count")
+class_state_sample = read.table("chromHMM/class_state_sample_summit.txt",sep='\t',col.names=c("Class","Sample","State","Count"))
 
 ## Including missing combinations
 class_state_sample = merge(class_state_sample,expand.grid(Class = levels(class_state_sample$Class),Sample = levels(class_state_sample$Sample),State = levels(class_state_sample$State)),by=c("Class","State","Sample"),all.y=TRUE)
@@ -45,8 +44,8 @@ TE_meth_average_class_stats$class_update = factor(TE_meth_average_class_stats$cl
 TE_meth_average_class_stats[,2:4] = apply(TE_meth_average_class_stats[,2:4],2,function(x) as.numeric(x))
 
 # Number/proportion of TEs in each methylation state by class by sample
-TE_meth_average_state_class = melt(TE_meth_average[,c(1:44,54)],id.vars=c(TE_coordinates,"class_update"))
-colnames(TE_meth_average_state_class)[9:10] = c("Sample","Methylation")
+TE_meth_average_state_class = melt(TE_meth_average[,c(1:44,54)],id.vars=c(TE_coordinates,"class_update"),
+                                   variable.name="Sample",value.name="Methylation")
 WGBS_sample_state_class = ddply(TE_meth_average_state_class,.(class_update,Sample),summarise,
                                 Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
                                 Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))

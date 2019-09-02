@@ -5,8 +5,8 @@
 
 # Load dataframe of the average level of each epigenetic mark over each 50bp bin, 
 # By chromHMM state (all instances of a TE in that state)
-histones = read.table("compare_marks/profile_histone/rmsk_TEother_average.txt",sep='\t')
-colnames(histones) = c("Bin","Level","Bases","Mark","State")
+histones = read.table("compare_marks/profile_histone/rmsk_TEother_average.txt",sep='\t',
+                      col.names=c("Bin","Level","Bases","Mark","State"))
 histones$Mark = factor(histones$Mark,levels=levels(histones$Mark)[c(5:6,8,3:4,7,2,1,9)])
 histones$State = gsub("8_ZNF.Rpts","8_ZNF/Rpts",histones$State)
 histones$State = factor(histones$State,levels=chromHMM_states[c(1:4,6:13)])

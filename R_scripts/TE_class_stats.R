@@ -18,8 +18,7 @@ rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE[which(rmsk_TE$chromosome != "c
 rmsk_TE_class = merge(rmsk_TE_class,ddply(rmsk_TE,~class_update,function(y) apply(y[,15:35],2,function(x) length(na.omit(x))/length(x))),by="class_update")
 
 # Total number of CpGs per class
-TE_class_CpG_count = read.table("WGBS/class/TE_CpG_class.txt",sep='\t',row.names=1)
-colnames(TE_class_CpG_count) = c("CpGs")
+TE_class_CpG_count = read.table("WGBS/class/TE_CpG_class.txt",sep='\t',row.names=1,col.names=c("CpGs"))
 rownames(TE_class_CpG_count)[c(12,14)] = c("SVA","Other")
 rmsk_TE_class$CpGs = TE_class_CpG_count[as.vector(rmsk_TE_class$class_update),]/2
 rm(TE_class_CpG_count)
@@ -29,8 +28,7 @@ rmsk_TE_class$Percent_TE_CpGs = rmsk_TE_class$CpGs/TE_CPGS
 rmsk_TE_class$Percent_all_CpGs = rmsk_TE_class$CpGs/ALL_CPGS
 
 # Number of TEs with CpGs
-TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
-colnames(TE_CpG_count) = c(TE_coordinates[c(1:4,6,5,7)],"CpGs")
+TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"CpGs"))
 test = table(TE_CpG_count$class)
 names(test)[7] = "SVA"
 test[13] = sum(test[c(2,4,6,8,10:12)])

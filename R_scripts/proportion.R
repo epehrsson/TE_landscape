@@ -32,8 +32,7 @@ mnemonics_states_TE$Cohort = rep("TE",dim(mnemonics_states_TE)[1])
 
 # RefSeq genic features
 # Number of bases annotated with each state in each sample within genic features
-mnemonics_states_features = read.table("chromHMM/chromHMM_refseq_features.txt",sep='\t')
-colnames(mnemonics_states_features) = c("Sample","Cohort","State","Bases")
+mnemonics_states_features = read.table("chromHMM/chromHMM_refseq_features.txt",sep='\t',col.names=c("Sample","Cohort","State","Bases"))
 mnemonics_states_features$Cohort = gsub("refseq_","",mnemonics_states_features$Cohort)
 
 # Include all sample x feature x state combinations
@@ -67,8 +66,7 @@ TE_CpG_meth[is.na(TE_CpG_meth)] = 0
 
 # RefSeq genic features
 # Number of CpGs overlapping each RefSeq feature in each methylation state per sample
-feature_CpG_meth = read.table("WGBS/feature_CpG_Meth_states.txt",sep="\t")
-colnames(feature_CpG_meth) = c("State","Cohort","Sample","CpGs")
+feature_CpG_meth = read.table("WGBS/feature_CpG_Meth_states.txt",sep="\t",col.names=c("State","Cohort","Sample","CpGs"))
 feature_CpG_meth$Sample = mapvalues(feature_CpG_meth$Sample,from = seq(5,41,1), to = as.vector(metadata[which(!is.na(metadata$WGBS)),]$Sample))
 feature_CpG_meth$Cohort = gsub("refseq_", "", feature_CpG_meth$Cohort)
 
@@ -93,17 +91,14 @@ WGBS_state_proportion = ddply(WGBS_state_proportion,.(Sample,Cohort),transform,T
 # Genome/TEs
 # Number and total width of DHS peaks per sample, overall and overlapping TEs
 # Plus number of peaks whose summit overlaps a TE per sample
-DNase_stats = read.table("DNase/DNase_stats.txt",sep='\t')
-colnames(DNase_stats) = c("Peaks","Sample","Total_width","Peaks_in_TE")
-test = read.table("DNase/rmsk_TEother_merge_DNase_contribution.txt",sep='\t')
-colnames(test) = c("Sample","Total_width_in_TE")
+DNase_stats = read.table("DNase/DNase_stats.txt",sep='\t',col.names=c("Peaks","Sample","Total_width","Peaks_in_TE"))
+test = read.table("DNase/rmsk_TEother_merge_DNase_contribution.txt",sep='\t',col.names=c("Sample","Total_width_in_TE"))
 DNase_stats = merge(DNase_stats,test,by=c("Sample"))[,c(1:2,4,3,5)]
 DNase_stats$Summit_in_TE = read.table("DNase/true_summit/rmsk_TEother_DNase_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of overlap between DHS peaks and each RefSeq genic feature, by sample
-DNase_features = read.table("DNase/refseq_features_DNase.txt",sep='\t')
-colnames(DNase_features) = c("Sample","Cohort","Bases")
+DNase_features = read.table("DNase/refseq_features_DNase.txt",sep='\t',col.names=c("Sample","Cohort","Bases"))
 DNase_features$Cohort = gsub("refseq_", "", DNase_features$Cohort)
 
 # Add the total width of the feature in that sample
@@ -112,8 +107,8 @@ DNase_features$Total = apply(DNase_features,1,function(x) ifelse(x[1] %in% as.ve
                                                                  feature_overlap[which(feature_overlap$Cohort == x[2]),]$Genome_noY))
 
 # Combine into one dataframe
-DNase_stats_long = melt(DNase_stats[,c("Sample","Total_width","Total_width_in_TE")],id.var=("Sample"))
-colnames(DNase_stats_long)[2:3] = c("Cohort","Bases")
+DNase_stats_long = melt(DNase_stats[,c("Sample","Total_width","Total_width_in_TE")],
+                        id.var=("Sample"),variable.name="Cohort",value.name="Bases")
 
 ## Add the total width of the genome/all TEs in that sample
 DNase_stats_long$Total = ifelse(DNase_stats_long$Cohort == "Total_width",
@@ -129,15 +124,13 @@ DNase_stats_long$State = rep("DNase",dim(DNase_stats_long)[1])
 # Number and total width of H3K27ac peaks per sample, overall and overlapping TEs
 # Plus number of peaks whose summit overlaps a TE per sample
 H3K27ac_stats = read.table("H3K27ac/H3K27ac_stats.txt",sep='\t',header=TRUE)
-test = read.table("H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt",sep='\t')
-colnames(test) = c("Sample","Total_width_in_TE")
+test = read.table("H3K27ac/rmsk_TEother_merge_H3K27ac_contribution.txt",sep='\t',col.names=c("Sample","Total_width_in_TE"))
 H3K27ac_stats = merge(H3K27ac_stats,test,by=c("Sample"))
 H3K27ac_stats$Summit_in_TE = read.table("H3K27ac/true_summit/rmsk_TEother_H3K27ac_summit_stats.txt",sep='\t')$V1
 rm(test)
 
 # Number of bases of overlap between H3K27ac peaks and each RefSeq genic feature, by sample
-H3K27ac_features = read.table("H3K27ac/refseq_features_H3K27ac.txt",sep='\t')
-colnames(H3K27ac_features) = c("Sample","Cohort","Bases")
+H3K27ac_features = read.table("H3K27ac/refseq_features_H3K27ac.txt",sep='\t',col.names=c("Sample","Cohort","Bases"))
 H3K27ac_features$Cohort = gsub("refseq_", "", H3K27ac_features$Cohort)
 
 # Add the total width of the feature in that sample
@@ -146,8 +139,8 @@ H3K27ac_features$Total = apply(H3K27ac_features,1,function(x) ifelse(x[1] %in% a
                                                                      feature_overlap[which(feature_overlap$Cohort == x[2]),]$Genome_noY))
 
 # Combine into one dataframe
-H3K27ac_stats_long = melt(H3K27ac_stats[,c("Sample","Total_width","Total_width_in_TE")],id.var=("Sample"))
-colnames(H3K27ac_stats_long)[2:3] = c("Cohort","Bases")
+H3K27ac_stats_long = melt(H3K27ac_stats[,c("Sample","Total_width","Total_width_in_TE")],
+                          id.var=("Sample"),variable.name="Cohort",value.name="Bases")
 
 ## Add the total width of the genome/all TEs in that sample
 H3K27ac_stats_long$Total = ifelse(H3K27ac_stats_long$Cohort == "Total_width",

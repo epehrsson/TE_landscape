@@ -12,8 +12,7 @@ metadata = merge(metadata,EID_add,by=c("Sample"))
 rm(EID_add)
 
 # Add Germlayer
-EID_germ = read.table("metadata/EID_germ.txt",sep='\t')
-colnames(EID_germ) = c("Sample","Germline")
+EID_germ = read.table("metadata/EID_germ.txt",sep='\t',col.names=c("Sample","Germline"))
 metadata = merge(metadata,EID_germ,by=c("Sample"))
 rm(EID_germ)
 

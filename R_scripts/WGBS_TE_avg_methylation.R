@@ -5,8 +5,7 @@
 TE_meth_average = read.table("WGBS/TE_CpG_Meth_new_average.txt",sep='\t',header=TRUE)
 
 # Load number of CpGs per TE
-TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t')
-colnames(TE_CpG_count) = c(TE_coordinates[c(1:4,6,5,7)],"CpGs")
+TE_CpG_count = read.table("WGBS/TE_CpG_count.txt",sep='\t',col.names=c(TE_coordinates[c(1:4,6,5,7)],"CpGs"))
 TE_CpG_count$CpGs = TE_CpG_count$CpGs/2
 
 # Remove TEs that do not overlap any CpG

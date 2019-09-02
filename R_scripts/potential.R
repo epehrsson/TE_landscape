@@ -2,7 +2,7 @@
 # As well as the number of TEs in each state in at least one sample
 
 ## chromHMM_TE_state_dist: Number of TEs in each chromHMM state for each number of samples
-## chromHMM_TE_state_dist_stats: Proportion of TEs ever in each state and mean/SE proportion of samples in state
+## chromHMM_TE_state_dist_stats: Proportion of TEs ever in each chromHMM state and mean/SE proportion of samples in state
 ## state_sample_count: Number/proportion of TEs in each chromHMM state by sample
 ## TE_meth_average_category: Number of TEs in each methylation state for each number of samples
 ## combine_boxplot: TEs in each state per sample, all samples
@@ -31,8 +31,7 @@ chromHMM_TE_state_dist_noCancer_stats = potential_stats(chromHMM_TE_state_dist_n
 chromHMM_TE_state_dist_noCancer_stats$State = factor(chromHMM_states,levels=chromHMM_states)
 
 # Number/proportion of TEs in each chromHMM state by sample
-state_sample_count = read.table("chromHMM/state_sample_counts_summit.txt",sep='\t')
-colnames(state_sample_count) = c("Sample","State","Count")
+state_sample_count = read.table("chromHMM/state_sample_counts_summit.txt",sep='\t',col.names=c("Sample","State","Count"))
 state_sample_count[1905,] = c("E002","3_TxFlnk",0)
 state_sample_count$Count = as.numeric(state_sample_count$Count)
 state_sample_count$Proportion = ifelse(metadata[match(state_sample_count$Sample,metadata$Sample),]$chrY == "Yes",state_sample_count$Count/NUM_TE,state_sample_count$Count/NUM_TE_noY)
@@ -58,13 +57,11 @@ TE_meth_average_noIMR90_category_stats = potential_stats(TE_meth_average_noIMR90
 TE_meth_average_noIMR90_category_stats$State = factor(rownames(TE_meth_average_noIMR90_category_stats),levels=meth_states)
 
 # Number/proportion of TEs in each methylation state by sample
-WGBS_sample_state = melt(TE_meth_average[,8:44])
-colnames(WGBS_sample_state) = c("Sample","Methylation")
+WGBS_sample_state = melt(TE_meth_average[,8:44],variable.name="Sample",value.name="Methylation")
 WGBS_sample_state = ddply(WGBS_sample_state,.(Sample),summarise,
                                 Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
                                 Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))
-WGBS_sample_state = melt(WGBS_sample_state,id.vars="Sample")
-colnames(WGBS_sample_state) = c("Sample","State","Count")
+WGBS_sample_state = melt(WGBS_sample_state,id.vars="Sample",variable.name="State",value.name="Count")
 WGBS_sample_state$Proportion = WGBS_sample_state$Count/NUM_TE_WGBS
 
 # DHS potential

@@ -9,8 +9,8 @@
 
 # chromHMM
 # Number of bases annotated with each state in each sample per class
-class_chromHMM = read.table("chromHMM/class/class_state_sample.txt",sep='\t')
-colnames(class_chromHMM) = c("class","State","Sample","Bases_state_class")
+class_chromHMM = read.table("chromHMM/class/class_state_sample.txt",sep='\t',
+                            col.names=c("class","State","Sample","Bases_state_class"))
 
 ## Update class assignments
 class_chromHMM$class = convert_class(class_chromHMM$class)
@@ -59,13 +59,11 @@ class_CpG_meth$class = convert_class(class_CpG_meth$class)
 # Proportion of CpGs within each class in each state, across all samples
 class_CpG_meth_total = aggregate(data=class_CpG_meth[,2:6],.~class,sum)
 class_CpG_meth_total[,2:5] = class_CpG_meth_total[,2:5]/(rmsk_TE_class[match(class_CpG_meth_total$class,rmsk_TE_class$class_update),]$CpGs*sample_counts["All","WGBS"])
-class_CpG_meth_total = melt(class_CpG_meth_total,id.vars="class")
-colnames(class_CpG_meth_total) = c("class","State","Proportion")
+class_CpG_meth_total = melt(class_CpG_meth_total,id.vars="class",variable.name="State",value.name="Proportion")
 
 # Add total CpGs per class per sample
 class_CpG_meth$CpGs_class = rowSums(class_CpG_meth[,3:6])
-class_CpG_meth = melt(class_CpG_meth,id.vars=c("class","Sample","CpGs_class"))
-colnames(class_CpG_meth)[4:5] = c("State","CpGs_state_class")
+class_CpG_meth = melt(class_CpG_meth,id.vars=c("class","Sample","CpGs_class"),variable.name="State",value.name="CpGs_state_class")
 class_CpG_meth$State = factor(class_CpG_meth$State,meth_states)
 
 # Proportion of CpGs within each class in each state, by sample
@@ -85,8 +83,7 @@ class_CpG_meth$Enrichment = log2((class_CpG_meth$CpGs_state_class/class_CpG_meth
 
 # DHS
 # Length of overlap with DHS peaks for each class per sample
-TE_DNase_class = read.table("DNase/class_DNase_sample.txt",sep='\t')
-colnames(TE_DNase_class) = c("class","Sample","Bases_state_class")
+TE_DNase_class = read.table("DNase/class_DNase_sample.txt",sep='\t',col.names=c("class","Sample","Bases_state_class"))
 TE_DNase_class = TE_DNase_class[which(TE_DNase_class$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
 TE_DNase_class$class = convert_class(TE_DNase_class$class)
 TE_DNase_class$State = rep("DNase",dim(TE_DNase_class)[1])
@@ -119,8 +116,7 @@ TE_DNase_class_total$State = rep("DNase",6)
 
 # H3K27ac
 # Length of overlap with H3K27ac peaks for each class per sample
-TE_H3K27ac_class = read.table("H3K27ac/class_H3K27ac_sample.txt",sep='\t')
-colnames(TE_H3K27ac_class) = c("class","Sample","Bases_state_class")
+TE_H3K27ac_class = read.table("H3K27ac/class_H3K27ac_sample.txt",sep='\t',col.names=c("class","Sample","Bases_state_class"))
 TE_H3K27ac_class = TE_H3K27ac_class[which(TE_H3K27ac_class$class %in% c("DNA","LINE","LTR","SINE","Other","Unconfident_RC")),]
 TE_H3K27ac_class$class = convert_class(TE_H3K27ac_class$class)
 TE_H3K27ac_class$State = rep("H3K27ac",dim(TE_H3K27ac_class)[1])

@@ -17,8 +17,8 @@ print("Loaded metadata")
 
 # Average expression per TE
 ## Load RNA-seq read coverage per TE
-RNA_TE = read.table("RNAseq/rmsk_TEother_average.txt",sep='\t')
-colnames(RNA_TE) = c("chromosome","start","stop","subfamily","class","family","strand",as.vector(read.table("sample_lists/RNA_samples_agnostic.txt")$V1))
+RNA_TE = read.table("RNAseq/rmsk_TEother_average.txt",sep='\t',
+                    col.names=c("chromosome","start","stop","subfamily","class","family","strand",as.vector(read.table("sample_lists/RNA_samples_agnostic.txt")$V1)))
 
 ## Convert to RPKM
 RNA_TE[,8:63] = t(t(RNA_TE[,8:63])*RNA_samples[match(colnames(RNA_TE[,8:63]),RNA_samples$Sample),]$Factor)
@@ -46,8 +46,8 @@ print("Wrote matrix")
 
 # Average expression per RefSeq exon
 ## Load RNA-seq read coverage per exon
-RNA_refseq_exon = read.table("RNAseq/refseq_exons_average.txt",sep='\t')
-colnames(RNA_refseq_exon) = c("chromosome","start","stop","strand",as.vector(read.table("sample_lists/RNA_samples_agnostic.txt")$V1))
+RNA_refseq_exon = read.table("RNAseq/refseq_exons_average.txt",sep='\t',
+                             col.names=c("chromosome","start","stop","strand",as.vector(read.table("sample_lists/RNA_samples_agnostic.txt")$V1)))
 
 ## Convert to RPKM
 RNA_refseq_exon[,5:60] = t(t(RNA_refseq_exon[,5:60])*RNA_samples[match(colnames(RNA_refseq_exon[,5:60]),RNA_samples$Sample),]$Factor)

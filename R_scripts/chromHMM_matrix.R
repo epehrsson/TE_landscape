@@ -17,8 +17,8 @@ chromHMM_TE_state$Tissues = apply(chromHMM_TE_state[,8:22],1,sum)
 # Add maximum number of states annotating each TE in a single sample
 print("Add max intra")
 
-chromHMM_max_intra = read.table("chromHMM/rmsk_TEother_chromHMM_summit_max.txt",sep='\t')
-colnames(chromHMM_max_intra) = c(TE_coordinates[c(1:4,6,5,7)],"Max_states_intra")
+chromHMM_max_intra = read.table("chromHMM/rmsk_TEother_chromHMM_summit_max.txt",sep='\t',
+                                col.names=c(TE_coordinates[c(1:4,6,5,7)],"Max_states_intra"))
 chromHMM_TE_state = merge(chromHMM_TE_state,chromHMM_max_intra,by=TE_coordinates,all.x=TRUE)
 chromHMM_TE_state[is.na(chromHMM_TE_state)] = 0
 rm(chromHMM_max_intra)
@@ -31,8 +31,7 @@ chromHMM_TE_state$class_update = convert_class(chromHMM_TE_state$class)
 # Add column indicating whether the TE overlaps the center of a 200bp window
 print("Summit assignments")
 
-summit = read.table("features/TEs/rmsk_TEother_summit.txt",sep='\t')
-colnames(summit) = TE_coordinates[c(1:4,6,5,7)]
+summit = read.table("features/TEs/rmsk_TEother_summit.txt",sep='\t',col.names=TE_coordinates[c(1:4,6,5,7)])
 summit$Category = rep("summit",dim(summit)[1])
 chromHMM_TE_state = merge(chromHMM_TE_state,summit,by=TE_coordinates,all.x=TRUE)
 chromHMM_TE_state[which(is.na(chromHMM_TE_state$Category)),]$Category = "majority"

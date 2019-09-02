@@ -52,21 +52,18 @@ promoter_H3K27ac_potential_stats$State = "H3K27ac"
 # Number/proportion of promoters in each state by sample
 
 ## chromHMM
-promoter_state_sample_count = read.table("chromHMM/promoters_state_sample_counts_summit.txt",sep='\t')
-colnames(promoter_state_sample_count) = c("Sample","State","Count")
+promoter_state_sample_count = read.table("chromHMM/promoters_state_sample_counts_summit.txt",sep='\t',col.names=c("Sample","State","Count"))
 promoter_state_sample_count[1905,] = c("E002","3_TxFlnk",0)
 promoter_state_sample_count$Count = as.numeric(promoter_state_sample_count$Count)
 promoter_state_sample_count$Proportion = ifelse(metadata[match(promoter_state_sample_count$Sample,metadata$Sample),]$chrY == "Yes",promoter_state_sample_count$Count/NUM_PROMOTER,promoter_state_sample_count$Count/NUM_PROMOTER_noY)
 promoter_state_sample_count$State = factor(promoter_state_sample_count$State,levels=chromHMM_states)
 
 ## WGBS
-promoter_meth_average_state = melt(promoter_meth_average[,5:41])
-colnames(promoter_meth_average_state) = c("Sample","Methylation")
+promoter_meth_average_state = melt(promoter_meth_average[,5:41],variable.name="Sample",value.name="Methylation")
 promoter_meth_average_state = ddply(promoter_meth_average_state,.(Sample),summarise,
                                     Hypomethylated=sum(na.omit(Methylation) < 0.3),Intermediate=sum(na.omit(Methylation) <= 0.7 & na.omit(Methylation) >= 0.3),
                                     Hypermethylated=sum(na.omit(Methylation) > 0.7),Missing=sum(is.na(Methylation)))
-promoter_meth_average_state = melt(promoter_meth_average_state,id.vars="Sample")
-colnames(promoter_meth_average_state) = c("Sample","State","Count")
+promoter_meth_average_state = melt(promoter_meth_average_state,id.vars="Sample",variable.name="State",value.name="Count")
 promoter_meth_average_state$Proportion = promoter_meth_average_state$Count/NUM_PROMOTER_noY
 
 ## Overlapping DHS peak summits

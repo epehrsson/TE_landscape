@@ -4,8 +4,8 @@
 # Restricted to peaks where the summit overlaps the TE
 print("Load DNase")
 
-TE_DNase_peaks = read.table(file="DNase/true_summit/rmsk_TEother_DNase_summit.txt",sep='\t')
-colnames(TE_DNase_peaks) = c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks")
+TE_DNase_peaks = read.table(file="DNase/true_summit/rmsk_TEother_DNase_summit.txt",sep='\t',
+                            col.names=c("chromosome","start","stop","subfamily","class","family","strand","Sample","Peaks"))
 
 # Reformat data frame (rows: TEs, columns: samples, values: number of overlapping peaks)
 # Replacing missing values with 0

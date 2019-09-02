@@ -23,8 +23,8 @@ promoter_meth_average$Missing = apply(promoter_meth_average,1,function(x) sum(is
 
 # Data frame of promoter, sample, and number of overlapping DHS peaks
 ## Restricted to peaks where the summit overlaps the promoter
-promoter_DNase_peaks = read.table(file="DNase/true_summit/promoters/refseq_promoter_unique_DNase_summit.txt",sep='\t')
-colnames(promoter_DNase_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
+promoter_DNase_peaks = read.table(file="DNase/true_summit/promoters/refseq_promoter_unique_DNase_summit.txt",sep='\t',
+                                  col.names=c("chromosome","start","stop","strand","Sample","Peaks"))
 
 ## Reformat matrix (row: promoter, column: sample, value: number of overlapping peak summits)
 promoter_DNase_peaks = dcast(promoter_DNase_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
@@ -38,8 +38,8 @@ promoter_DNase_peaks$Samples = apply(promoter_DNase_peaks,1,function(x) sum(as.n
 
 # Data frame of promoter, sample, and number of overlapping H3K27ac peaks
 ## Restricted to peaks where the summit overlaps the promoter
-promoter_H3K27ac_peaks = read.table(file="H3K27ac/true_summit/promoters/refseq_promoter_unique_H3K27ac_summit.txt",sep='\t')
-colnames(promoter_H3K27ac_peaks) = c("chromosome","start","stop","strand","Sample","Peaks")
+promoter_H3K27ac_peaks = read.table(file="H3K27ac/true_summit/promoters/refseq_promoter_unique_H3K27ac_summit.txt",sep='\t',
+                                    col.names=c("chromosome","start","stop","strand","Sample","Peaks"))
 
 ## Reformat matrix (row: promoter, column: sample, value: number of overlapping peak summits)
 promoter_H3K27ac_peaks = dcast(promoter_H3K27ac_peaks,chromosome+start+stop+strand~Sample,value.var="Peaks")
