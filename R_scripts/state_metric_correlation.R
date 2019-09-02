@@ -1,11 +1,18 @@
-# Spearman correlation between states and metrics
-# Individual TE level
+# Creates dataframes with the Spearman correlation between individual TE characteristics
+# and the proportion of samples the TE is annotated with each epigenetic state,
+# for all TEs and by class
 
-#source("R_scripts/TE_correlation.R")
+## correlate_TE_state - Spearman correlation between TE characteristics and the proportion of samples in each epigenetic state
+## correlate_TE_feature - Spearman correlation between TE characteristics
 
 a = length(c(states,measure_states_extra))
 
-# Correlation between TE metrics and number of samples in state
+# Calculates the Spearman correlation across individual TEs between 
+# A) five TE characteristics (JC distance from subfamily consensus, mappability, length, number of CpGs, and CpG density) and
+# B) the proportion of samples each TE is annotated with each epigenetic state,
+# plus the number of unique chromHMM and methylation states across all samples, maximum expression, 
+# and maximum number of chromHMM states in a single sample
+# For all TEs and by class
 correlate_TE_state = rbind(correlate_spearman(rmsk_TE_measure,"JC_distance",c(states,measure_states_extra)), 
                            correlate_spearman(rmsk_TE_measure,"Length",c(states,measure_states_extra)),  
                            correlate_spearman(rmsk_TE_measure,"mappability",c(states,measure_states_extra)), 
@@ -17,7 +24,9 @@ correlate_TE_state$estimate.rho = as.numeric(as.character(correlate_TE_state$est
 correlate_TE_state$State = factor(correlate_TE_state$State,levels=c(states,measure_states_extra))
 correlate_TE_state$class_update = factor(correlate_TE_state$class_update,levels=c("DNA","LINE","LTR","SINE","SVA","Other","All"))
 
-# Correlation between TE metrics
+# Calculates the Spearman correlation across individual TEs between 
+# five TE characteristics (JC distance from subfamily consensus, mappability, length, number of CpGs, and CpG density),
+# for all TEs and by class
 correlate_TE_feature = rbind(correlate_spearman(rmsk_TE_measure,"Length",measure_metrics[2:5]),
                              correlate_spearman(rmsk_TE_measure,"mappability",measure_metrics[3:5]), 
                              correlate_spearman(rmsk_TE_measure,"JC_distance",measure_metrics[4:5]),
