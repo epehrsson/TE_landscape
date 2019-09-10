@@ -1,5 +1,6 @@
-# Quasi-poisson models of the number of samples a TE is annotated with the 9_Het state or hypermethylated
-# Versus class (LTR/SINE) and CpG density
+# Creates generalized linear models with a quasi-Poisson distribution for the response
+# (the number of samples a TE is annotated with the 9_Het state or hypermethylated)
+# versus class (LTR/SINE) and CpG density
 
 ## measure_het - Number of samples each TE is annotated with the 9_Het state and CpG density
 ## model_het1 - Quasi-poisson model of the impact of class on samples annotated with 9_Het
