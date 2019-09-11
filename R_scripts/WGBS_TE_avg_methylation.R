@@ -1,5 +1,5 @@
 # Creates a matrix of the methylation level of each hg19 TE (row) in each sample (column) ("TE_meth_average")
-# For all samples with WGBS data (n=37)
+# For all samples with WGBS data (n=37), including only TEs that overlap a CpG
 
 # Load average methylation level for all TEs
 TE_meth_average = read.table("WGBS/TE_CpG_Meth_new_average.txt",sep='\t',header=TRUE)
