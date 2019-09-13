@@ -6,7 +6,9 @@
 ## human_mouse_orthologs_chromHMM_paired - Dataframe of orthologous TEs with chromHMM state in each human/mouse sample pair
 ## hg19_mm10_chromHMM_active - Dataframe of the number of samples each orthologous TE pair is in an active regulatory state in each species, by tissue and overall
 ## hg19_mm10_chromHMM_promoter - Dataframe of the number of samples each orthologous TE pair is in a promoter state in each species, by tissue and overall
-
+## hg19_orthologs_specific - Counts the number of orthologous TEs with tissue-specific epigenetic activity for 5 tissues, 
+## including only TEs in the state in <5 human tissues and in both samples of the specified tissue (All),
+## divided by the number of tissues they are in the state in mouse. Includes active regulatory chromHMM states and only promoter states.
 
 # Dataframe of chromHMM state for hg19 TEs with an ortholog in mouse, in 12 human samples used for comparison to mouse
 hg19_orthologs_chromHMM = read.table("Mouse/chromHMM/hg19_chromHMM_TE.txt",sep='\t')[,c(1:8,10)]
@@ -89,3 +91,38 @@ hg19_mm10_chromHMM_promoter = hg19_mm10_chromHMM_promoter[,c(1:14,23,15,17:22,24
 ## Calculate the total number of samples each TE is in a promoter state
 hg19_mm10_chromHMM_promoter$Human_samples = apply(hg19_mm10_chromHMM_promoter,1,function(x) sum(as.numeric(x[16:22])))
 hg19_mm10_chromHMM_promoter$Mouse_samples = apply(hg19_mm10_chromHMM_promoter,1,function(x) sum(as.numeric(x[23:29])))
+
+
+# Counts the number of orthologous TEs with tissue-specific epigenetic activity by tissue, 
+# including only TEs in the state in <5 human tissues and in both samples of the specified tissue (All),
+# divided by the number of tissues they are in the state in mouse:
+# Specific, both samples of the specified tissue, <5 samples overall; On, >8 samples; Off, <2 samples; Other, 2-8 samples, not the correct tissue.
+# Includes 5 tissues with 2 samples each, active regulatory chromHMM states and only promoter states
+
+## Active regulatory state, chromHMM 
+hg19_orthologs_specific_active = as.data.frame(t(sapply(c("BRAIN","GI_INTESTINE","GI_STOMACH","HEART","LUNG"),
+                                                        function(x) tissue_matrix(x,hg19_mm10_chromHMM_active))))
+hg19_orthologs_specific_active$Tissue = rownames(hg19_orthologs_specific_active)
+hg19_orthologs_specific_active$Other = hg19_orthologs_specific_active$All - 
+  hg19_orthologs_specific_active$Specific - hg19_orthologs_specific_active$On - hg19_orthologs_specific_active$Off
+hg19_orthologs_specific_active = melt(hg19_orthologs_specific_active[,c("Specific","On","Off","Other","Tissue")],id.var="Tissue",
+                                      variable.name="Subset",value.name="Count")
+hg19_orthologs_specific_active$State = rep("Active",dim(hg19_orthologs_specific_active)[1])
+
+## Promoter state, chromHMM
+hg19_orthologs_specific_promoter = as.data.frame(t(sapply(c("BRAIN","GI_INTESTINE","GI_STOMACH","HEART","LUNG"),
+                                                          function(x) tissue_matrix(x,hg19_mm10_chromHMM_promoter))))
+hg19_orthologs_specific_promoter$Tissue = rownames(hg19_orthologs_specific_promoter)
+hg19_orthologs_specific_promoter$Other = hg19_orthologs_specific_promoter$All - 
+  hg19_orthologs_specific_promoter$Specific - hg19_orthologs_specific_promoter$On - hg19_orthologs_specific_promoter$Off
+hg19_orthologs_specific_promoter = melt(hg19_orthologs_specific_promoter[,c("Specific","On","Off","Other","Tissue")],id.var="Tissue",
+                                        variable.name="Subset",value.name="Count")
+hg19_orthologs_specific_promoter$State = rep("Promoter",dim(hg19_orthologs_specific_promoter)[1])
+
+## Combine
+hg19_orthologs_specific = rbind(hg19_orthologs_specific_active,hg19_orthologs_specific_promoter)
+hg19_orthologs_specific$Subset = factor(hg19_orthologs_specific$Subset,levels=c("Off","Specific","Other","On"))
+### Fraction of tissue-specific orthologous hg19 TEs in each category by tissue and state
+hg19_orthologs_specific = ddply(hg19_orthologs_specific,.(Tissue,State),transform,Proportion=Count/sum(Count),Total=sum(Count))
+
+rm(list=c("hg19_orthologs_specific_active","hg19_orthologs_specific_promoter"))
