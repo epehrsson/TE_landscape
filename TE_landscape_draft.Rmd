@@ -4600,7 +4600,7 @@ Plot: For each sample annotated with a 50-state chromHMM model, the number of su
 source("R_scripts/subfamily_enrichment_50state.R")
 
 # Plot
-ggplot(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > 1.5),],aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,name="State (18-state model)") + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank(),legend.position="bottom",legend.key.size = unit(2,'mm'))
+ggplot(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,name="State (18-state model)") + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank(),legend.position="bottom",legend.key.size = unit(2,'mm'))
 ```
 
 Identify subfamily x sample combinations enriched LOR > 1.5 in both 15-state and 50-state model states, active chromHMM states only.
@@ -4608,7 +4608,7 @@ Identify subfamily x sample combinations enriched LOR > 1.5 in both 15-state and
 ```{r compare 50 15 state}
 # Combine subfamily x state x sample enrichments with LOR > 1.5 for 15-state and 50-state models, active chromHMM states only, by subfamily and sample
 ## Including number of members annotated with each state and the corresponding 18-state model state
-subfamily_state_sample_compare = merge(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > 1.5 & subfamily_50state_sample_filter$State18 %in% names(chromHMM_states_18)[1:11]),c("subfamily","Sample","State","Members","State18")],subfamily_state_sample_filter[which(subfamily_state_sample_filter$State %in% chromHMM_states[1:7] & subfamily_state_sample_filter$Enrichment > 1.5),c("subfamily","family","class_update","Sample",sample_categories,"State","Members")],by=c("subfamily","Sample"))
+subfamily_state_sample_compare = merge(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > THRESHOLD_LOR & subfamily_50state_sample_filter$State18 %in% names(chromHMM_states_18)[1:11]),c("subfamily","Sample","State","Members","State18")],subfamily_state_sample_filter[which(subfamily_state_sample_filter$State %in% chromHMM_states[1:7] & subfamily_state_sample_filter$Enrichment > THRESHOLD_LOR),c("subfamily","family","class_update","Sample",sample_categories,"State","Members")],by=c("subfamily","Sample"))
 
 ## Write out results
 write.table(subfamily_state_sample_compare,file="enrichment/compare_models.txt",sep='\t',quote=FALSE,row.names=FALSE)
