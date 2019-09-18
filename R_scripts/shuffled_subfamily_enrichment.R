@@ -148,17 +148,25 @@ subfamily_state_potential_shuffle$Iteration = factor(subfamily_state_potential_s
 # with the dataframe of LOR enrichment for each real subfamily x state x sample combination
 shuffled_enrichment = lapply(shuffled_enrichment,function(x) {y = merge(x,subfamily_state_sample_combined,all.y=TRUE,by=c("State","Sample","subfamily")); y[is.na(y)] <- 0; return(y)})
 
+# Add the length of the shuffled subfamilies (Length ik for all other states)
+shuffled_ik = lapply(seq(1,10,1),function(x) read.table(paste("features/shuffled_TEs/subfamily/subfamily_merge_",x,"_length.txt",sep=""),sep='\t',
+                                                        col.names=c("subfamily","Total_length","Total_length_noY")))
+shuffled_enrichment = lapply(seq(1,10,1),function(x) {y <- merge(shuffled_enrichment[[x]],shuffled_ik[[x]],by="subfamily",all.x=TRUE); y[is.na(y)] = 0; return(y)})
+rm(shuffled_ik)
+
 # Add the number of CpGs per shuffled subfamily (Length ik for methylation states)
-shuffled_subfam_CpG = lapply(seq(1,10,1),function(x) read.table(paste("WGBS/shuffled/subfamily/subfamily_CpG_count_",x,".txt",sep=""),sep="\t",col.names=c("subfamily","Length_ik")))
-shuffled_enrichment = lapply(seq(1,10,1),function(x) merge(shuffled_enrichment[[x]],shuffled_subfam_CpG[[x]],by="subfamily",all.x=TRUE))
+shuffled_subfam_CpG = lapply(seq(1,10,1),function(x) {y <-read.table(paste("WGBS/shuffled/subfamily/subfamily_CpG_count_",x,".txt",sep=""),sep="\t",
+                                                                col.names=c("subfamily","CpGs")); y$CpGs = y$CpGs/2; return(y)})
+shuffled_enrichment = lapply(seq(1,10,1),function(x) {y <- merge(shuffled_enrichment[[x]],shuffled_subfam_CpG[[x]],by="subfamily",all.x=TRUE); y[is.na(y)] = 0; return(y)})
 rm(shuffled_subfam_CpG)
 
 # Log odds ratio (LOR) enrichment for each shuffled subfamily x state x sample combination
 # With pseudocount of 1e-20 to avoid undefined values
 # Using the updated Length ijk/Length ik for shuffled subfamilies
-shuffled_enrichment = lapply(shuffled_enrichment,function(x) transform(x,Enrichment.Shuffled = ifelse(State %in% meth_states,
-                                                                                                      log2(1e-20+((x$Length_ijk.x/x$Length_jk)/(x$Length_ik.y/x$Length_k))),
-                                                                                                      log2(1e-20+((x$Length_ijk.x/x$Length_jk)/(x$Length_ik.x/x$Length_k))))))
+shuffled_enrichment = lapply(shuffled_enrichment,function(x) transform(x,Enrichment.Shuffled = ifelse(State %in% meth_states,log2(1e-20+((x$Length_ijk.x/x$Length_jk)/(x$CpGs/x$Length_k))),
+                                                                                                      ifelse(metadata[match(Sample,metadata$Sample),]$chrY == "Yes",
+                                                                                                             log2(1e-20+((x$Length_ijk.x/x$Length_jk)/(x$Total_length/x$Length_k))),
+                                                                                                             log2(1e-20+((x$Length_ijk.x/x$Length_jk)/(x$Total_length_noY/x$Length_k)))))))
 
 # Filter LOR enrichments to only those where the subfamily has >10 members in the state and >30 overall
 # For the methylation states, considers only TEs that overlap at least one CpG
