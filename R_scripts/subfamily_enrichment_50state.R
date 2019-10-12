@@ -52,7 +52,7 @@ subfamily_50state_sample = merge(subfamily_50state_sample,rmsk_TE_subfamily[,c("
 ## Number of subfamily members where 1) the TE overlaps the center of a 200bp chromHMM bin annotated with the state
 ## or 2) the state covers the majority of the TE, for TEs that do not overlap the center of any 200bp chromHMM bin,
 ## by chromHMM state and sample
-subfamily_50state_members = lapply(list.files(path="/scratch/ecp/TE_landscape/state50/",pattern="subfamily_state_sample_",full.names = TRUE),
+subfamily_50state_members = lapply(list.files(path="chromHMM/state50/",pattern="subfamily_state_sample_",full.names = TRUE),
                                    function(x)  read.table(x,sep='\t',col.names = c("subfamily","State","Sample","Members")))
 subfamily_50state_members = ldply(subfamily_50state_members)
 

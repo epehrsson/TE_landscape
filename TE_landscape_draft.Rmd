@@ -1018,9 +1018,6 @@ Average RNA-seq read coverage for individual TEs. Intersected individual TEs wit
 # Average RNA-seq expression for individual TEs
 intersect_RNA_agnostic.sh
 
-## Output
-#/scratch/ecp/TE_landscape/RNA/rmsk_TEother.txt.sorted_E#_average.txt [56 files]
-
 # Average expression per TE, raw, combined samples
 cut -f1-7 rmsk_TEother.txt.sorted_E003_average.txt > rmsk_TEother_average.txt
 while read line; do cut -f10 rmsk_TEother.txt.sorted_$line\_average.txt | paste rmsk_TEother_average.txt - > rmsk_TEother_average; mv rmsk_TEother_average rmsk_TEother_average.txt ; done < RNA_samples_agnostic.txt
@@ -1074,9 +1071,6 @@ Intersected individual exons with unnormalized, strand-agnostic RNA-seq read cov
 ```{bash exon RNA matrix, eval=FALSE}
 # Average RNA-seq expression for individual exons
 intersect_RNA_agnostic.sh
-
-## Output
-#/scratch/ecp/TE_landscape/RNA/refseq_exons_unique.txt.sorted_E#_average.txt [56 files]
 
 # Average expression per exon, raw, combined samples
 cut -f1-4 refseq_exons_unique.txt.sorted_E003_average.txt > refseq_exons_average.txt
@@ -2464,16 +2458,10 @@ while read line; do bedtools intersect -wo -sorted -a features/TEs/rmsk_TEother_
 for file in rmsk_TEother_summit_E*.txt; do awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
 for file in rmsk_TEother_summit_E[0-9][0-9][0-9] ; do mv $file $file\.txt; done
 
-## Output
-#/scratch/ecp/TE_landscape/state18/rmsk_TEother_summit_E#.txt [98 files]
-
 # TEs that do not ("majority")
 while read line; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b raw_data/chromHMM_18state/$line\_18_core_K27ac_mnemonics.bed > /scratch/ecp/TE_landscape/state18/rmsk_TEother_majority_$line\.txt; done < sample_lists/H3K27ac_samples.txt
 for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
 for file in rmsk_TEother_majority_E[0-9][0-9][0-9]; do mv $file $file\.txt; done
-
-## Output
-#/scratch/ecp/TE_landscape/state18/rmsk_TEother_majority_E#.txt [98 files]
 
 # Combine and sort
 while read line; do awk -v OFS='\t' -v sample=$line '{print $0, sample, "summit"}' rmsk_TEother_summit_$line\.txt >> rmsk_TEother_18state.txt; awk -v OFS='\t' -v sample=$line '{print $0, sample, "majority"}' rmsk_TEother_majority_$line\.txt >> rmsk_TEother_18state.txt; done < ~/TE_landscape/sample_lists/H3K27ac_samples.txt &
@@ -2481,7 +2469,6 @@ awk '{print>$1}' rmsk_TEother_18state.txt
 while read line; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $line >> rmsk_TEother_18state_sorted.txt; rm $line; done < chromosomes.txt
 
 ## Output
-#/scratch/ecp/TE_landscape/state18/rmsk_TEother_18state.txt
 #/bar/epehrsson/TE_landscape/chromHMM/rmsk_TEother_18state_sorted.txt
 ```
 
@@ -2567,24 +2554,17 @@ for file in chromHMM/genome/windows/windows_50state_E0*.bed; do bedtools interse
 for file in rmsk_TEother_summit_windows_50state_E*.txt; do  awk -v OFS='\t' '{if(($9+99.5 >= $2) && ($9+99.5 < $3)) a[$1, $2, $3, $4, $5, $6, $7, $11]+=$12}END{for(i in a) {split(i, sep, SUBSEP); print sep[1], sep[2], sep[3], sep[4], sep[5], sep[6], sep[7], sep[8], a[i]}}' $file > $(basename $file .txt); done
 for file in rmsk_TEother_summit_windows_50state_E0[0-1][3-8] ; do mv $file $file\.txt; done
 
-## Output
-#/scratch/ecp/TE_landscape/state50/rmsk_TEother_summit_windows_50state_E#.txt [7 files]
-
 # TEs that do not ("majority")
 for file in raw_data/chromHMM_50state/*bed; do bedtools intersect -wo -a features/TEs/rmsk_TEother_majority.txt -b $file > /scratch/ecp/TE_landscape/state50/rmsk_TEother_majority_$(basename $file .bed).txt; done &
 for file in rmsk_TEother_majority_*.txt; do python ~/bin/TE_landscape/pick_majority.py $file $(basename $file .txt) 10 11; done
 for file in rmsk_TEother_majority_E[0-9][0-9][0-9]_50_segments; do mv $file $file\.txt; done
-
-## Output
-#/scratch/ecp/TE_landscape/state50/rmsk_TEother_majority_E#_50_segments.txt [7 files]
 
 # Combine and sort
 for sample in E003 E004 E005 E006 E007 E008 E017; do awk -v OFS='\t' -v sample=$sample '{print $0, sample, "summit"}' rmsk_TEother_summit_windows_50state_$sample\.txt >> rmsk_TEother_50state_$sample\.txt; awk -v OFS='\t' -v sample=$sample '{print $0, sample, "majority"}' rmsk_TEother_majority_$sample\_50_segments.txt >> rmsk_TEother_50state_$sample\.txt; done &
 for file in rmsk_TEother_50state_*.txt; do sort -k1,1V -k2,2n -k3,3n -k4,4 -k10,10 $file > $(basename $file .txt)_sorted.txt; done
 
 ## Output
-#/scratch/ecp/TE_landscape/state50/rmsk_TEother_50state_E#.txt [7 files]
-#/scratch/ecp/TE_landscape/state50/rmsk_TEother_50state_E#_sorted.txt [7 files]
+#/bar/epehrsson/TE_landscape/chromHMM/state50/rmsk_TEother_50state_E#_sorted.txt [7 files]
 ```
 
 Then, I found the number of TEs that are annotated with each chromHMM state per sample. 
@@ -2597,16 +2577,16 @@ Then, I found the number of TEs that are annotated with each chromHMM state per 
 for file in rmsk_TEother_50state_E0*_sorted.txt; do awk -v OFS='\t' '{a[$8]+=1}END{for(i in a){print i, a[i]}}' $file > state_sample_counts_$(basename $file _sorted.txt).txt; done
 
 ## Output
-#/scratch/ecp/TE_landscape/state50/state_sample_counts_rmsk_TEother_50state_E#.txt [7 files]
+#/bar/epehrsson/TE_landscape/chromHMM/state50/state_sample_counts_rmsk_TEother_50state_E#.txt [7 files]
 ```
 
 Creates a dataframe of the number/proportion of TEs in each 50-state model chromHMM state in each sample. Using Roadmap 2015 Supplementary Fig. 4, for all 7 samples, I determined which of 18-state model states is most enriched for each of the 50 states.
 
 ```{r 50 state potential}
 # Number of TEs in each chromHMM state by sample
-state50_files = list.files(path="/scratch/ecp/TE_landscape/state50",pattern="state_sample_counts_rmsk_TEother_50state_",full.names = TRUE)
+state50_files = list.files(path="chromHMM/state50",pattern="state_sample_counts_rmsk_TEother_50state_",full.names = TRUE)
 state_sample_50state = lapply(state50_files,function(x) read.table(x,sep='\t',quote=""))
-names(state_sample_50state) = gsub(".txt","",gsub("/scratch/ecp/TE_landscape/state50/state_sample_counts_rmsk_TEother_50state_","",state50_files))
+names(state_sample_50state) = gsub(".txt","",gsub("chromHMM/state50/state_sample_counts_rmsk_TEother_50state_","",state50_files))
 state_sample_50state = ldply(state_sample_50state)
 colnames(state_sample_50state) = c("Sample","State50","Count")
 
@@ -2639,7 +2619,7 @@ awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5"
 awk '{if(($8 == "E1") ||($8 == "E2") ||($8 == "E3") ||($8 == "E4") ||($8 == "E5") ||($8 == "E6") ||($8 == "E7") ||($8 == "E8") ||($8 == "E17") ||($8 == "E18") ||($8 == "E19") ||($8 == "E20") ||($8 == "E21") ||($8 == "E22") ||($8 == "E23") ||($8 == "E24") ||($8 == "E25") ||($8 == "E26") ||($8 == "E27") ||($8 == "E28") ||($8 == "E29") ||($8 == "E30") ||($8 == "E31") ||($8 == "E32") ||($8 == "E33") ||($8 == "E34") ||($8 == "E35") ||($8 == "E36") ||($8 == "E37")) print $0}' rmsk_TEother_50state_E017_sorted.txt | cut -f1-7 | sort | uniq | wc -l >> count_active.txt
 
 ## Output
-#/scratch/ecp/TE_landscape/state50/count_active.txt
+#/bar/epehrsson/TE_landscape/chromHMM/state50/count_active.txt
 ```
 
 The number of TEs in an active regulatory state per sample, using the 15-state model. Input is the by-sample matrices produced by the Figure S10 analysis (combine marks).
@@ -2648,14 +2628,14 @@ The number of TEs in an active regulatory state per sample, using the 15-state m
 for file in E*; do awk '{if(($10 == "1_TssA") || ($10 == "2_TssAFlnk") || ($10 == "3_TxFlnk") || ($10 == "6_EnhG") || ($10 == "7_Enh")) print $0}' $file | cut -f1-7 | uniq | wc -l >> count_active.txt ; done
 
 ## Output
-#/scratch/ecp/TE_landscape/combine_marks/true_summit/count_active.txt
+#/bar/epehrsson/TE_landscape/compare_marks/combined/count_active.txt
 ```
 
 Comparison of the number of TEs in an active regulatory state per sample using the 15-state and 50-state models.
 
 ```{r active reg by sample}
 # Number/proportion of TEs in an active regulatory state per sample, 15-state model
-count_active_15 = cbind(metadata[,c("Sample","chrY")],read.table("/scratch/ecp/TE_landscape/combine_marks/true_summit/count_active.txt"))
+count_active_15 = cbind(metadata[,c("Sample","chrY")],read.table("compare_marks/combined/count_active.txt"))
 colnames(count_active_15)[3] = "Count"
 count_active_15$Proportion = count_active_15$Count/ifelse(count_active_15$chrY == "Yes",NUM_TE,NUM_TE_noY)
 
@@ -2665,7 +2645,7 @@ summary(count_active_15$Proportion)
 summary(count_active_15[which(count_active_15$Sample %in% c("E003","E004","E005","E006","E007","E008","E017")),]$Proportion)
 
 # Number/proportion of TEs in an active regulatory state per sample, 50-state model
-count_active_50 = cbind(c("E003","E004","E005","E006","E007","E008","E017"),read.table("/scratch/ecp/TE_landscape/state50/count_active.txt"))
+count_active_50 = cbind(c("E003","E004","E005","E006","E007","E008","E017"),read.table("chromHMM/state50/count_active.txt"))
 colnames(count_active_50) = c("Sample","Count")
 count_active_50$Proportion = count_active_50$Count/NUM_TE
 
@@ -3899,7 +3879,7 @@ awk '{print>"RNA/"$8}' rmsk_TE_rpkm.txt &
 python ~/bin/TE_landscape/combine_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
 
 ## Output (Single combined file per sample)
-#/scratch/ecp/TE_landscape/combine_marks/true_summit/E# [127 files]
+#/bar/epehrsson/TE_landscape/compare_marks/combined/E# [127 files]
 
 # Count number of TEs x sample in each state combination (all, unique)
 python ~/bin/TE_landscape/aggregate_marks_pandas.py ~/TE_landscape/sample_lists/mnemonics.txt &
@@ -4324,6 +4304,12 @@ for i in {1..10}; do sort -k1,1 -k2,2n features/shuffled_TEs/subfamily/subfamily
 
 ## Output
 #/bar/epehrsson/TE_landscape/features/shuffled_TEs/subfamily/subfamily_merge_#.txt [10 files]
+
+# Length of shuffled subfamilies
+for file in features/shuffled_TEs/subfamily/subfamily_merge_*.txt; do awk -v OFS='\t' '{a[$4]+=$3-$2; if($1 != "chrY") b[$4]+=$3-$2}END{for(i in a) print i, a[i], b[i]}' $file > features/shuffled_TEs/subfamily/$(basename $file .txt)_length.txt; done
+
+## Output
+#/bar/epehrsson/TE_landscape/features/shuffled_TEs/subfamily/subfamily_merge_#_length.txt [10 files]
 
 ## chromHMM
 # Intersect with epigenetic data
@@ -5074,7 +5060,7 @@ for file in chromHMM/subfamily/50state/subfamily_state_*.bed; do awk -v OFS='\t'
 for file in rmsk_TEother_50state_*_sorted.txt; do awk -v OFS='\t' '{a[$4, $8, $10]+=1}END{for(i in a){split (i, sep, SUBSEP); print sep[1], sep[2], sep[3], a[i]}}' $file > subfamily_state_sample_$(basename $file _sorted.txt).txt; done
 
 ## Output
-#/scratch/ecp/TE_landscape/state50/subfamily_state_sample_rmsk_TEother_50state_E#.txt [7 files]
+#/bar/epehrsson/TE_landscape/chromHMM/state50/subfamily_state_sample_rmsk_TEother_50state_E#.txt [7 files]
 
 # Number of genomic bp in each state in each sample
 for file in raw_data/chromHMM_50state/*.bed; do awk -v OFS='\t' '{a[$4]+=$3-$2}END{for(i in a){print i, a[i]}}' $file > chromHMM/genome/state50/$(basename $file .bed)_genome.txt; done
@@ -5112,7 +5098,7 @@ Compare MER121 x E017 enrichment in 7_Enh and 50-state enhancer states. Pulled o
 awk '{if(($4 == "MER121") && (($8 == "E26") || ($8 == "E30") || ($8 == "E31") || ($8 == "E32") || ($8 == "E37"))) print $0}' rmsk_TEother_50state_E017_sorted.txt > MER121_E017_7_Enh.txt
 
 ## Output
-#/scratch/ecp/TE_landscape/state50/MER121_E017_7_Enh.txt
+#/bar/epehrsson/TE_landscape/chromHMM/state50/MER121_E017_7_Enh.txt
 
 # Combine with MER121 E017 in 7_Enh, 15-state
 awk '{if($8 == "E017") print $0}' chromHMM/subfamily/by_state/MER121_7_Enh.txt | bedtools intersect -wo -f 1 -r -a /scratch/ecp/TE_landscape/state50/MER121_E017_7_Enh.txt -b - > MER121_7_Enh_50state.txt
