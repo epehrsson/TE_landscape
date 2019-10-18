@@ -152,7 +152,7 @@ sample_distribution = function(TE_matrix,columns,samples){
 ## states - number of states under consideration
 ## samples - total number of samples in dataset
 ## Output: stats - table by state (row) with the proportion of TEs ever in the state
-## and the mean proprotion of samples a TE is in the state (columns)
+## and the mean proportion of samples a TE is in the state (columns)
 potential_stats = function(distribution,states,samples){
   # Dataframe with state columns
   if (states > 1){
@@ -1730,7 +1730,7 @@ The number of CpGs in each methylation state across the entire genome, by sample
 awk '{for (i=4;i<=NF;i++){if($i == -1) miss[i]+=1; else if ($i < 0.3) hypo[i]+=1; else if ($i > 0.7) hyper[i]+=1; else if (($i <= 0.7) && ($i >= 0.3)) inter[i]+=1;}}; END{for (i in hyper) print i" "hypo[i]" "inter[i]" "hyper[i]" "miss[i];}' all_CpG_Meth.bed > all_CpG_Meth_states.txt
 
 ## Output
-/bar/epehrsson/TE_landscape/WGBS/all_CpG_Meth_states.txt
+#/bar/epehrsson/TE_landscape/WGBS/all_CpG_Meth_states.txt
 ```
 
 The number of CpGs in each methylation state within TEs, by sample. 
@@ -1934,7 +1934,7 @@ awk -v OFS='\t' '{a[$4, $16]+=$15}END{for(i in a){split(i,sep,SUBSEP); print sep
 
 ### Figure 1
 
-a. Proportion of the genome, TEs, and genic features annotated with each epigenetic state (protein-coding and non-coding), across all samples. b. Proportion of each TE class annotated with each epigenetic state, across all samples. c. Proportion of each epigenetic state within TEs, across all samples. d. Proprotion of each state within TEs that is within each TE class (including duplicated bases from overlapping classes). 
+a. Proportion of the genome, TEs, and genic features annotated with each epigenetic state (protein-coding and non-coding), across all samples. b. Proportion of each TE class annotated with each epigenetic state, across all samples. c. Proportion of each epigenetic state within TEs, across all samples. d. Proportion of each state within TEs that is within each TE class (including duplicated bases from overlapping classes). 
 
 ```{r Figure 1, echo=FALSE}
 source("R_scripts/proportion.R")
@@ -1951,6 +1951,13 @@ d = ggplot(contribution_class,aes(x=State,y=Proportion,fill=forcats::fct_rev(cla
 legend_class = get_legend(ggplot(contribution_class,aes(x=State,y=Proportion,fill=class)) + geom_bar(stat="identity") + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),axis.text.y=element_blank(),legend.position="bottom",legend.direction = "horizontal",legend.key.size = unit(3,'mm')) + scale_fill_manual(values=class_colors,name="Class") + guides(fill = guide_legend(nrow = 2)))
 
 grid.arrange(a,b,c,d,legend_class, nrow = 4,layout_matrix = rbind(c(1),c(2),c(3,4),c(NA,5)),heights=c(0.25,0.3,0.4,0.05),widths=c(0.55,0.45))
+```
+
+```{r Figure 1 source data}
+write.table(combined_proportion[which(combined_proportion$Coding == "All"),c("Feature","Proportion","State","Mark")],file="source_data/Figure_1a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_class_proportion[,c("class","Proportion","State","Cohort")],file="source_data/Figure_1b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(contribution[,c("State","Proportion")],file="source_data/Figure_1c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(contribution_class[,c("State","Proportion","class")],file="source_data/Figure_1d.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Proportion/contribution analysis
@@ -2011,6 +2018,11 @@ all_state_proportion_corr = ddply(all_state_proportion_matrix,.(State),summarise
 ggplot(all_state_proportion_matrix,aes(x=log10(Genome),y=log10(TE))) + geom_point(aes(color=Group)) + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",ncol=6,labeller=labeller(State=all_state_labels)) + xlab("Bases or CpGs in genome (log10)") + ylab("Bases or CpGs in TEs (log10)") + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_state_proportion_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position="bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 ```
 
+```{r Figure S1 source data}
+write.table(all_state_proportion_matrix[,c("Sample","Genome","TE","Group","State")],file="source_data/Figure_S1_dot.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(all_state_proportion_corr,file="source_data/Figure_S1_cor.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Compare TE bases to non-TE bases by sample
 
 ```{r proportion investigation}
@@ -2052,6 +2064,12 @@ c = ggplot(combined_proportion[which(combined_proportion$Feature %in% c("promote
 grid.arrange(a,b,c,nrow=3,heights=c(0.25,0.22,0.53))
 ```
 
+```{r Figure S2 source data}
+write.table(feature_overlap_long[,c("Feature","Percent","Coding","Measure")],file="source_data/Figure_S2a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(ddply(all_state_proportion[which(all_state_proportion$Coding == "All"),],.(Mark,State,Feature),summarise,Proportion=mean(Proportion))[,c("Feature","Proportion","State","Mark")],file="source_data/Figure_S2b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combined_proportion[which(combined_proportion$Feature %in% c("promoters","5UTR","3UTR","exons","introns")),c("Feature","Proportion","State","Coding","Mark")],file="source_data/Figure_S2c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### RefSeq feature analysis
 
 ```{r analysis Fig S2}
@@ -2084,6 +2102,11 @@ g = ggplot(rmsk_TE,aes(x=mappability,y=..scaled..,fill=class_update)) + geom_den
 h = ggplot(rmsk_TE,aes(x=JC_distance,y=..scaled..,fill=class_update)) + geom_density() + scale_fill_manual(values=class_colors,guide=FALSE) + xlab("Jukes-Cantor evolutionary distance") + ylab("Density") + facet_wrap(~class_update,nrow=1) + scale_x_continuous(breaks=c(0,0.5,1)) + scale_y_continuous(breaks=c(0,0.5,1),limits=c(0,1))
 
 grid.arrange(a,b,c,legend_class,d,e,f,g,h,nrow=7,layout_matrix=rbind(c(1,2,3),c(4),c(5),c(6),c(7),c(8),c(9)),heights=c(0.2,0.05,0.15,0.15,0.15,0.15,0.15))
+```
+
+```{r Figure S3 source data}
+write.table(rmsk_TE_class[,c("class_update","Total_length","Count","Subfamilies")],file="source_data/Figure_S3abc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(rmsk_TE[,c("class_update","Length","CpGs","CpGs_per_length","mappability","JC_distance")],file="source_data/Figure_S3d_to_h.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### TE metric stats
@@ -2160,6 +2183,16 @@ e = ggplot(ddply(combine_potential[which(combine_potential$Sample.Proportion >= 
 f = ggplot(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total)),aes(x=State,y=TEs.Proportion,fill=forcats::fct_rev(Class))) + geom_bar(stat="identity") + scale_fill_manual(values=class_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + labs(y="Proportion of TEs in 90%\nof samples by class") + coord_flip() + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + scale_y_continuous(expand=c(0.01,0.01))
 
 grid.arrange(a,b,c,d,e,f,legend_class, nrow = 3, layout_matrix=rbind(c(1,2,3),c(4,5,6),c(NA,NA,7)),widths=c(0.42,0.29,0.29),heights=c(0.475,0.475,0.05))
+```
+
+```{r Figure 2 source data}
+write.table(combine_boxplot[,c("Sample","State","Proportion")],file="source_data/Figure_2a_boxplot.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_stats[,c("State","Proportion_ever")],file="source_data/Figure_2a_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_class_ever[,c("State","Proportion","Class")],file="source_data/Figure_2b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_potential[which(combine_potential$Samples != 0),c("State","Sample.Proportion","Count")],file="source_data/Figure_2c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_potential[which(combine_potential$Sample.Proportion == 1),c("State","Count")],file="source_data/Figure_2d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(ddply(combine_potential[which(combine_potential$Sample.Proportion >= 0.9),],.(State),summarise,Count=sum(Count))[,c("State","Count")],file="source_data/Figure_2e.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(ddply(combine_potential_class[which(combine_potential_class$Sample.Proportion >= 0.9),],.(State,Class),summarise,TEs.Proportion=sum(Count)/sum(Total))[,c("State","TEs.Proportion","Class")],file="source_data/Figure_2f.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Potential analysis
@@ -2429,6 +2462,11 @@ category_legend = get_legend(ggplot(potential_ever,aes(x=State,y=Ratio,color=Cat
 grid.arrange(a,b,category_legend,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.9,0.1),widths=c(0.55,0.45))
 ```
 
+```{r Figure S4 source data}
+write.table(state_sample_count_rules[,c("Sample","State","Ratio","Category")],file="source_data/Figure_S4a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(potential_ever[,c("State","Ratio","Category")],file="source_data/Figure_S4b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Supplementary Figure 5
 
 '''18-state model'''
@@ -2656,6 +2694,13 @@ c = ggplot(state_sample_50state,aes(x=State50,y=Proportion,fill=State18)) + geom
 grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),widths=c(0.55,0.45),heights=c(0.4,0.6))
 ```
 
+```{r Figure S5 source data}
+write.table(state_sample_18state[,c("Sample","State","Proportion")],file="source_data/Figure_S5a_boxplot.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chromHMM_18state_stats[,c("State","Proportion_ever")],file="source_data/Figure_S5a_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chromHMM_18state_potential[which(chromHMM_18state_potential$Samples != 0),c("State","Sample.Proportion","Count")],file="source_data/Figure_S5b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_sample_50state[,c("Sample","State50","Proportion","State18")],file="source_data/Figure_S5c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Potential without chrY
 
 Tests the results for the average number of samples a TE is in each chromHMM state and the proportion of TEs ever in each chromHMM state without chrY. 
@@ -2691,6 +2736,13 @@ b = ggplot(rmsk_TE_class_feature,aes(x=Class,y=Proportion,fill=Feature)) + geom_
 c = ggplot(combine_potential_class[which(combine_potential_class$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + xlab("State") + ylab("Proportion of samples in state") + scale_x_discrete(labels=rev(all_state_labels),limits = rev(states)) + facet_wrap(~Class,nrow=1) + geom_boxplot(width=0.2,outlier.size = 0.1)  + theme(axis.title.y = element_text(margin = margin(r = -10))) + scale_y_continuous(breaks=pretty_breaks(n=3),expand=c(0.01,0.01)) 
 
 grid.arrange(a,b,c,nrow=2,layout_matrix=rbind(c(1,2),c(3)),heights=c(0.6,0.4),widths=c(0.58,0.42))
+```
+
+```{r Figure S6 source data}
+write.table(combine_boxplot_class[,c("Sample","State","Proportion","Class")],file="source_data/Figure_S6a_boxplots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_stats_class[,c("State","Proportion_ever","Class")],file="source_data/Figure_S6a_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(rmsk_TE_class_feature[,c("Class","Proportion","Feature","Coding")],file="source_data/Figure_S6b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_potential_class[which(combine_potential_class$Samples != 0),c("State","Sample.Proportion","Count","Class")],file="source_data/Figure_S6c.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Class potential analysis
@@ -2761,6 +2813,20 @@ e = ggplot(combine_boxplot_noCancer_IMR90,aes(x=State,y=Proportion,fill=State)) 
 f = ggplot(combine_potential_noCancer[which(combine_potential_noCancer$Samples != 0),],aes(x=State,y=Sample.Proportion,weight=Count,fill=State)) + geom_violin(scale="width") + coord_flip() + scale_fill_manual(values=all_state_colors,guide=FALSE) + theme(axis.title.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y = element_blank()) + ylab("Proportion of samples in state") + scale_x_discrete(limits = rev(states),labels=rev(all_state_labels)) + geom_boxplot(width=0.2,outlier.size = 0.1) + scale_y_continuous(expand=c(0.01,0.01))
 
 grid.arrange(a,b,c,d,e,f,nrow = 3,layout_matrix=rbind(c(1,2),c(3,4),c(5,6)),heights=c(0.45,0.1,0.45),widths=c(0.6,0.4))
+```
+
+```{r Figure S7 source data}
+write.table(combine_boxplot_prom[,c("Sample","State","Proportion")],file="source_data/Figure_S7a_boxplots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_stats_prom[,c("State","Proportion_ever")],file="source_data/Figure_S7a_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_potential_prom[which(combine_potential_prom$Samples != 0),c("State","Sample.Proportion","Count")],file="source_data/Figure_S7b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+
+write.table(RNA_exon_sample[,c("Sample","State","Proportion")],file="source_data/Figure_S7c_boxplots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(RNA_potential_exon_stats[,c("State","Proportion_ever")],file="source_data/Figure_S7c_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(RNA_potential_exon[which(RNA_potential_exon$Samples != 0),c("State","Sample.Proportion","Count")],file="source_data/Figure_S7d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+
+write.table(combine_boxplot_noCancer_IMR90[,c("Sample","State","Proportion")],file="source_data/Figure_S7e_boxplots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_stats_noCancer_IMR90[,c("State","Proportion_ever")],file="source_data/Figure_S7e_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(combine_potential_noCancer[which(combine_potential_noCancer$Samples != 0),c("State","Sample.Proportion","Count")],file="source_data/Figure_S7f.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Promoter statistics
@@ -3262,6 +3328,13 @@ scale_switching = get_legend(ggplot(melt(as.matrix(ss_inter_meth)),aes(x=Var2,y=
 grid.arrange(a,b,c,d,scale_switching,nrow = 3, layout_matrix=rbind(c(1,2),c(3,4),c(5,5)),heights=c(0.3,0.6,0.1))
 ```
 
+```{r Figure 3 source data}
+write.table(chromHMM_TE_state[,c("States","class_update")],file="source_data/Figure_3a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(TE_meth_average[,c("States","class_update")],file="source_data/Figure_3b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_switching_inter,file="source_data/Figure_3c.txt",sep='\t',quote=FALSE)
+write.table(ss_inter_meth,file="source_data/Figure_3d.txt",sep='\t',quote=FALSE)
+```
+
 ### Total number of states per TE
 
 For TEs ever in each chromHMM/methylation state, the total number of states they are annotated with across all samples. 
@@ -3310,6 +3383,14 @@ d = ggplot(melt(as.matrix(state_switching_intra)),aes(x=Var2,y=Var1,fill=value))
 e = ggplot(melt(ss_inter_meth_class,id.vars=c("Class","State")),aes(x=variable,y=State,fill=value/sample_counts["All","WGBS"])) + geom_tile() + theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5)) + scale_y_discrete(limits=rev(meth_states)) + scale_fill_gradient(low="white",high="darkmagenta",limits=c(0,1),guide=FALSE) + facet_wrap(~Class,nrow=1) + coord_equal() + xlab("State 2") + ylab("State 1")
 
 grid.arrange(a,b,c,d,e,scale_switching,nrow=4,layout_matrix=rbind(c(1,2),c(3,4),c(5),c(6)),heights=c(0.35,0.3,0.3,0.05),widths=c(0.55,0.45))
+```
+
+```{r Figure S8 source data}
+write.table(chromHMM_dynamics[,c("States","variable")],file="source_data/Figure_S8a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(meth_dynamics[,c("States","variable")],file="source_data/Figure_S8b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chromHMM_TE_state[which(chromHMM_TE_state$Category == "summit"),c("Max_states_intra","class_update")],file="source_data/Figure_S8c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_switching_intra,file="source_data/Figure_S8d.txt",sep='\t',quote=FALSE)
+write.table(melt(ss_inter_meth_class,id.vars=c("Class","State"))[,c("variable","State","value","Class")],file="source_data/Figure_S8e.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### State switching analysis
@@ -3514,6 +3595,11 @@ b = ggplot(shuffled_meth_inter,aes(x=State2,y=State1,fill=Mean_samples/sample_co
 grid.arrange(a,b)
 ```
 
+```{r Figure S9 source data}
+write.table(shuffled_chromHMM_inter[,c("State1","State2","Mean_samples","Iteration","Count.y")],file="source_data/Figure_S9a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(shuffled_meth_inter[,c("State1","State2","Mean_samples","Iteration","Total")],file="source_data/Figure_S9b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ```{r shuffled dynamics analysis}
 # Total number of chromHMM states a TE is annotated with across all samples (table and stats, overall and by class, each iteration)
 table(shuffled_chromHMM_states$States,shuffled_chromHMM_states$Iteration)
@@ -3615,6 +3701,14 @@ legend_states = get_legend(ggplot(by_DNase,aes(x=1,y=Proportion,fill=State)) + g
   theme(legend.position = "bottom",legend.key.size = unit(3,'mm')) + scale_fill_manual(values=c(chromHMM_colors,meth_colors,setNames(c("gold","darkgrey"),c("True","False"))),labels=c(all_state_labels,"True","False")) + guides(fill=guide_legend(ncol=7,title.position = "top")))
 
 grid.arrange(a,b,c,d,e,legend_states, nrow=3, layout_matrix=rbind(c(1),c(2,3,4,5),c(6)),widths=c(0.36,0.21,0.21,0.22),heights=c(0.45,0.45,0.1))
+```
+
+```{r Figure S10 source data}
+write.table(by_chromHMM[,c("Proportion","State","Mark","chromHMM","TE_sample")],file="source_data/Figure_S10a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_WGBS[,c("Proportion","State","Mark","WGBS","TE_sample")],file="source_data/Figure_S10b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_DNase[,c("Proportion","State","Mark","DNase","TE_sample")],file="source_data/Figure_S10c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_H3K27ac[,c("Proportion","State","Mark","H3K27ac","TE_sample")],file="source_data/Figure_S10d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_RNA[,c("Proportion","State","Mark","RNA","TE_sample")],file="source_data/Figure_S10e.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Compare mark analysis 
@@ -3792,6 +3886,14 @@ legend = get_legend(ggplot(by_sample_all,aes(x=State,y=Proportion,color=Group)) 
 grid.arrange(a,b,c,d,legend,nrow=3,ncol=3,layout_matrix=rbind(c(1,1,5),c(2,2,5),c(3,4,5)),heights=c(0.2,0.55,0.15),widths=c(0.2,0.65,0.15))
 ```
 
+```{r Figure 4 source data}
+write.table(by_sample_all[,c("State","Sample","Proportion","Group","Contribution")],file="source_data/Figure_4a_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_sample_KW[which(by_sample_KW$Category == "Group"),c("State","Stars")],file="source_data/Figure_4a_stars.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_sample_class[,c("State","Sample","Proportion_state","Group","Contribution","class","Bases_class")],file="source_data/Figure_4b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(RNA_proportion[,c("Ratio","Group","Sample")],file="source_data/Figure_4c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(class_RNA[,c("Ratio","Group","Sample","class_update")],file="source_data/Figure_4d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### By sample and class analysis
 
 Variation in the contribution of each TE class to each epigenetic state by sample classification.
@@ -3900,6 +4002,11 @@ legend_cancer = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Ca
 legend_germline = get_legend(ggplot(by_sample_all_long[which(by_sample_all_long$Category == "Germline"),],aes(x=State,y=Proportion,color=Group)) + geom_point(position=position_jitterdodge(dodge.width = 0.6)) + theme(panel.grid=element_blank(),axis.title.y=element_blank(),legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + scale_color_manual(values=c(germline_colors),name="Germlayer"))
 
 grid.arrange(a,legend_anatomy,legend_type,legend_age,legend_cancer,legend_germline,nrow=4,layout_matrix=rbind(c(1,1),c(2,2),c(3,4),c(6,5)),heights=c(0.8,0.1,0.05,0.05),widths=c(0.6,0.4))
+```
+
+```{r Figure S11 source data}
+write.table(by_sample_all_long[,c("Sample","State","Proportion","Group","Contribution","Category")],file="source_data/Figure_S11_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(by_sample_KW[which(by_sample_KW$Category != "Group"),c("State","Stars","Category")],file="source_data/Figure_S11_stars.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ## Tissue-specific subfamily enrichment in epigenetic states
@@ -4099,10 +4206,14 @@ source("R_scripts/subfamily_enrichment.R")
 # Number of samples each TE subfamily is annotated with each epigenetic state,
 # plus the number of unique states each TE subfamily is annotated with across all samples
 source("R_scripts/subfamily_potential.R")
+```
 
+```{r Figure 5 scripts part 2, cache=TRUE, cache.lazy=FALSE}
 # PCA on LOR enrichment for sample x subfamily x state combinations, by sample and subfamily
 source("R_scripts/subfamily_PCA.R")
+```
 
+```{r Figure 5 scripts part 3, cache=TRUE, cache.lazy=FALSE}
 # LOR enrichment of each TE subfamily x epigenetic state x sample, for 10 iterations of shuffled TEs,
 # with and without subfamily member thresholds
 source("R_scripts/shuffled_subfamily_enrichment.R")
@@ -4136,6 +4247,17 @@ e = ggplot(homer_top5,aes(x=reorder(Motif.Name,`q.value..Benjamini.`,median),y=P
 legend_group = get_legend(ggplot(sample_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=Group)) + geom_point() + scale_color_manual(values=group_colors) + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')) + guides(color=guide_legend(ncol=8)))
 
 grid.arrange(a,b,c,d,e,legend_group,legend_class,nrow=6,ncol=2,layout_matrix=rbind(c(1),c(6),c(2,4),c(3,4),c(5,4),c(5,7)),heights=c(0.2,0.05,0.25,0.25,0.2,0.05),widths=c(0.4,0.6))
+```
+
+```{r Figure 5 source data}
+write.table(subfam_states[,c("subfamily","States","Metric")],file="source_data/Figure_5a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_chromHMM_pca$eigenvectors[,c("PC1","PC2","Group","Age")],file="source_data/Figure_5b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_chromHMM_pca$eigenvalues,file="source_data/Figure_5b_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_chromHMM_pca$eigenvectors[,c("PC1","PC2","class_update","family_shape")],file="source_data/Figure_5c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_chromHMM_pca$eigenvalues,file="source_data/Figure_5c_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_state_sample_counts[,c("subfamily","State","Sample.Proportion","class_update")],file="source_data/Figure_5d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_state_sample_counts_combine[,c("State","V1")],file="source_data/Figure_5d_n.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(homer_top5[,c("Motif.Name","q.value..Benjamini.","PC","variable")],file="source_data/Figure_5e.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Number of enrichments and enriched subfamilies by state, overall and by class
@@ -4214,6 +4336,13 @@ c = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Enrichments,fill=Sta
 d = ggplot(shuffled_enrichment_counts_combine,aes(x=State,y=Subfamilies,fill=State)) + geom_boxplot() +   geom_point(data=enrichment_table,aes(x=State,y=Subfamilies),color="red") + ylab("Number of\nenriched subfamilies") +  theme(axis.text.x = element_text(angle=90,hjust=1,vjust=0.5),axis.title.x = element_text(margin = margin(t = -10))) + scale_fill_manual(values=all_state_colors,guide=FALSE) + scale_x_discrete(labels=all_state_labels)
 
 grid.arrange(a,b,c,d,layout_matrix=rbind(c(1),c(2),c(3,4)),nrow=3,heights=c(0.15,0.55,0.3),widths=c(0.48,0.52))
+```
+
+```{r Figure S12 source data}
+write.table(shuffle_state_potential[,c("subfamily","States","Iteration","Metric")],file="source_data/Figure_S12a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(test[,c("subfamily","Sample.Proportion","Iteration","State")],file="source_data/Figure_S12b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(shuffled_enrichment_counts_combine[,c("State","Enrichments","Subfamilies")],file="source_data/Figure_S12cd_boxplots.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(enrichment_table[,c("State","Enrichments","Subfamilies")],file="source_data/Figure_S12cd_dots.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Subfamily potential
@@ -4296,6 +4425,25 @@ legend_shape_age = get_legend(ggplot(sample_H3K27ac_pca$eigenvectors,aes(x=PC1,y
 legend_family = get_legend(ggplot(subfamily_chromHMM_pca$eigenvectors,aes(x=PC1,y=PC2,color=class_update,shape=family_shape)) + geom_point() + scale_color_manual(values=class_colors,guide=FALSE) + scale_shape_manual(values=family_shapes,name="Family") + theme(aspect.ratio = 1,legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
 grid.arrange(a,b,c,d,legend_group,legend_shape_age,e,f,g,h,legend_anatomy,legend_type,legend_germline,legend_cancer,i,j,k,legend_class_dot,legend_family,nrow=9,layout_matrix=rbind(c(1,2,3,4),c(5),c(6),c(7,8,9,10),c(11),c(12),c(13,14),c(15,16,17,NA),c(18,19)),heights=c(0.23,0.05,0.04,0.23,0.1,0.04,0.04,0.23,0.04))
+```
+
+```{r Figure S13 source data}
+write.table(sample_WGBS_pca$eigenvectors[,c("PC1","PC2","PC3","Group","Age")],file="source_data/Figure_S13ab.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_WGBS_pca$eigenvalues,file="source_data/Figure_S13ab_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_DNase_pca$eigenvectors[,c("PC1","PC2","Group","Age")],file="source_data/Figure_S13c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_DNase_pca$eigenvalues,file="source_data/Figure_S13c_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_H3K27ac_pca$eigenvectors[,c("PC1","PC2","Group","Age")],file="source_data/Figure_S13d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_H3K27ac_pca$eigenvalues,file="source_data/Figure_S13d_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+
+write.table(sample_chromHMM_pca$eigenvectors[,c("PC1","PC2","Anatomy","Type","Germline","Cancer")],file="source_data/Figure_S13efgh.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(sample_chromHMM_pca$eigenvalues,file="source_data/Figure_S13efgh_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+
+write.table(subfamily_WGBS_pca$eigenvectors[,c("PC1","PC2","class_update","family")],file="source_data/Figure_S13i.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_WGBS_pca$eigenvalues,file="source_data/Figure_S13i_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_DNase_pca$eigenvectors[,c("PC1","PC2","class_update","family")],file="source_data/Figure_S13j.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_DNase_pca$eigenvalues,file="source_data/Figure_S13j_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_H3K27ac_pca$eigenvectors[,c("PC1","PC2","class_update","family")],file="source_data/Figure_S13k.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_H3K27ac_pca$eigenvalues,file="source_data/Figure_S13k_pc.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### PCA
@@ -4415,6 +4563,14 @@ d = ggplot(great[which(great$set == "MER121_7_Enh"),],aes(x=reorder(`Term Name`,
 e = ggplot(great[which(great$set == "MER131_DNase"),],aes(x=reorder(`Term Name`,`Binom Raw P-Value`,median),y=log10(`Binom Raw P-Value`))) + geom_bar(stat="identity") + coord_flip() + theme(axis.title.y = element_blank(),plot.title = element_text(hjust = 1,size=7),axis.text=element_text(size=6),plot.margin = margin(0,0,0,0)) + ylab("-Log10(p-value)") + ggtitle("MER131, DHS")
 
 grid.arrange(a,b,c,d,e,nrow=4,layout_matrix=rbind(c(1,2),c(3),c(4),c(5)),widths=c(0.45,0.55),heights=c(0.35,0.25,0.25,0.15))
+```
+
+```{r Figure S14 source data}
+write.table(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% measure_metrics_subfam[c(1,3,5,8)] & correlate_subfamily$class_update == "LTR"),c("State","Metric","estimate.rho")],file="source_data/Figure_S14a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(correlate_subfamily[which(correlate_subfamily$State %in% states & correlate_subfamily$Metric %in% c(features[1:3],"coding_exon",features[5:8]) & correlate_subfamily$class_update == "LTR"),c("State","Metric","estimate.rho")],file="source_data/Figure_S14b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(great[which(great$set == "AmnSINE1_7_Enh"),c("set","Term Name","Binom Raw P-Value")],file="source_data/Figure_S14c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(great[which(great$set == "MER121_7_Enh"),c("set","Term Name","Binom Raw P-Value")],file="source_data/Figure_S14d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(great[which(great$set == "MER131_DNase"),c("set","Term Name","Binom Raw P-Value")],file="source_data/Figure_S14e.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Subfamily enrichment correlation
@@ -4770,6 +4926,10 @@ source("R_scripts/subfamily_enrichment_50state.R")
 ggplot(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > THRESHOLD_LOR),],aes(x=State,fill=State18)) + geom_bar(color="black") + facet_wrap(~Sample) + scale_fill_manual(values=chromHMM_states_18,name="State (18-state model)") + ylab("Enrichments LOR > 1.5") + theme(axis.text.x=element_blank(),axis.ticks.x = element_blank(),legend.position="bottom",legend.key.size = unit(2,'mm'))
 ```
 
+```{r Figure S15 source data}
+write.table(subfamily_50state_sample_filter[which(subfamily_50state_sample_filter$Enrichment > THRESHOLD_LOR),c("subfamily","State","State18","Sample")],file="source_data/Figure_S15.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 Identify subfamily x sample combinations enriched LOR > 1.5 in both 15-state and 50-state model states, active chromHMM states only.
 
 ```{r compare 50 15 state}
@@ -4822,6 +4982,13 @@ d = ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined
 scale_length_jk = get_legend(ggplot(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),],aes(x=reorder(Sample,match(Group,group_order)),y=reorder(subfamily,rmsk_TE_subfamily[match(subfamily,rmsk_TE_subfamily$subfamily),]$Total_length),fill=Length_percent_jk)) + geom_tile(linetype="blank") + scale_fill_gradient(name="Proportion of state\nin subfamily",low="white",high="darkblue",limits=c(0,0.12)) + theme(legend.position = "bottom"))
 
 grid.arrange(a,b,c,d,scale_length_jk,layout_matrix=rbind(c(1,1,1),c(2,3,4),c(5)),heights=c(0.6,0.35,0.05),widths=c(0.33,0.37,0.3))
+```
+
+```{r Figure S16 source data}
+write.table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% chromHMM_states[1:7]),c("Sample","Group","subfamily","Length_percent_jk","State")],file="source_data/Figure_S16a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "DNase"),c("Sample","Group","subfamily","Length_percent_jk","State")],file="source_data/Figure_S16b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State == "H3K27ac"),c("Sample","Group","subfamily","Length_percent_jk","State")],file="source_data/Figure_S16c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(subfamily_state_sample_combined[which(subfamily_state_sample_combined$subfamily %in% pc_subfamilies & subfamily_state_sample_combined$State %in% meth_states[1:2]),c("Sample","Group","subfamily","Length_percent_jk","State")],file="source_data/Figure_S16d.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Subfamilies representing >1% of a state
@@ -4935,6 +5102,11 @@ legend2 = get_legend(ggplot(melt(rmsk_TE_measure_Alu,id.vars=c(TE_coordinates,"c
 grid.arrange(a,b,c,d,e,f,legend1,legend2,nrow=5,layout_matrix=rbind(c(1,4),c(2,5),c(7,7),c(3,6),c(8,8)),heights=c(0.2,0.35,0.05,0.35,0.05))
 ```
 
+```{r Figure 6 source data}
+write.table(rmsk_TE_measure_SINE[,c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs","CpGs_per_length",meth_states,"cpgIsland_binary")],file="source_data/Figure_6abc.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(rmsk_TE_measure_Alu[,c(TE_coordinates,"class_update","Length","mappability","JC_distance","CpGs","CpGs_per_length",meth_states,"cpgIsland_binary")],file="source_data/Figure_6def.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Figure 6 analysis
 
 ```{r analysis Fig 6}
@@ -5033,6 +5205,14 @@ e = ggplot(chromosome_potential,aes(x=State,y=Zscore,label=chromosome)) + geom_p
 grid.arrange(a,b,c,d,e,layout_matrix=rbind(c(1,2),c(3,4),c(5)),heights=c(0.35,0.25,0.4))
 ```
 
+```{r Figure S17 source data}
+write.table(chrom_state_total[,c("chromosome","Bases","State")],file="source_data/Figure_S17a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chr_state_WGBS_total[,c("chromosome","CpGs","State")],file="source_data/Figure_S17b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chr_state_DNase_total[,c("chromosome","size","Peaks")],file="source_data/Figure_S17c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chr_state_H3K27ac_total[,c("chromosome","size","Peaks")],file="source_data/Figure_S17d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(chromosome_potential[,c("State","Zscore","chromosome")],file="source_data/Figure_S17e.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Supplementary Figure 18 (intergenic potential)
 
 ```{r Figure S18 scripts, cache=TRUE, cache.lazy=FALSE, dependson=c("Figure 6 scripts")}
@@ -5053,6 +5233,12 @@ a = ggplot(na.omit(feature_state_mean_class[which(feature_state_mean_class$Codin
 b = ggplot(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),],aes(x=Bin,y=Ratio,color=class_update)) + geom_line() + ylim(0,1) + scale_color_manual(values=class_colors,name="Class") + xlab("Proportion of samples in state") + ylab("Proportion of TEs overlapping genes") +  geom_hline(data=rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),],aes(yintercept=Proportion,color=class_update),linetype="dotted") + facet_grid(State~Genes,labeller = labeller(Genes=setNames(c("All genes","Protein-coding genes"),c("All","PC")),State=all_state_labels))
 
 grid.arrange(a,b,nrow=2)
+```
+
+```{r Figure S18 source data}
+write.table(na.omit(feature_state_mean_class[which(feature_state_mean_class$Coding == "All"),])[,c("State","Feature","Enrichment","Class")],file="source_data/Figure_S18a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_genic[which(!(state_genic$class_update %in% c("SVA","Other")) & state_genic$State %in% states[c(1,4:5,7,20:21)]),c("Bin","Ratio","class_update","State","Genes")],file="source_data/Figure_S18b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(rmsk_TE_genic[which(!(rmsk_TE_genic$class_update %in% c("SVA","Other"))),c("Proportion","class_update","Genes")],file="source_data/Figure_S18b_dashed.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### CpG density vs class repression mechanism
@@ -5094,6 +5280,13 @@ d = ggplot(droplevels(correlate_TE_state[which(correlate_TE_state$class_update !
 scale_legend = get_legend(ggplot(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),],aes(x=Metric,y=State,fill=estimate.rho)) + geom_tile() + scale_fill_gradient2(limits=c(-1,1),high="darkred",low="darkblue",mid="white",name="Spearman's rho") + theme(panel.background=element_rect(fill="lightgrey"),aspect.ratio = 1,legend.position="bottom"))
 
 grid.arrange(a,b,c,d,scale_legend,nrow=3,heights=c(0.45,0.45,0.1),widths=c(0.45,0.55))
+```
+
+```{r Figure S19 source data}
+write.table(correlate_TE_feature[which(correlate_TE_feature$class_update == "All"),c("Metric","State","estimate.rho")],file="source_data/Figure_S19a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(correlate_TE_feature[which(correlate_TE_feature$class_update != "All"),c("Metric","State","estimate.rho","class_update")],file="source_data/Figure_S19b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(droplevels(correlate_TE_state[which(correlate_TE_state$class_update == "All" & correlate_TE_state$State %in% meth_states),])[,c("Metric","State","estimate.rho")],file="source_data/Figure_S19c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(droplevels(correlate_TE_state[which(correlate_TE_state$class_update != "All" & correlate_TE_state$State %in% meth_states),])[,c("Metric","State","estimate.rho","class_update")],file="source_data/Figure_S19d.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### TE feature stats
@@ -5347,6 +5540,14 @@ d = ggplot(hg19_orthologs_specific,aes(x=factor(1),y=Count,fill=Subset,label=pas
 grid.arrange(a,b,c,d,nrow=2,layout_matrix=rbind(c(1,4,4),c(2,3,3)),heights=c(0.45,0.55))
 ```
 
+```{r Figure 7 source data}
+write.table(human_mouse_orthologs_WGBS_paired[,c("Mouse_sample_WGBS","Human_sample","Human_methylation","Mouse_methylation","Human_state_WGBS","Mouse_state_WGBS")],file="source_data/Figure_7ab.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_freq,file="source_data/Figure_7b_freq.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(human_mouse_orthologs_chromHMM_paired[,c("Mouse_sample_chromHMM","Human_sample","Human_state_chromHMM","Mouse_state_chromHMM")],file="source_data/Figure_7c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(state_freq_chromHMM,file="source_data/Figure_7c_freq.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(hg19_orthologs_specific[,c("Count","Subset","Proportion","State","Tissue")],file="source_data/Figure_7d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+```
+
 ### Supplementary Figure 20
 
 a. Pie chart with the percent of all TEs and TEs with an mm10 ortholog in each class. b. Pie chart with the percent of all subfamilies and subfamilies shared with mm10 in each class. c-e. Proportion of members in each shared subfamily that are d) hypomethylated, e) in the promoter state (1_TssA/TssA), or f) in any active regulatory chromHMM state in human (x-axis) and mouse (y-axis) in paired samples. The linear correlation for each sample pair is presented as a line. Only subfamilies with >30 members in each species are considered. 
@@ -5382,6 +5583,14 @@ e = ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color
 legend = get_legend(ggplot(hg19_mm10_chromHMM_subfamily_active,aes(x=Percent.x,y=Percent.y,color=Anatomy,shape=Age)) + geom_point() + scale_color_manual(values=anatomy_colors) + scale_shape_discrete(labels=age_labels) + geom_smooth(aes(linetype=Age),method='lm',fullrange=TRUE,alpha=0.1) + scale_linetype_manual(labels=age_labels,values=c(1,2)) + xlab("Human") + ylab("Mouse") + theme(legend.position = "bottom",legend.direction = "horizontal",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm')))
 
 grid.arrange(a,b,legend_class,c,d,e,legend,nrow=4,layout_matrix=rbind(c(1,NA,2),c(3),c(4,5,6),c(7)),heights=c(0.45,0.05,0.45,0.05))
+```
+
+```{r Figure S20 source data}
+write.table(ortholog_stats[,c("Category","TEs","class_update","Percent")],file="source_data/Figure_S20a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(ortholog_stats_subfam[,c("Category","Count","class_update","Percent")],file="source_data/Figure_S20b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(hg19_mm10_TE_WGBS_subfamily_hypo_paired[,c("subfamily","Human_hypo","Mouse_hypo","Anatomy","Age")],file="source_data/Figure_S20c.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(hg19_mm10_chromHMM_subfamily[which(hg19_mm10_chromHMM_subfamily$Human_state_chromHMM == "1_TssA" & hg19_mm10_chromHMM_subfamily$Mouse_state_chromHMM == "TssA"),c("subfamily","Percent.x","Percent.y","Anatomy","Age")],file="source_data/Figure_S20d.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(hg19_mm10_chromHMM_subfamily_active[,c("subfamily","Percent.x","Percent.y","Anatomy","Age")],file="source_data/Figure_S20e.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### Human-mouse ortholog analysis
@@ -5839,6 +6048,12 @@ a = ggplot(histones,aes(x=Position/1000,y=Level,color=Mark,group=Mark)) + geom_l
 b = ggplot(all_lengths_blocks,aes(x=log10(Blocks),y=log10(Median))) + geom_point(aes(color=Group)) + xlab("Number of blocks or peaks (log10)") + ylab("Median length of blocks or peaks (log10(bp))") + scale_color_manual(values=group_colors) + facet_wrap(~State,scales="free",labeller=labeller(State=all_state_labels)) + geom_smooth(method="lm",se=FALSE,color="black") + geom_text(data=all_lengths_blocks_corr,aes(x = -Inf, y = Inf,label=round(Cor,2)),hjust=-0.1,vjust=1.5,size=3) + scale_y_continuous(breaks=pretty_breaks(n=3)) + scale_x_continuous(breaks=pretty_breaks(n=3)) + theme(legend.position = "bottom",legend.margin=margin(0,0,0,0),legend.key.size = unit(1,'mm'))
 
 grid.arrange(a,b,heights=c(0.45,0.55))
+```
+
+```{r Figure S22 source data}
+write.table(histones[,c("Position","Level","Mark","State")],file="source_data/Figure_S22a.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(all_lengths_blocks[,c("Sample","Blocks","Median","Group","State")],file="source_data/Figure_S22b.txt",sep='\t',row.names=FALSE,quote=FALSE)
+write.table(all_lengths_blocks_corr,file="source_data/Figure_S22b_cor.txt",sep='\t',row.names=FALSE,quote=FALSE)
 ```
 
 ### State/peak lengths analysis
