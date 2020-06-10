@@ -7,6 +7,3 @@
 # python_scripts/ - 23 python scripts
 # R_scripts/ - 46 R scripts
 # SourceData.tar.gz - contains input data for each figure panel
-
-# Additional:
-## sample_lists/ - 21 lists used as input by bash/python scripts
